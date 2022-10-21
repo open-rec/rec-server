@@ -7,7 +7,7 @@ import java.util.Map;
 public abstract class IoNode<T> extends AbstractNode {
 
 
-    public abstract Map<String,String> buildQuery(GraphContext context);
+    public abstract Map<String, String> buildQuery(GraphContext context);
 
     public abstract void handleResult(GraphContext context, T result);
 }
