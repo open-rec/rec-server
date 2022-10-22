@@ -2,6 +2,7 @@ package com.openrec.proto;
 
 
 import lombok.Data;
+import com.openrec.proto.JsonRes;
 
 @Data
 public class HealthRes extends JsonRes{
