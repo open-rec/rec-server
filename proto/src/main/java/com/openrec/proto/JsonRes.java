@@ -4,9 +4,9 @@ package com.openrec.proto;
 import lombok.Data;
 
 @Data
-public abstract class JsonRes {
+public abstract class JsonRes<T> {
     protected int code;
     protected boolean status;
     protected String msg;
-    protected Object data;
+    protected T data;
 }
