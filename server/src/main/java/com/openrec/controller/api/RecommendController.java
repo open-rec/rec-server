@@ -18,7 +18,6 @@ public class RecommendController {
     @RequestMapping(value = {"/api/recommend"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<RecommendRes<Item>>> recommend(@RequestBody JsonReq<RecommendReq> recommendReq){
-        System.out.println(recommendReq);
         return Mono.just(new JsonRes<>(new RecommendRes<>()));
     }
 }
