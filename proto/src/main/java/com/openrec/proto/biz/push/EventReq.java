@@ -6,5 +6,4 @@ import lombok.Data;
 @Data
 public class EventReq extends AbstractPushReq<Event>{
 
-    protected PushType type = PushType.EVENT;
 }

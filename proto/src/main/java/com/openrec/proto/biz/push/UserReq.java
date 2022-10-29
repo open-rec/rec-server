@@ -6,5 +6,4 @@ import lombok.Data;
 @Data
 public class UserReq extends AbstractPushReq<User> {
 
-    protected PushType type = PushType.USER;
 }
