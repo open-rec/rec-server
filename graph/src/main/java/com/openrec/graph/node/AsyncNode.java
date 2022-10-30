@@ -5,7 +5,7 @@ import com.openrec.graph.GraphContext;
 import java.util.Map;
 
 /**
- * for NIO.
+ * for NIO
  * @param <T>
  */
 public abstract class AsyncNode<T> extends AbstractNode {

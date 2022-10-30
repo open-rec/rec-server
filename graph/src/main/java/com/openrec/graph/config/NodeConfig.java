@@ -4,9 +4,11 @@ package com.openrec.graph.config;
 import lombok.Data;
 
 @Data
-public abstract class NodeConfig<T> {
+public class NodeConfig<T> {
 
+    protected String name;
     protected boolean open;
+    protected String clazz;
 
     protected T content;
 
