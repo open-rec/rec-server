@@ -1,5 +1,7 @@
 package com.openrec.graph;
 
+import com.google.common.collect.Maps;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -7,6 +9,10 @@ import java.util.Set;
 public class GraphParams {
 
     private Map<String, Object> params;
+
+    public GraphParams() {
+        this.params = Maps.newHashMap();
+    }
 
     public String getValueToString(String key) {
         return (String) params.getOrDefault(key, "");
@@ -42,5 +48,9 @@ public class GraphParams {
 
     public int size() {
         return params.size();
+    }
+
+    public void clear() {
+        params.clear();
     }
 }

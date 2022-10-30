@@ -15,7 +15,13 @@ public abstract class AbstractNode implements Node {
     protected List<Node> children;
 
     public AbstractNode() {
+        this.init();
+    }
+
+    public void init() {
         this.status = NodeStatus.INIT;
+        this.id = this.getClass().getSimpleName();
+        this.name = id;
         this.parents = Lists.newArrayList();
         this.children = Lists.newArrayList();
     }
@@ -24,7 +30,7 @@ public abstract class AbstractNode implements Node {
         return NodeStatus.STOP == status;
     }
 
-    public boolean ready() {
+    public boolean isReady() {
         return parents.stream().allMatch(p -> p.finished());
     }
 
@@ -36,7 +42,22 @@ public abstract class AbstractNode implements Node {
         parents.add(parent);
     }
 
+    public void start() {
+        this.status = NodeStatus.RUNNING;
+    }
+
+    @Override
+    public NodeStatus getStatus() {
+        return status;
+    }
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
     public void destroy() {
+        this.status = NodeStatus.STOP;
         this.children.clear();
         this.parents.clear();
     }
@@ -45,5 +66,4 @@ public abstract class AbstractNode implements Node {
     public String toString() {
         return super.toString();
     }
-
 }

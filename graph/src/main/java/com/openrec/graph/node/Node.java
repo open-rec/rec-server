@@ -7,5 +7,7 @@ public interface Node {
 
     boolean finished();
 
+    boolean isReady();
+
     void destroy();
 }

@@ -4,7 +4,11 @@ import com.openrec.graph.GraphContext;
 
 import java.util.Map;
 
-public abstract class IoNode<T> extends AbstractNode {
+/**
+ * for NIO.
+ * @param <T>
+ */
+public abstract class AsyncNode<T> extends AbstractNode {
 
 
     public abstract Map<String, String> buildQuery(GraphContext context);
