@@ -1,5 +1,9 @@
 package com.openrec.graph.node;
 
+import com.openrec.graph.GraphContext;
+
+import java.util.List;
+
 public interface Node {
 
     String getId();
@@ -9,11 +13,23 @@ public interface Node {
 
     boolean finished();
 
+    boolean isRunning();
+
     boolean isReady();
 
-    public void addChild(Node child);
+    void start();
 
-    public void addParent(Node parent);
+    void stop();
+
+    void run(GraphContext context);
+
+    void addChild(Node child);
+
+    List<Node> getChildren();
+
+    void addParent(Node parent);
+
+    List<Node> getParents();
 
     void destroy();
 }

@@ -6,24 +6,24 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class GraphConfigTest {
+public class GraphEngineTest {
 
-    public static final String TEST_GRAPH_CONFIG = "{\n" +
+    private static final String TEST_GRAPH_CONIG = "{\n" +
             "\t\"nodes\": [{\n" +
             "\t\t\t\"name\": \"a\",\n" +
-            "\t\t\t\"clazz\": \"com.openrec.graph.node.EmptyNode\",\n" +
+            "\t\t\t\"clazz\": \"com.openrec.graph.node.SleepNode\",\n" +
             "\t\t\t\"open\": true,\n" +
             "\t\t\t\"content\": null\n" +
             "\t\t},\n" +
             "\t\t{\n" +
             "\t\t\t\"name\": \"b\",\n" +
-            "\t\t\t\"clazz\": \"com.openrec.graph.node.EmptyNode\",\n" +
+            "\t\t\t\"clazz\": \"com.openrec.graph.node.SleepNode\",\n" +
             "\t\t\t\"open\": true,\n" +
             "\t\t\t\"content\": null\n" +
             "\t\t},\n" +
             "\t\t{\n" +
             "\t\t\t\"name\": \"c\",\n" +
-            "\t\t\t\"clazz\": \"com.openrec.graph.node.EmptyNode\",\n" +
+            "\t\t\t\"clazz\": \"com.openrec.graph.node.SleepNode\",\n" +
             "\t\t\t\"open\": true,\n" +
             "\t\t\t\"content\": null\n" +
             "\t\t}\n" +
@@ -37,10 +37,17 @@ public class GraphConfigTest {
             "\t}]\n" +
             "}";
 
+
     @Test
-    public void build() {
-        GraphConfig graphConfig = new Gson().fromJson(TEST_GRAPH_CONFIG, GraphConfig.class);
-        Assert.assertEquals(graphConfig.getNodes().size(), 3);
-        Assert.assertEquals(graphConfig.getEdges().size(), 2);
+    public void testGraph() {
+        GraphConfig graphConfig = new Gson().fromJson(TEST_GRAPH_CONIG, GraphConfig.class);
+        long start = System.currentTimeMillis();
+        GraphEngine graphEngine = new GraphEngine();
+        graphEngine.prepare();
+        graphEngine.buildGraph(graphConfig);
+        graphEngine.execGraph();
+        long cost = System.currentTimeMillis() - start;
+        System.out.println(cost);
+        Assert.assertTrue(cost < graphConfig.getNodes().size() * 1000);
     }
 }

@@ -41,8 +41,12 @@ public abstract class AbstractNode implements Node {
         return NodeStatus.STOP == status;
     }
 
+    public boolean isRunning() {
+        return NodeStatus.RUNNING == status;
+    }
+
     public boolean isReady() {
-        return parents.stream().allMatch(p -> p.finished());
+        return NodeStatus.INIT == status && parents.stream().allMatch(p -> p.finished());
     }
 
     public void addChild(Node child) {
@@ -55,6 +59,10 @@ public abstract class AbstractNode implements Node {
 
     public void start() {
         this.status = NodeStatus.RUNNING;
+    }
+
+    public void stop() {
+        this.status = NodeStatus.STOP;
     }
 
     @Override
@@ -72,8 +80,17 @@ public abstract class AbstractNode implements Node {
         return name;
     }
 
+    @Override
+    public List<Node> getChildren() {
+        return children;
+    }
+
+    @Override
+    public List<Node> getParents() {
+        return parents;
+    }
+
     public void destroy() {
-        this.status = NodeStatus.STOP;
         this.children.clear();
         this.parents.clear();
     }
