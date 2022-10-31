@@ -6,10 +6,12 @@ import com.google.common.collect.Sets;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.node.Node;
 import com.openrec.graph.node.RootNode;
+import com.openrec.graph.tools.anno.Export;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -97,7 +99,9 @@ public class GraphEngine {
                 for(Node node : readyNodes) {
                     node.start();
                     threadPool.submit(()->{
+                        context.importNodeData(node);
                         node.run(context);
+                        context.exportNodeData(node);
                         node.stop();
                         latch.countDown();
                     });
