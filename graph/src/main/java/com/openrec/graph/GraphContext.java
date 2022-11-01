@@ -71,8 +71,16 @@ public class GraphContext {
         params.put(key, value);
     }
 
+    public GraphParams getParams() {
+        return params;
+    }
+
     public void addConfig(String key, NodeConfig nodeConfig) {
         configMap.put(key, nodeConfig);
+    }
+
+    public NodeConfig getConfig(String key) {
+        return configMap.get(key);
     }
 
     public void clean(){

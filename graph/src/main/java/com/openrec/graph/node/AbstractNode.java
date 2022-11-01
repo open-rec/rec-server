@@ -90,6 +90,11 @@ public abstract class AbstractNode implements Node {
         return parents;
     }
 
+    @Override
+    public void setConfig(NodeConfig config) {
+        this.config = config;
+    }
+
     public void destroy() {
         this.children.clear();
         this.parents.clear();

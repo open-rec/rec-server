@@ -1,6 +1,7 @@
 package com.openrec.graph.node;
 
 import com.openrec.graph.GraphContext;
+import com.openrec.graph.config.NodeConfig;
 
 import java.util.List;
 
@@ -30,6 +31,8 @@ public interface Node {
     void addParent(Node parent);
 
     List<Node> getParents();
+
+    void setConfig(NodeConfig config);
 
     void destroy();
 }

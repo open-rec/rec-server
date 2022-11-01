@@ -6,7 +6,6 @@ import com.google.common.collect.Sets;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.node.Node;
 import com.openrec.graph.node.RootNode;
-import com.openrec.graph.tools.anno.Export;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -32,8 +31,23 @@ public class GraphEngine {
         this.context = new GraphContext();
     }
 
-    public void prepare() {
-        // TODO: 2022/10/31  init graph context
+    public void prepare(Object paramsObj, List<NodeConfig> nodeConfigs) {
+        if(paramsObj!=null) {
+            for(Field field:paramsObj.getClass().getDeclaredFields()) {
+                try {
+                    field.setAccessible(true);
+                    context.addParam(field.getName(), field.get(paramsObj));
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        if(nodeConfigs!=null) {
+            for(NodeConfig config : nodeConfigs) {
+                context.addConfig(config.getName(), config);
+            }
+        }
     }
 
 
@@ -46,6 +60,7 @@ public class GraphEngine {
                     Node node = (Node) Class.forName(nodeConfig.getClazz())
                             .getDeclaredConstructor(NodeConfig.class)
                             .newInstance(nodeConfig);
+                    node.setConfig(nodeConfig);
                     nodeMap.put(node.getName(), node);
                 } catch (Exception e) {
                     log.error("node:{} reflect failed: {}", nodeConfig.getClazz(), ExceptionUtils.getStackTrace(e));

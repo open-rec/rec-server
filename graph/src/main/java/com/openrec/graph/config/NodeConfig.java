@@ -8,6 +8,7 @@ public class NodeConfig<T> {
 
     protected String name;
     protected boolean open;
+    protected int timeout;
     protected String clazz;
 
     protected T content;
