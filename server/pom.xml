@@ -23,6 +23,10 @@
             <groupId>com.openrec</groupId>
             <artifactId>rec-proto</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.openrec</groupId>
+            <artifactId>rec-graph</artifactId>
+        </dependency>
 
         <!-- webflux -->
         <dependency>

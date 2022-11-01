@@ -31,7 +31,7 @@ public class GraphEngine {
         this.context = new GraphContext();
     }
 
-    public void prepare(Object paramsObj, List<NodeConfig> nodeConfigs) {
+    public void prepare(Object paramsObj, GraphConfig graphConfig) {
         if(paramsObj!=null) {
             for(Field field:paramsObj.getClass().getDeclaredFields()) {
                 try {
@@ -43,8 +43,8 @@ public class GraphEngine {
             }
         }
 
-        if(nodeConfigs!=null) {
-            for(NodeConfig config : nodeConfigs) {
+        if(graphConfig!=null) {
+            for(NodeConfig config : graphConfig.getNodes()) {
                 context.addConfig(config.getName(), config);
             }
         }
