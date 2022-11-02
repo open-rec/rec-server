@@ -44,6 +44,6 @@ public class HotNode extends SyncNode<HotConfig> {
         int size = config.getContent().getSize();
 
         hotItems = redisService.getZSet(key, 0, Double.MAX_VALUE, size);
-        log.info("{} with new item size:{}", getName(), hotItems.size());
+        log.info("{} with hot item size:{}", getName(), hotItems.size());
     }
 }

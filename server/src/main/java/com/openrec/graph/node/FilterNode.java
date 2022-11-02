@@ -23,7 +23,7 @@ public class FilterNode extends SyncNode<FilterConfig> {
     }
 
     private RedisService redisService = BeanUtil.getBean(RedisService.class);
-    private String bizType = "filter";
+    private String bizType = "event";
     private String filterType = "expose";
     private String FILTER_KEY_FORMAT = "%s:%s:%s:{%s}";
 

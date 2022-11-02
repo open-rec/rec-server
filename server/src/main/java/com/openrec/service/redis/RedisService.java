@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,11 +30,23 @@ public class RedisService {
         redisTemplate.opsForZSet().add(key, value, score);
     }
 
-    public List<ScoreResult> getZSet(Object key, double scoreMin, double scoreMax, int size) {
+    public List<ScoreResult> getZSet(String key, double scoreMin, double scoreMax, int size) {
         Set<ZSetOperations.TypedTuple<String>> tupleSet = redisTemplate.opsForZSet()
                 .rangeByScoreWithScores(key, scoreMin, scoreMax, 0, size);
         return tupleSet.stream().map(t -> new ScoreResult(t.getValue(), t.getScore()))
                 .collect(Collectors.toList());
+    }
+
+    public List<ScoreResult> getZSet(List<String> keys, double scoreMin, double scoreMax, int size) {
+
+        String tmpKey="tmp_"+ UUID.randomUUID().toString();
+        redisTemplate.opsForZSet().unionAndStore(tmpKey, keys, tmpKey);
+        Set<ZSetOperations.TypedTuple<String>> tupleSet = redisTemplate.opsForZSet()
+                .rangeByScoreWithScores(tmpKey, scoreMin, scoreMax, 0, size);
+        List<ScoreResult> mergeResult = tupleSet.stream().map(t -> new ScoreResult(t.getValue(), t.getScore()))
+                .collect(Collectors.toList());
+        redisTemplate.delete(tmpKey);
+        return mergeResult;
     }
 
     public void addKv(String key, Object value) {
