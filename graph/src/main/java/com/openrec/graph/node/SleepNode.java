@@ -8,9 +8,9 @@ import java.util.concurrent.TimeUnit;
 
 
 @Slf4j
-public class SleepNode extends SyncNode{
+public class SleepNode extends SyncNode {
 
-    private static final long DEFAULT_SLEEP_TIME =  TimeUnit.SECONDS.toMillis(1);
+    private static final long DEFAULT_SLEEP_TIME = TimeUnit.SECONDS.toMillis(1);
 
     private long sleetTime;
 

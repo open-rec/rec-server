@@ -10,7 +10,7 @@ import springfox.documentation.oas.annotations.EnableOpenApi;
 @SpringBootApplication
 public class RecServer {
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         SpringApplication.run(RecServer.class, args);
     }
 }

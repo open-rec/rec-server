@@ -9,7 +9,7 @@ import org.springframework.core.io.ClassPathResource;
 public class AppConfig {
 
     @Bean
-    public static PropertyPlaceholderConfigurer getPropertyPlaceholderConfigurer(){
+    public static PropertyPlaceholderConfigurer getPropertyPlaceholderConfigurer() {
         PropertyPlaceholderConfigurer ppc = new PropertyPlaceholderConfigurer();
         ppc.setLocation(new ClassPathResource("application.properties"));
         ppc.setIgnoreUnresolvablePlaceholders(true);

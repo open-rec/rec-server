@@ -21,6 +21,7 @@ public class RecommendRes<T> {
     public RecommendRes(List<ScoreResult> results) {
         this(results, null);
     }
+
     public RecommendRes(List<ScoreResult> results, List<T> detailInfos) {
         this.results = results;
         this.detailInfos = detailInfos;

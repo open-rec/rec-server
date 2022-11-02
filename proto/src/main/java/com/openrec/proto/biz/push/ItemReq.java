@@ -4,6 +4,6 @@ import com.openrec.proto.model.Item;
 import lombok.Data;
 
 @Data
-public class ItemReq extends AbstractPushReq<Item>{
+public class ItemReq extends AbstractPushReq<Item> {
 
 }

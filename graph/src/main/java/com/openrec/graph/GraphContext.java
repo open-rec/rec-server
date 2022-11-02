@@ -7,7 +7,6 @@ import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
 import lombok.extern.slf4j.Slf4j;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Map;
 
@@ -26,8 +25,8 @@ public class GraphContext {
     }
 
     public void exportNodeData(Node node) {
-        for(Field field:node.getClass().getDeclaredFields()){
-            if(field.isAnnotationPresent(Export.class)){
+        for (Field field : node.getClass().getDeclaredFields()) {
+            if (field.isAnnotationPresent(Export.class)) {
                 Export export = field.getAnnotation(Export.class);
                 String key = export.value();
                 Object data = null;
@@ -43,8 +42,8 @@ public class GraphContext {
     }
 
     public void importNodeData(Node node) {
-        for(Field field:node.getClass().getDeclaredFields()){
-            if(field.isAnnotationPresent(Import.class)){
+        for (Field field : node.getClass().getDeclaredFields()) {
+            if (field.isAnnotationPresent(Import.class)) {
                 Import export = field.getAnnotation(Import.class);
                 String key = export.value();
                 Object data = dataMap.get(key);
@@ -83,7 +82,7 @@ public class GraphContext {
         return configMap.get(key);
     }
 
-    public void clean(){
+    public void clean() {
         params.clear();
         configMap.clear();
         dataMap.clear();

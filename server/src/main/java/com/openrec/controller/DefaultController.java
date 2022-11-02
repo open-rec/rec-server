@@ -15,7 +15,7 @@ public class DefaultController {
     @RequestMapping(value = {"/"}, method = RequestMethod.GET)
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public Mono<String> home(){
+    public Mono<String> home() {
         return Mono.just("hello, rec server start.");
     }
 
@@ -23,7 +23,7 @@ public class DefaultController {
     @RequestMapping(value = {"/health"}, method = RequestMethod.GET)
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public Mono<JsonRes<String>> health(){
+    public Mono<JsonRes<String>> health() {
         return Mono.just(new JsonRes<>("health check"));
     }
 }

@@ -3,8 +3,6 @@ package com.openrec.graph.node;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 public class EmptyNodeTest {
 
     @Test
@@ -13,7 +11,7 @@ public class EmptyNodeTest {
         Assert.assertEquals(NodeStatus.INIT, node.getStatus());
 
         Assert.assertTrue(node.isReady());
-        if(node.isReady()){
+        if (node.isReady()) {
             node.start();
             Assert.assertEquals(NodeStatus.RUNNING, node.getStatus());
             node.run(null);

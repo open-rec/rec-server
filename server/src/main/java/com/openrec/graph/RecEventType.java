@@ -10,7 +10,8 @@ public enum RecEventType {
     BUY,
     DISLIKE;
 
-    RecEventType() {}
+    RecEventType() {
+    }
 
     @Override
     public String toString() {

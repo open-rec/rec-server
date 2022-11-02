@@ -39,16 +39,16 @@ public class FilterNode extends SyncNode<FilterConfig> {
         int timeout = config.getTimeout();
         boolean open = config.isOpen();
 
-        if(!open) {
+        if (!open) {
             log.info("{} not open, just return", getName());
             return;
         }
 
         int duration = config.getContent().getFilterMap().get(RecEventType.EXPOSE).getDuration();
         int size = config.getContent().getFilterMap().get(RecEventType.EXPOSE).getSize();
-        long nowSecs = System.currentTimeMillis()/1000;
+        long nowSecs = System.currentTimeMillis() / 1000;
 
-        List<ScoreResult> exposeItems = redisService.getZSet(key, nowSecs-duration, nowSecs, size);
+        List<ScoreResult> exposeItems = redisService.getZSet(key, nowSecs - duration, nowSecs, size);
         log.info("{} with expose item size:{}", getName(), exposeItems.size());
     }
 }

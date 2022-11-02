@@ -10,6 +10,7 @@ public interface Node {
     String getId();
 
     String getName();
+
     NodeStatus getStatus();
 
     boolean finished();

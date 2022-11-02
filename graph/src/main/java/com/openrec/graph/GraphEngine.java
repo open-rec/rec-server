@@ -32,8 +32,8 @@ public class GraphEngine {
     }
 
     public void prepare(Object paramsObj, GraphConfig graphConfig) {
-        if(paramsObj!=null) {
-            for(Field field:paramsObj.getClass().getDeclaredFields()) {
+        if (paramsObj != null) {
+            for (Field field : paramsObj.getClass().getDeclaredFields()) {
                 try {
                     field.setAccessible(true);
                     context.addParam(field.getName(), field.get(paramsObj));
@@ -43,8 +43,8 @@ public class GraphEngine {
             }
         }
 
-        if(graphConfig!=null) {
-            for(NodeConfig config : graphConfig.getNodes()) {
+        if (graphConfig != null) {
+            for (NodeConfig config : graphConfig.getNodes()) {
                 context.addConfig(config.getName(), config);
             }
         }
@@ -54,8 +54,8 @@ public class GraphEngine {
     public void buildGraph(GraphConfig graphConfig) {
         RootNode rootNode = new RootNode();
         Map<String, Node> nodeMap = Maps.newHashMap();
-        for(NodeConfig nodeConfig: graphConfig.getNodes()) {
-            if(StringUtils.isNotEmpty(nodeConfig.getClazz())) {
+        for (NodeConfig nodeConfig : graphConfig.getNodes()) {
+            if (StringUtils.isNotEmpty(nodeConfig.getClazz())) {
                 try {
                     Node node = (Node) Class.forName(nodeConfig.getClazz())
                             .getDeclaredConstructor(NodeConfig.class)
@@ -68,13 +68,13 @@ public class GraphEngine {
             }
         }
 
-        for(GraphConfig.NodeEdge edge : graphConfig.getEdges()) {
+        for (GraphConfig.NodeEdge edge : graphConfig.getEdges()) {
             Node from = nodeMap.get(edge.getFrom());
             Node to = nodeMap.get(edge.getTo());
             from.addChild(to);
             to.addParent(from);
 
-            if(from.isReady()) {
+            if (from.isReady()) {
                 rootNode.addChild(from);
             }
         }
@@ -84,36 +84,36 @@ public class GraphEngine {
     }
 
     public void execGraph() {
-        while(!queue.isEmpty()) {
+        while (!queue.isEmpty()) {
             Iterator<Node> iterator = queue.iterator();
             List<Node> readyNodes = Lists.newLinkedList();
             List<Node> nextNodes = Lists.newLinkedList();
-            while(iterator.hasNext()) {
+            while (iterator.hasNext()) {
                 Node curNode = iterator.next();
-                if(curNode == null){
+                if (curNode == null) {
                     continue;
                 }
-                if(curNode.finished()) {
+                if (curNode.finished()) {
                     iterator.remove();
-                    for(Node nextNode : curNode.getChildren()) {
-                        if(nextNode.isReady() && !nodeSet.contains(nextNode.getName())) {
+                    for (Node nextNode : curNode.getChildren()) {
+                        if (nextNode.isReady() && !nodeSet.contains(nextNode.getName())) {
                             nextNodes.add(nextNode);
                             nodeSet.add(nextNode.getName());
                         }
                     }
                     curNode.destroy();
-                } else if(curNode.isReady()) {
+                } else if (curNode.isReady()) {
                     readyNodes.add(curNode);
                 }
             }
             queue.addAll(nextNodes);
 
             int batch = readyNodes.size();
-            if(batch>0) {
+            if (batch > 0) {
                 CountDownLatch latch = new CountDownLatch(batch);
-                for(Node node : readyNodes) {
+                for (Node node : readyNodes) {
                     node.start();
-                    threadPool.submit(()->{
+                    threadPool.submit(() -> {
                         context.importNodeData(node);
                         node.run(context);
                         context.exportNodeData(node);

@@ -7,10 +7,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.lang.annotation.Target;
-
-import static org.junit.Assert.*;
-
 public class GraphContextTest {
 
     private static final String TEST_STRING = "hello";
@@ -23,7 +19,7 @@ public class GraphContextTest {
 
         @Override
         public void run(GraphContext context) {
-            this.str=TEST_STRING;
+            this.str = TEST_STRING;
         }
     }
 

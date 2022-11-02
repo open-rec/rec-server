@@ -4,6 +4,6 @@ import com.openrec.proto.model.Event;
 import lombok.Data;
 
 @Data
-public class EventReq extends AbstractPushReq<Event>{
+public class EventReq extends AbstractPushReq<Event> {
 
 }

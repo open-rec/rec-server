@@ -31,7 +31,7 @@ public abstract class AbstractNode<C> implements Node {
 
     public void init() {
         this.status = NodeStatus.INIT;
-        if(config!=null) {
+        if (config != null) {
             this.name = config.getName();
             this.open = config.isOpen();
         }

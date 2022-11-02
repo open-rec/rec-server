@@ -3,11 +3,8 @@ package com.openrec.graph.config;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.openrec.graph.RecEventType;
-import com.openrec.proto.JsonRes;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class FilterConfigTest {
 
@@ -29,8 +26,10 @@ public class FilterConfigTest {
     public void test() {
 
         NodeConfig<FilterConfig> nodeConfig = new Gson().
-                fromJson(TEST_FILTER_CONFIG, new TypeToken<NodeConfig<FilterConfig>>() {}.getType());
+                fromJson(TEST_FILTER_CONFIG, new TypeToken<NodeConfig<FilterConfig>>() {
+                }.getType());
         Assert.assertEquals(nodeConfig.getName(), "a");
-        Assert.assertEquals(nodeConfig.getContent().getFilterMap().get(RecEventType.EXPOSE.toString()).getDuration(), 86400);
+        Assert.assertEquals(nodeConfig.getContent().getFilterMap()
+                .get(RecEventType.EXPOSE.toString()).getDuration(), 86400);
     }
 }

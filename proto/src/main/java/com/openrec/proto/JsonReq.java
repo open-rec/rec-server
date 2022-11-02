@@ -13,6 +13,7 @@ public class JsonReq<T> {
     public JsonReq() {
         this(null);
     }
+
     public JsonReq(T body) {
         this.requestId = UUID.randomUUID().toString();
         this.body = body;

@@ -2,8 +2,6 @@ package com.openrec.graph;
 
 import org.junit.Before;
 
-import static org.junit.Assert.*;
-
 public class GraphParamsTest {
 
     @Before

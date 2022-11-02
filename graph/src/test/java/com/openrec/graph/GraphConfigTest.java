@@ -4,8 +4,6 @@ import com.google.gson.Gson;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 public class GraphConfigTest {
 
     public static final String TEST_GRAPH_CONFIG = "{\n" +
