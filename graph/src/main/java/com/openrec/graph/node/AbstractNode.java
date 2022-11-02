@@ -5,7 +5,7 @@ import com.openrec.graph.config.NodeConfig;
 
 import java.util.List;
 
-public abstract class AbstractNode implements Node {
+public abstract class AbstractNode<C> implements Node {
 
     protected String id;
     protected String name;
@@ -15,7 +15,7 @@ public abstract class AbstractNode implements Node {
 
     protected List<Node> parents;
     protected List<Node> children;
-    protected NodeConfig config;
+    protected NodeConfig<C> config;
 
     public AbstractNode() {
         this(null);

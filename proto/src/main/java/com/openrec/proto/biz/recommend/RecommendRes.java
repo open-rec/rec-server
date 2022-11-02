@@ -1,6 +1,6 @@
 package com.openrec.proto.biz.recommend;
 
-import com.openrec.proto.model.RankResult;
+import com.openrec.proto.model.ScoreResult;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -10,7 +10,7 @@ import java.util.List;
 @Data
 public class RecommendRes<T> {
 
-    private List<RankResult> results;
+    private List<ScoreResult> results;
 
     private List<T> detailInfos;
 
@@ -18,10 +18,10 @@ public class RecommendRes<T> {
         this(new ArrayList<>(0));
     }
 
-    public RecommendRes(List<RankResult> results) {
+    public RecommendRes(List<ScoreResult> results) {
         this(results, null);
     }
-    public RecommendRes(List<RankResult> results, List<T> detailInfos) {
+    public RecommendRes(List<ScoreResult> results, List<T> detailInfos) {
         this.results = results;
         this.detailInfos = detailInfos;
     }
