@@ -51,7 +51,7 @@ public class FilterNode extends SyncNode<FilterConfig> {
         int size = config.getContent().getFilterMap().get(RecEventType.EXPOSE.toString()).getSize();
         long nowSecs = System.currentTimeMillis() / 1000;
 
-        List<ScoreResult> exposeItems = redisService.getZSet(key, nowSecs - duration, nowSecs, size);
+        exposeItems = redisService.getZSet(key, nowSecs - duration, nowSecs, size);
         log.info("{} with expose item size:{}", getName(), exposeItems.size());
     }
 }
