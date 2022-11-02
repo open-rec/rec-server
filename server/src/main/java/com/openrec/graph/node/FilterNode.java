@@ -3,11 +3,12 @@ package com.openrec.graph.node;
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.RecEventType;
 import com.openrec.graph.config.FilterConfig;
+import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.redis.RedisService;
+import com.openrec.util.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
@@ -17,9 +18,11 @@ import static com.openrec.graph.RecParams.USER_ID;
 @Slf4j
 public class FilterNode extends SyncNode<FilterConfig> {
 
-    @Autowired
-    private RedisService redisService;
+    public FilterNode(NodeConfig nodeConfig) {
+        super(nodeConfig);
+    }
 
+    private RedisService redisService = BeanUtil.getBean(RedisService.class);
     private String bizType = "filter";
     private String filterType = "expose";
     private String FILTER_KEY_FORMAT = "%s:%s:%s:{%s}";
@@ -44,8 +47,8 @@ public class FilterNode extends SyncNode<FilterConfig> {
             return;
         }
 
-        int duration = config.getContent().getFilterMap().get(RecEventType.EXPOSE).getDuration();
-        int size = config.getContent().getFilterMap().get(RecEventType.EXPOSE).getSize();
+        int duration = config.getContent().getFilterMap().get(RecEventType.EXPOSE.toString()).getDuration();
+        int size = config.getContent().getFilterMap().get(RecEventType.EXPOSE.toString()).getSize();
         long nowSecs = System.currentTimeMillis() / 1000;
 
         List<ScoreResult> exposeItems = redisService.getZSet(key, nowSecs - duration, nowSecs, size);

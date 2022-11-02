@@ -10,9 +10,7 @@ public abstract class AbstractNode<C> implements Node {
     protected String id;
     protected String name;
     protected boolean open;
-
     protected NodeStatus status;
-
     protected List<Node> parents;
     protected List<Node> children;
     protected NodeConfig<C> config;
