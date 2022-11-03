@@ -10,6 +10,7 @@ public class NodeConfig<T> {
     protected boolean open;
     protected int timeout;
     protected String clazz;
+    protected String configClazz;
 
     protected T content;
 

@@ -126,8 +126,8 @@ public class GraphEngine {
         log.info("graph execute finished, total node count:{}", nodeSet.size());
     }
 
-    public Object getResult() {
-        return context.getResult();
+    public <T> T getResult() {
+        return (T) context.getResult();
     }
 
     public void destroy() {

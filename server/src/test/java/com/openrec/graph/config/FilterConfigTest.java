@@ -1,7 +1,6 @@
 package com.openrec.graph.config;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.openrec.graph.RecEventType;
 import org.junit.Assert;
 import org.junit.Test;
@@ -24,10 +23,8 @@ public class FilterConfigTest {
 
     @Test
     public void test() {
-
         NodeConfig<FilterConfig> nodeConfig = new Gson().
-                fromJson(TEST_FILTER_CONFIG, new TypeToken<NodeConfig<FilterConfig>>() {
-                }.getType());
+                fromJson(TEST_FILTER_CONFIG, NodeConfigTool.getNodeConfigType(FilterConfig.class));
         Assert.assertEquals(nodeConfig.getName(), "a");
         Assert.assertEquals(nodeConfig.getContent().getFilterMap()
                 .get(RecEventType.EXPOSE.toString()).getDuration(), 86400);

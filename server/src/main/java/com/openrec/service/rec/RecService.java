@@ -27,7 +27,7 @@ public class RecService {
         graphEngine.prepare(recommendReq);
         graphEngine.buildGraph(graphConfig);
         graphEngine.execGraph();
-        recommendRes.setResults((List<ScoreResult>) graphEngine.getResult());
+        recommendRes.setResults(graphEngine.getResult());
         return recommendRes;
     }
 }

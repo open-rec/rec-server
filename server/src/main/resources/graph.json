@@ -1,100 +1,137 @@
 {
-  "nodes": [{
-    "name": "userTrigger",
-    "clazz": "com.openrec.graph.node.UserTriggerNode",
-    "open": true,
-    "timeout": 20,
-    "content": null
-  }, {
-    "name": "userFeature",
-    "clazz": "com.openrec.graph.node.UserFeatureNode",
-    "open": true,
-    "timeout": 20,
-    "content": null
-  }, {
-    "name": "new",
-    "clazz": "com.openrec.graph.node.NewNode",
-    "open": true,
-    "timeout": 20,
-    "content": null
-  }, {
-    "name": "hot",
-    "clazz": "com.openrec.graph.node.HotNode",
-    "open": true,
-    "timeout": 20,
-    "content": null
-  }, {
-    "name": "filter",
-    "clazz": "com.openrec.graph.node.FilterNode",
-    "open": true,
-    "timeout": 20,
-    "content": null
-  }, {
-    "name": "i2i",
-    "clazz": "com.openrec.graph.node.I2iNode",
-    "open": true,
-    "timeout": 20,
-    "content": null
-  }, {
-    "name": "combine",
-    "clazz": "com.openrec.graph.node.CombineNode",
-    "open": true,
-    "timeout": 20,
-    "content": null
-  }, {
-    "name": "rank",
-    "clazz": "com.openrec.graph.node.RankNode",
-    "open": true,
-    "timeout": 20,
-    "content": null
-  }, {
-    "name": "itemFeature",
-    "clazz": "com.openrec.graph.node.ItemFeatureNode",
-    "open": true,
-    "timeout": 20,
-    "content": null
-  }, {
-    "name": "operation",
-    "clazz": "com.openrec.graph.node.OperationNode",
-    "open": true,
-    "timeout": 20,
-    "content": null
-  }, {
-    "name": "fakeExposure",
-    "clazz": "com.openrec.graph.node.FakeExposureNode",
-    "open": true,
-    "timeout": 20,
-    "content": null
-  }],
-  "edges": [{
-    "from": "userTrigger",
-    "to": "i2i"
-  }, {
-    "from": "i2i",
-    "to": "combine"
-  }, {
-    "from": "hot",
-    "to": "combine"
-  }, {
-    "from": "new",
-    "to": "combine"
-  }, {
-    "from": "filter",
-    "to": "combine"
-  }, {
-    "from": "combine",
-    "to": "rank"
-  }, {
-    "from": "userFeature",
-    "to": "rank"
-  }, {
-    "from": "itemFeature",
-    "to": "rank"
-  }, {
-    "from": "rank",
-    "to": "operation"
-  }, {
-    "from": "operation",
-    "to": "fakeExposure"
-  }]
+  "nodes": [
+    {
+      "name": "userTrigger",
+      "clazz": "com.openrec.graph.node.UserTriggerNode",
+      "configClazz": "com.openrec.graph.config.UserTriggerConfig",
+      "open": true,
+      "timeout": 20,
+      "content": null
+    },
+    {
+      "name": "userFeature",
+      "clazz": "com.openrec.graph.node.UserFeatureNode",
+      "configClazz": null,
+      "open": true,
+      "timeout": 20,
+      "content": null
+    },
+    {
+      "name": "new",
+      "clazz": "com.openrec.graph.node.NewNode",
+      "configClazz": "com.openrec.graph.config.NewConfig",
+      "open": true,
+      "timeout": 20,
+      "content": {
+        "size": 100,
+        "duration": 86400
+      }
+    },
+    {
+      "name": "hot",
+      "clazz": "com.openrec.graph.node.HotNode",
+      "configClazz": "com.openrec.graph.config.HotConfig",
+      "open": true,
+      "timeout": 20,
+      "content": null
+    },
+    {
+      "name": "filter",
+      "clazz": "com.openrec.graph.node.FilterNode",
+      "configClazz": "com.openrec.graph.config.FilterConfig",
+      "open": true,
+      "timeout": 20,
+      "content": null
+    },
+    {
+      "name": "i2i",
+      "clazz": "com.openrec.graph.node.I2iNode",
+      "configClazz": "com.openrec.graph.config.I2iConfig",
+      "open": true,
+      "timeout": 20,
+      "content": null
+    },
+    {
+      "name": "combine",
+      "clazz": "com.openrec.graph.node.CombineNode",
+      "configClazz": "com.openrec.graph.config.CombineConfig",
+      "open": true,
+      "timeout": 20,
+      "content": null
+    },
+    {
+      "name": "rank",
+      "clazz": "com.openrec.graph.node.RankNode",
+      "configClazz": "com.openrec.graph.config.RankConfig",
+      "open": true,
+      "timeout": 20,
+      "content": null
+    },
+    {
+      "name": "itemFeature",
+      "clazz": "com.openrec.graph.node.ItemFeatureNode",
+      "configClazz": null,
+      "open": true,
+      "timeout": 20,
+      "content": null
+    },
+    {
+      "name": "operation",
+      "clazz": "com.openrec.graph.node.OperationNode",
+      "configClazz": null,
+      "open": true,
+      "timeout": 20,
+      "content": null
+    },
+    {
+      "name": "fakeExposure",
+      "clazz": "com.openrec.graph.node.FakeExposureNode",
+      "configClazz": null,
+      "open": true,
+      "timeout": 20,
+      "content": null
+    }
+  ],
+  "edges": [
+    {
+      "from": "userTrigger",
+      "to": "i2i"
+    },
+    {
+      "from": "i2i",
+      "to": "combine"
+    },
+    {
+      "from": "hot",
+      "to": "combine"
+    },
+    {
+      "from": "new",
+      "to": "combine"
+    },
+    {
+      "from": "filter",
+      "to": "combine"
+    },
+    {
+      "from": "combine",
+      "to": "rank"
+    },
+    {
+      "from": "userFeature",
+      "to": "rank"
+    },
+    {
+      "from": "itemFeature",
+      "to": "rank"
+    },
+    {
+      "from": "rank",
+      "to": "operation"
+    },
+    {
+      "from": "operation",
+      "to": "fakeExposure"
+    }
+  ]
 }
