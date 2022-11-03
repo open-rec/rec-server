@@ -20,14 +20,15 @@ public abstract class AbstractNode<C> implements Node {
     }
 
     public AbstractNode(NodeConfig nodeConfig) {
+        this.refresh(nodeConfig);
+    }
+
+    @Override
+    public void refresh(NodeConfig nodeConfig) {
         this.id = this.getClass().getSimpleName();
         this.parents = Lists.newArrayList();
         this.children = Lists.newArrayList();
         this.config = nodeConfig;
-        this.init();
-    }
-
-    public void init() {
         this.status = NodeStatus.INIT;
         if (config != null) {
             this.name = config.getName();

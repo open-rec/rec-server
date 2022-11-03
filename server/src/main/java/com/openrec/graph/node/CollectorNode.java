@@ -1,6 +1,7 @@
 package com.openrec.graph.node;
 
 import com.openrec.graph.GraphContext;
+import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Import;
 import com.openrec.proto.model.ScoreResult;
 import lombok.extern.slf4j.Slf4j;
@@ -8,10 +9,15 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 
 @Slf4j
-public class CollectorNode extends SyncNode<Void>{
+public class CollectorNode extends SyncNode<Void> {
 
     @Import("operationItems")
     private List<ScoreResult> finalItems;
+
+    public CollectorNode(NodeConfig nodeConfig) {
+        super(nodeConfig);
+    }
+
 
     @Override
     public void run(GraphContext context) {

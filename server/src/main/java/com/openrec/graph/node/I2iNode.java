@@ -2,6 +2,7 @@ package com.openrec.graph.node;
 
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.I2iConfig;
+import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
 import com.openrec.proto.model.ScoreResult;
@@ -26,6 +27,11 @@ public class I2iNode extends SyncNode<I2iConfig> {
 
     @Export("i2iItems")
     private List<ScoreResult> i2iItems;
+
+    public I2iNode(NodeConfig nodeConfig) {
+        super(nodeConfig);
+    }
+
 
     @Override
     public void run(GraphContext context) {

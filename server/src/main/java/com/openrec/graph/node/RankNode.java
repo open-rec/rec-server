@@ -1,6 +1,7 @@
 package com.openrec.graph.node;
 
 import com.openrec.graph.GraphContext;
+import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.config.RankConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
@@ -11,16 +12,21 @@ import java.util.List;
 import java.util.Map;
 
 @Slf4j
-public class RankNode extends SyncNode<RankConfig>{
+public class RankNode extends SyncNode<RankConfig> {
 
     @Import("combineItems")
     private List<ScoreResult> combineItems;
 
     @Import("userFeatureMap")
-    private Map<String,String> userFeatureMap;
+    private Map<String, String> userFeatureMap;
 
     @Export("rankItems")
     private List<ScoreResult> rankItems;
+
+    public RankNode(NodeConfig nodeConfig) {
+        super(nodeConfig);
+    }
+
 
     @Override
     public void run(GraphContext context) {

@@ -2,6 +2,7 @@ package com.openrec.graph.node;
 
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.CombineConfig;
+import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
 import com.openrec.proto.model.ScoreResult;
@@ -11,7 +12,7 @@ import org.assertj.core.util.Lists;
 import java.util.List;
 
 @Slf4j
-public class CombineNode extends SyncNode<CombineConfig>{
+public class CombineNode extends SyncNode<CombineConfig> {
     @Import("i2iItems")
     private List<ScoreResult> i2iItems;
 
@@ -24,6 +25,11 @@ public class CombineNode extends SyncNode<CombineConfig>{
     @Export("recallItems")
     private List<ScoreResult> recallItems;
 
+    public CombineNode(NodeConfig nodeConfig) {
+        super(nodeConfig);
+    }
+
+
     @Override
     public void run(GraphContext context) {
 
@@ -34,6 +40,6 @@ public class CombineNode extends SyncNode<CombineConfig>{
 
         int size = config.getContent().getSize();
         recallItems = recallItems.subList(0, size);
-        log.info("{} with result size:{}" ,getName(), recallItems.size());
+        log.info("{} with result size:{}", getName(), recallItems.size());
     }
 }

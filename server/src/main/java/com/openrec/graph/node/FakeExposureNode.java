@@ -1,6 +1,7 @@
 package com.openrec.graph.node;
 
 import com.openrec.graph.GraphContext;
+import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
 import com.openrec.proto.model.ScoreResult;
@@ -14,6 +15,11 @@ public class FakeExposureNode extends SyncNode<Void> {
     @Import("operationItems")
     @Export("operationItems")
     private List<ScoreResult> operationItems;
+
+    public FakeExposureNode(NodeConfig nodeConfig) {
+        super(nodeConfig);
+    }
+
 
     @Override
     public void run(GraphContext context) {

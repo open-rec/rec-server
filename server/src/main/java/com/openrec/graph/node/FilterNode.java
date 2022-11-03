@@ -18,19 +18,17 @@ import static com.openrec.graph.RecParams.USER_ID;
 @Slf4j
 public class FilterNode extends SyncNode<FilterConfig> {
 
-    public FilterNode(NodeConfig nodeConfig) {
-        super(nodeConfig);
-    }
-
     private RedisService redisService = BeanUtil.getBean(RedisService.class);
     private String bizType = "event";
     private String filterType = "expose";
     private String FILTER_KEY_FORMAT = "%s:%s:%s:{%s}";
-
-
     @Export("exposeItems")
     private List<ScoreResult> exposeItems;
 
+
+    public FilterNode(NodeConfig nodeConfig) {
+        super(nodeConfig);
+    }
 
     @Override
     public void run(GraphContext context) {

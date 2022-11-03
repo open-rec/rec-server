@@ -35,5 +35,7 @@ public interface Node {
 
     void setConfig(NodeConfig config);
 
+    void refresh(NodeConfig config);
+
     void destroy();
 }

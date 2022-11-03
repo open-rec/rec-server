@@ -15,16 +15,15 @@ import static com.openrec.graph.RecParams.SCENE_ID;
 
 @Slf4j
 public class HotNode extends SyncNode<HotConfig> {
-    public HotNode(NodeConfig nodeConfig) {
-        super(nodeConfig);
-    }
-
     private RedisService redisService = BeanUtil.getBean(RedisService.class);
     private String bizType = "hot";
     private String FILTER_KEY_FORMAT = "%s:{%s}";
-
     @Export("hotItems")
     private List<ScoreResult> hotItems;
+
+    public HotNode(NodeConfig nodeConfig) {
+        super(nodeConfig);
+    }
 
     @Override
     public void run(GraphContext context) {

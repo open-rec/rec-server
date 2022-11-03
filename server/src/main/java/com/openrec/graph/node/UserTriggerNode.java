@@ -1,7 +1,6 @@
 package com.openrec.graph.node;
 
 import com.openrec.graph.GraphContext;
-import com.openrec.graph.RecEventType;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.config.UserTriggerConfig;
 import com.openrec.graph.tools.anno.Export;
@@ -17,19 +16,16 @@ import static com.openrec.graph.RecParams.USER_ID;
 
 @Slf4j
 public class UserTriggerNode extends SyncNode<UserTriggerConfig> {
-    public UserTriggerNode(NodeConfig nodeConfig) {
-        super(nodeConfig);
-    }
-
     private RedisService redisService = BeanUtil.getBean(RedisService.class);
     private String bizType = "event";
     private String filterType = "click";
     private String FILTER_KEY_FORMAT = "%s:%s:%s:{%s}";
-
-
     @Export("triggerItems")
     private List<ScoreResult> triggerItems;
 
+    public UserTriggerNode(NodeConfig nodeConfig) {
+        super(nodeConfig);
+    }
 
     @Override
     public void run(GraphContext context) {
