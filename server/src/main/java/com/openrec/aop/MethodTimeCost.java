@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Aspect
 @Component
-public class ApiTimeCost {
+public class MethodTimeCost {
 
     @Pointcut("@annotation(com.openrec.aop.TimeCost)")
     private void pointcut() {
