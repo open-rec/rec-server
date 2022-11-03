@@ -21,7 +21,7 @@ public class GraphContext {
     public GraphContext() {
         this.params = new GraphParams();
         this.configMap = Maps.newHashMap();
-        this.dataMap = Maps.newHashMap();
+        this.dataMap = Maps.newConcurrentMap();
     }
 
     public void exportNodeData(Node node) {

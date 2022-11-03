@@ -6,7 +6,9 @@
       "configClazz": "com.openrec.graph.config.UserTriggerConfig",
       "open": true,
       "timeout": 20,
-      "content": null
+      "content": {
+        "size": 10
+      }
     },
     {
       "name": "userFeature",
@@ -33,7 +35,9 @@
       "configClazz": "com.openrec.graph.config.HotConfig",
       "open": true,
       "timeout": 20,
-      "content": null
+      "content": {
+        "size": 1000
+      }
     },
     {
       "name": "filter",
@@ -41,7 +45,14 @@
       "configClazz": "com.openrec.graph.config.FilterConfig",
       "open": true,
       "timeout": 20,
-      "content": null
+      "content": {
+        "filterMap": {
+          "expose": {
+            "duration": 86400,
+            "size": 1000
+          }
+        }
+      }
     },
     {
       "name": "i2i",
@@ -49,7 +60,9 @@
       "configClazz": "com.openrec.graph.config.I2iConfig",
       "open": true,
       "timeout": 20,
-      "content": null
+      "content": {
+        "size": 1000
+      }
     },
     {
       "name": "combine",
@@ -57,7 +70,9 @@
       "configClazz": "com.openrec.graph.config.CombineConfig",
       "open": true,
       "timeout": 20,
-      "content": null
+      "content": {
+        "size": 3000
+      }
     },
     {
       "name": "rank",
@@ -65,7 +80,10 @@
       "configClazz": "com.openrec.graph.config.RankConfig",
       "open": true,
       "timeout": 20,
-      "content": null
+      "content": {
+        "size": 100,
+        "endpoint": ""
+      }
     },
     {
       "name": "itemFeature",
@@ -86,6 +104,14 @@
     {
       "name": "fakeExposure",
       "clazz": "com.openrec.graph.node.FakeExposureNode",
+      "configClazz": null,
+      "open": true,
+      "timeout": 20,
+      "content": null
+    },
+    {
+      "name": "collector",
+      "clazz": "com.openrec.graph.node.CollectorNode",
       "configClazz": null,
       "open": true,
       "timeout": 20,
@@ -132,6 +158,10 @@
     {
       "from": "operation",
       "to": "fakeExposure"
+    },
+    {
+      "from": "fakeExposure",
+      "to": "collector"
     }
   ]
 }

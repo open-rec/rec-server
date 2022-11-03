@@ -22,8 +22,8 @@ public class CombineNode extends SyncNode<CombineConfig> {
     @Import("hotItems")
     private List<ScoreResult> hotItems;
 
-    @Export("recallItems")
-    private List<ScoreResult> recallItems;
+    @Export("combineItems")
+    private List<ScoreResult> combineItems;
 
     public CombineNode(NodeConfig nodeConfig) {
         super(nodeConfig);
@@ -33,13 +33,13 @@ public class CombineNode extends SyncNode<CombineConfig> {
     @Override
     public void run(GraphContext context) {
 
-        recallItems = Lists.newArrayList();
-        recallItems.addAll(i2iItems);
-        recallItems.addAll(hotItems);
-        recallItems.addAll(newItems);
+        combineItems = Lists.newArrayList();
+        combineItems.addAll(i2iItems);
+        combineItems.addAll(hotItems);
+        combineItems.addAll(newItems);
 
         int size = config.getContent().getSize();
-        recallItems = recallItems.subList(0, size);
-        log.info("{} with result size:{}", getName(), recallItems.size());
+        combineItems = combineItems.subList(0, Math.min(combineItems.size(), size));
+        log.info("{} with result size:{}", getName(), combineItems.size());
     }
 }

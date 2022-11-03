@@ -109,11 +109,16 @@ public class GraphEngine {
                 for (Node node : readyNodes) {
                     node.start();
                     threadPool.submit(() -> {
-                        context.importNodeData(node);
-                        node.run(context);
-                        context.exportNodeData(node);
-                        node.stop();
-                        latch.countDown();
+                        try {
+                            context.importNodeData(node);
+                            node.run(context);
+                            context.exportNodeData(node);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        } finally {
+                            node.stop();
+                            latch.countDown();
+                        }
                     });
                 }
                 try {
