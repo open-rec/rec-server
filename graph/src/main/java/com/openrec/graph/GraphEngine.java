@@ -24,6 +24,7 @@ public class GraphEngine {
     private Queue<Node> queue;
     private Set<String> nodeSet;
 
+
     public GraphEngine() {
         this.threadPool = Executors.newCachedThreadPool();
         this.queue = Lists.newLinkedList();
@@ -49,7 +50,6 @@ public class GraphEngine {
             }
         }
     }
-
 
     public void buildGraph(GraphConfig graphConfig) {
         RootNode rootNode = new RootNode();

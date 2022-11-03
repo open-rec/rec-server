@@ -13,11 +13,13 @@ public class FileUtil {
         InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
         BufferedReader bufferedReader = new BufferedReader(streamReader);
         StringBuffer sb = new StringBuffer();
-        String line = null;
+        String line;
         do {
             try {
                 line = bufferedReader.readLine();
-                sb.append(line);
+                if (line != null) {
+                    sb.append(line);
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

@@ -12,14 +12,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class RecService {
 
-    private String graphTemplate;
     private GraphEngine graphEngine;
     private GraphConfig graphConfig;
 
     public RecService() {
         this.graphEngine = new GraphEngine();
-        this.graphTemplate = RecTemplate.load();
-        this.graphConfig = new Gson().fromJson(graphTemplate, GraphConfig.class);
+        this.graphConfig = RecTemplate.toGraphConfig();
     }
 
     public RecommendRes execute(RecommendReq recommendReq) {
