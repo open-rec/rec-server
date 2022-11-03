@@ -32,7 +32,7 @@ public class GraphEngine {
         this.context = new GraphContext();
     }
 
-    public void prepare(Object paramsObj, GraphConfig graphConfig) {
+    public void prepare(Object paramsObj) {
         if (paramsObj != null) {
             for (Field field : paramsObj.getClass().getDeclaredFields()) {
                 try {
@@ -43,18 +43,13 @@ public class GraphEngine {
                 }
             }
         }
-
-        if (graphConfig != null) {
-            for (NodeConfig config : graphConfig.getNodes()) {
-                context.addConfig(config.getName(), config);
-            }
-        }
     }
 
     public void buildGraph(GraphConfig graphConfig) {
         RootNode rootNode = new RootNode();
         Map<String, Node> nodeMap = Maps.newHashMap();
         for (NodeConfig nodeConfig : graphConfig.getNodes()) {
+            context.addConfig(nodeConfig.getName(), nodeConfig);
             if (StringUtils.isNotEmpty(nodeConfig.getClazz())) {
                 try {
                     Node node = (Node) Class.forName(nodeConfig.getClazz())
@@ -129,6 +124,10 @@ public class GraphEngine {
             }
         }
         log.info("graph execute finished, total node count:{}", nodeSet.size());
+    }
+
+    public Object getResult() {
+        return context.getResult();
     }
 
     public void destroy() {

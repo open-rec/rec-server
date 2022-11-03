@@ -15,8 +15,8 @@ public class GraphContext {
 
     private GraphParams params;
     private Map<String, NodeConfig> configMap;
-
     private Map<String, Object> dataMap;
+    private Object result;
 
     public GraphContext() {
         this.params = new GraphParams();
@@ -80,6 +80,14 @@ public class GraphContext {
 
     public NodeConfig getConfig(String key) {
         return configMap.get(key);
+    }
+
+    public void setResult(Object result) {
+        this.result = result;
+    }
+
+    public Object getResult() {
+        return result;
     }
 
     public void clean() {

@@ -41,7 +41,7 @@ public class GraphEngineTest {
         GraphConfig graphConfig = new Gson().fromJson(TEST_GRAPH_CONIG, GraphConfig.class);
         long start = System.currentTimeMillis();
         GraphEngine graphEngine = new GraphEngine();
-        graphEngine.prepare(null, graphConfig);
+        graphEngine.prepare(null);
         graphEngine.buildGraph(graphConfig);
         graphEngine.execGraph();
         long cost = System.currentTimeMillis() - start;

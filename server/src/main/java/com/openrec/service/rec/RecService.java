@@ -1,12 +1,14 @@
 package com.openrec.service.rec;
 
-import com.google.gson.Gson;
 import com.openrec.graph.GraphConfig;
 import com.openrec.graph.GraphEngine;
 import com.openrec.graph.RecTemplate;
 import com.openrec.proto.biz.recommend.RecommendReq;
 import com.openrec.proto.biz.recommend.RecommendRes;
+import com.openrec.proto.model.ScoreResult;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 
 @Service
@@ -21,10 +23,11 @@ public class RecService {
     }
 
     public RecommendRes execute(RecommendReq recommendReq) {
-        graphEngine.prepare(recommendReq, graphConfig);
+        RecommendRes recommendRes = new RecommendRes();
+        graphEngine.prepare(recommendReq);
         graphEngine.buildGraph(graphConfig);
         graphEngine.execGraph();
-        // TODO: 2022/11/1
-        return null;
+        recommendRes.setResults((List<ScoreResult>) graphEngine.getResult());
+        return recommendRes;
     }
 }
