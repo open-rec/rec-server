@@ -19,14 +19,13 @@ import java.util.concurrent.Executors;
 @Slf4j
 public class GraphEngine {
 
-    private ExecutorService threadPool;
+    private static ExecutorService threadPool = Executors.newCachedThreadPool();
     private GraphContext context;
     private Queue<Node> queue;
     private Set<String> nodeSet;
 
 
     private GraphEngine() {
-        this.threadPool = Executors.newCachedThreadPool();
         this.queue = Lists.newLinkedList();
         this.nodeSet = Sets.newHashSet();
         this.context = new GraphContext();
@@ -140,8 +139,7 @@ public class GraphEngine {
     }
 
     public void refresh() {
-        this.nodeSet.clear();
-
+        // TODO: 2022/11/3 reuse collections 
     }
 
     public void destroy() {
