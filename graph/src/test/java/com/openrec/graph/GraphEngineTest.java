@@ -40,7 +40,7 @@ public class GraphEngineTest {
     public void testGraph() {
         GraphConfig graphConfig = new Gson().fromJson(TEST_GRAPH_CONIG, GraphConfig.class);
         long start = System.currentTimeMillis();
-        GraphEngine graphEngine = new GraphEngine();
+        GraphEngine graphEngine = GraphEngine.getSessionGraphEngine();
         graphEngine.prepare(null);
         graphEngine.buildGraph(graphConfig);
         graphEngine.execGraph();

@@ -25,11 +25,15 @@ public class GraphEngine {
     private Set<String> nodeSet;
 
 
-    public GraphEngine() {
+    private GraphEngine() {
         this.threadPool = Executors.newCachedThreadPool();
         this.queue = Lists.newLinkedList();
         this.nodeSet = Sets.newHashSet();
         this.context = new GraphContext();
+    }
+
+    public static GraphEngine getSessionGraphEngine() {
+        return new GraphEngine();
     }
 
     public void prepare(Object paramsObj) {
@@ -135,9 +139,15 @@ public class GraphEngine {
         return (T) context.getResult();
     }
 
+    public void refresh() {
+        this.nodeSet.clear();
+
+    }
+
     public void destroy() {
         this.threadPool.shutdownNow();
         this.queue.clear();
+        this.nodeSet.clear();
         this.context.clean();
     }
 }
