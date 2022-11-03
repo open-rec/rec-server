@@ -27,7 +27,7 @@ public class RankNode extends SyncNode<RankConfig>{
         int size = config.getContent().getSize();
         String rankServer = config.getContent().getEndpoint();
         rankItems = combineItems.subList(0, Math.min(size, combineItems.size()));
-        // TODO: 2022/11/2  
+        // TODO: 2022/11/2
         log.info("{} with result size:{}", rankItems);
     }
 }
