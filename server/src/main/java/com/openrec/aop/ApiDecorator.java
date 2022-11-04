@@ -1,6 +1,7 @@
 package com.openrec.aop;
 
 import com.openrec.proto.JsonReq;
+import com.openrec.util.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -43,7 +44,12 @@ public class ApiDecorator {
         setRequestIdByParams(args);
 
         Object res = joinPoint.proceed(args);
-        log.info("API-{}:{} access cost time:{}", clazz, methodName, System.currentTimeMillis() - start);
+        log.info("API-{}:{} access with request:{}, response:{}, cost time:{}",
+                clazz,
+                methodName,
+                JsonUtil.objToJson(args),
+                JsonUtil.objToJson(res),
+                System.currentTimeMillis() - start);
         return res;
     }
 }
