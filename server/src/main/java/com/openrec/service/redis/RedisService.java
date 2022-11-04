@@ -65,6 +65,10 @@ public class RedisService {
         redisTemplate.delete(key);
     }
 
+    public void removeKs(List<String> keys) {
+        redisTemplate.delete(keys);
+    }
+
     public List<Object> getVs(List<String> keys) {
         return redisTemplate.opsForValue().multiGet(keys);
     }

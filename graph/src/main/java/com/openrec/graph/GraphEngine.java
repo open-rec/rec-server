@@ -139,7 +139,7 @@ public class GraphEngine {
     }
 
     public void refresh() {
-        // TODO: 2022/11/3 reuse collections 
+        // TODO: 2022/11/3 reuse collections
     }
 
     public void destroy() {
