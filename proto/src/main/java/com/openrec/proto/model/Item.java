@@ -2,8 +2,10 @@ package com.openrec.proto.model;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 @Data
-public class Item {
+public class Item implements Serializable {
     private String id;
     private int weight;
     private String title;

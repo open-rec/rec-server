@@ -15,6 +15,10 @@ import java.util.stream.Collectors;
 @Service
 public class PushRedisService implements PushService{
 
+    private String USER_KEY = "user:{%s}";
+    private String ITEM_KEY = "item:{%s}";
+    private String EVENT_KEY = "event:{%s}";
+
     @Autowired
     private RedisService redisService;
 
@@ -23,9 +27,11 @@ public class PushRedisService implements PushService{
     public void pushItem(ItemReq itemReq) {
         List<Item> items = itemReq.getData();
         if(itemReq.getCmd() == PushCmd.INSERT || itemReq.getCmd() == PushCmd.UPDATE) {
-            redisService.addKvs(items.stream().collect(Collectors.toMap(Item::getId, item->item)));
+            redisService.addKvs(items.stream()
+                    .collect(Collectors.toMap(item -> String.format(ITEM_KEY, item.getId()), item->item)));
         } else {
-            redisService.removeKs(items.stream().map(item->item.getId()).collect(Collectors.toList()));
+            redisService.removeKs(items.stream().map(item->item.getId())
+                    .collect(Collectors.toList()));
         }
     }
 
@@ -33,9 +39,11 @@ public class PushRedisService implements PushService{
     public void pushUser(UserReq userReq) {
         List<User> users = userReq.getData();
         if(userReq.getCmd() == PushCmd.INSERT || userReq.getCmd() == PushCmd.UPDATE) {
-            redisService.addKvs(users.stream().collect(Collectors.toMap(User::getId, user->user)));
+            redisService.addKvs(users.stream()
+                    .collect(Collectors.toMap(user -> String.format(USER_KEY, user.getId()), user->user)));
         } else {
-            redisService.removeKs(users.stream().map(user->user.getId()).collect(Collectors.toList()));
+            redisService.removeKs(users.stream().map(user->user.getId())
+                    .collect(Collectors.toList()));
         }
     }
 
@@ -43,7 +51,8 @@ public class PushRedisService implements PushService{
     public void pushEvent(EventReq eventReq) {
         List<Event> events = eventReq.getData();
         if(eventReq.getCmd() == PushCmd.INSERT || eventReq.getCmd() == PushCmd.UPDATE) {
-            redisService.addKvs(events.stream().collect(Collectors.toMap(Event::getUserId, event->event)));
+            redisService.addKvs(events.stream()
+                    .collect(Collectors.toMap(event -> String.format(EVENT_KEY, event.getUserId()), event->event)));
         }
     }
 }

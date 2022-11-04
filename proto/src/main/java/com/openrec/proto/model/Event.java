@@ -2,8 +2,10 @@ package com.openrec.proto.model;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 @Data
-public class Event {
+public class Event implements Serializable {
 
     private String userId;
     private String deviceId;

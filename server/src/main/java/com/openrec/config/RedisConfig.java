@@ -8,6 +8,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 import redis.clients.jedis.JedisPoolConfig;
 
 @Configuration
@@ -54,6 +56,8 @@ public class RedisConfig {
         RedisTemplate<String,String> redisTemplate=new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory);
         redisTemplate.afterPropertiesSet();
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        //redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<Object>());
         return redisTemplate;
     }
 }
