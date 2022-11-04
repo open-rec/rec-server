@@ -30,7 +30,7 @@ public class RedisService {
 
     public void addZSets(String key, Map<String, Double> valueScoreSet) {
         Set<ZSetOperations.TypedTuple<String>> tupleSet = new HashSet<>();
-        for(Map.Entry<String,Double> entry:valueScoreSet.entrySet()) {
+        for (Map.Entry<String, Double> entry : valueScoreSet.entrySet()) {
             tupleSet.add(new DefaultTypedTuple<>(entry.getKey(), entry.getValue()));
         }
         redisTemplate.opsForZSet().add(key, tupleSet);
@@ -45,7 +45,7 @@ public class RedisService {
 
     public List<ScoreResult> getZSet(List<String> keys, double scoreMin, double scoreMax, int size) {
 
-        String tmpKey="tmp_"+ UUID.randomUUID().toString();
+        String tmpKey = "tmp_" + UUID.randomUUID().toString();
         redisTemplate.opsForZSet().unionAndStore(tmpKey, keys, tmpKey);
         Set<ZSetOperations.TypedTuple<String>> tupleSet = redisTemplate.opsForZSet()
                 .rangeByScoreWithScores(tmpKey, scoreMin, scoreMax, 0, size);

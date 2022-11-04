@@ -1,14 +1,12 @@
 package com.openrec.aop;
 
 import com.openrec.proto.JsonReq;
-import com.openrec.proto.JsonRes;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.stereotype.Component;
 
@@ -26,7 +24,7 @@ public class ApiDecorator {
 
     private void setRequestIdByParams(Object[] args) {
         Object request = args[0];
-        if(request instanceof JsonReq) {
+        if (request instanceof JsonReq) {
             MDC.put(REQUEST_ID, ((JsonReq) request).getRequestId());
         } else {
             MDC.put(REQUEST_ID, "inner_" + UUID.randomUUID());

@@ -1,6 +1,5 @@
 package com.openrec.graph;
 
-import com.google.gson.GsonBuilder;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.util.FileUtil;
 import com.openrec.util.JsonUtil;
@@ -31,10 +30,10 @@ public class RecTemplate {
         load();
         if (needUpdate) {
             graphConfig = JsonUtil.jsonToObj(template, GraphConfig.class);
-            for(NodeConfig nodeConfig: graphConfig.getNodes()) {
+            for (NodeConfig nodeConfig : graphConfig.getNodes()) {
                 String content = JsonUtil.objToJson(nodeConfig.getContent());
                 String configClazz = nodeConfig.getConfigClazz();
-                if(StringUtils.isNotEmpty(configClazz)) {
+                if (StringUtils.isNotEmpty(configClazz)) {
                     try {
                         nodeConfig.setContent(JsonUtil.jsonToObj(content, Class.forName(configClazz)));
                     } catch (ClassNotFoundException e) {
