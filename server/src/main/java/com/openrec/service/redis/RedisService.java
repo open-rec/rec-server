@@ -2,14 +2,12 @@ package com.openrec.service.redis;
 
 import com.openrec.proto.model.ScoreResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.DefaultTypedTuple;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +26,14 @@ public class RedisService {
 
     public void addZSet(String key, String value, double score) {
         redisTemplate.opsForZSet().add(key, value, score);
+    }
+
+    public void addZSets(String key, Map<String, Double> valueScoreSet) {
+        Set<ZSetOperations.TypedTuple<String>> tupleSet = new HashSet<>();
+        for(Map.Entry<String,Double> entry:valueScoreSet.entrySet()) {
+            tupleSet.add(new DefaultTypedTuple<>(entry.getKey(), entry.getValue()));
+        }
+        redisTemplate.opsForZSet().add(key, tupleSet);
     }
 
     public List<ScoreResult> getZSet(String key, double scoreMin, double scoreMax, int size) {

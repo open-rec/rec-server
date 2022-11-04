@@ -11,6 +11,7 @@ public class Event implements Serializable {
     private String deviceId;
     private String itemId;
     private String traceId;
+    private String scene;
     private String type;
     private String value;
     private String time;
