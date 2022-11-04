@@ -34,7 +34,7 @@ public class PushRedisService implements PushService {
             redisService.addKvs(items.stream()
                     .collect(Collectors.toMap(item -> String.format(ITEM_KEY, item.getId()), item -> item)));
         } else {
-            redisService.removeKs(items.stream().map(item -> item.getId())
+            redisService.removeKs(items.stream().map(item -> String.format(ITEM_KEY, item.getId()))
                     .collect(Collectors.toList()));
         }
     }
@@ -46,7 +46,7 @@ public class PushRedisService implements PushService {
             redisService.addKvs(users.stream()
                     .collect(Collectors.toMap(user -> String.format(USER_KEY, user.getId()), user -> user)));
         } else {
-            redisService.removeKs(users.stream().map(user -> user.getId())
+            redisService.removeKs(users.stream().map(user -> String.format(USER_KEY, user.getId()))
                     .collect(Collectors.toList()));
         }
     }
