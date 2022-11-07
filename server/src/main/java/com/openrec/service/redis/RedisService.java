@@ -1,6 +1,5 @@
 package com.openrec.service.redis;
 
-import com.openrec.proto.model.Item;
 import com.openrec.proto.model.ScoreResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.DefaultTypedTuple;

@@ -6,7 +6,6 @@ import com.openrec.graph.GraphEngine;
 import com.openrec.graph.RecTemplate;
 import com.openrec.proto.biz.recommend.RecommendReq;
 import com.openrec.proto.biz.recommend.RecommendRes;
-import com.openrec.proto.model.Item;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.redis.RedisService;
 import org.springframework.beans.factory.annotation.Autowired;

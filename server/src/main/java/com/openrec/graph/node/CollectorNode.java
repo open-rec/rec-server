@@ -12,13 +12,11 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.openrec.graph.RecParams.*;
 
 @Slf4j
 public class CollectorNode extends SyncNode<Void> {
-
 
 
     @Import("operationItems")
@@ -37,8 +35,8 @@ public class CollectorNode extends SyncNode<Void> {
         String userId = context.getParams().getValueToString(USER_ID);
         String fakeExposeKey = String.format("%s:{%s}:%s:%s", biz, userId, scene, type);
         Map<String, Double> fakeExposeMap = Maps.newHashMap();
-        finalItems.stream().forEach(si-> fakeExposeMap.put(si.getId(), (double) (System.currentTimeMillis()/1000)));
-        if(!CollectionUtils.isEmpty(fakeExposeMap)) {
+        finalItems.stream().forEach(si -> fakeExposeMap.put(si.getId(), (double) (System.currentTimeMillis() / 1000)));
+        if (!CollectionUtils.isEmpty(fakeExposeMap)) {
             redisService.addZSets(fakeExposeKey, fakeExposeMap);
         }
         log.info("write fake expose size:{}", finalItems.size());

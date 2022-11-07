@@ -29,7 +29,6 @@ public class PushRedisService implements PushService {
     private RedisService redisService;
 
 
-
     @Override
     public void pushItem(ItemReq itemReq) {
         List<Item> items = itemReq.getData();
