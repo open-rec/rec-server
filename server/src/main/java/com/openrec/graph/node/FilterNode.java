@@ -8,6 +8,7 @@ import com.openrec.graph.tools.anno.Export;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.redis.RedisService;
 import com.openrec.util.BeanUtil;
+import com.openrec.util.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -49,7 +50,7 @@ public class FilterNode extends SyncNode<FilterConfig> {
 
         int duration = config.getContent().getFilterMap().get(RecEventType.EXPOSE.toString()).getDuration();
         int size = config.getContent().getFilterMap().get(RecEventType.EXPOSE.toString()).getSize();
-        long nowSecs = System.currentTimeMillis() / 1000;
+        long nowSecs = TimeUtil.nowSecs();
 
         exposeItemSet = redisService.getZSet(key, nowSecs - duration, nowSecs, size)
                 .stream().map(i->i.getId()).collect(Collectors.toSet());
