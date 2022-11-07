@@ -2,7 +2,7 @@ package com.openrec.graph;
 
 public interface RecParams {
 
-    String SCENE_ID = "sceneId";
+    String SCENE = "scene";
     String SIZE = "size";
     String USER_ID = "userId";
     String DEVICE_ID = "deviceId";

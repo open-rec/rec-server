@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
-import static com.openrec.graph.RecParams.SCENE_ID;
+import static com.openrec.graph.RecParams.SCENE;
 
 @Slf4j
 public class NewNode extends SyncNode<NewConfig> {
@@ -29,7 +29,7 @@ public class NewNode extends SyncNode<NewConfig> {
     @Override
     public void run(GraphContext context) {
 
-        String sceneId = context.getParams().getValueToString(SCENE_ID);
+        String sceneId = context.getParams().getValueToString(SCENE);
         String key = String.format(FILTER_KEY_FORMAT, bizType,
                 sceneId);
 

@@ -157,10 +157,6 @@
     },
     {
       "from": "operation",
-      "to": "fakeExposure"
-    },
-    {
-      "from": "fakeExposure",
       "to": "collector"
     }
   ]

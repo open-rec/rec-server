@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
-import static com.openrec.graph.RecParams.SCENE_ID;
+import static com.openrec.graph.RecParams.SCENE;
 import static com.openrec.graph.RecParams.USER_ID;
 
 @Slf4j
@@ -21,7 +21,7 @@ public class FilterNode extends SyncNode<FilterConfig> {
     private RedisService redisService = BeanUtil.getBean(RedisService.class);
     private String bizType = "event";
     private String filterType = "expose";
-    private String FILTER_KEY_FORMAT = "%s:%s:%s:{%s}";
+    private String FILTER_KEY_FORMAT = "%s:{%s}:%s:%s";
     @Export("exposeItems")
     private List<ScoreResult> exposeItems;
 
@@ -33,7 +33,7 @@ public class FilterNode extends SyncNode<FilterConfig> {
     @Override
     public void run(GraphContext context) {
 
-        String sceneId = context.getParams().getValueToString(SCENE_ID);
+        String sceneId = context.getParams().getValueToString(SCENE);
         String userId = context.getParams().getValueToString(USER_ID);
         String key = String.format(FILTER_KEY_FORMAT, bizType, sceneId, filterType, userId);
 

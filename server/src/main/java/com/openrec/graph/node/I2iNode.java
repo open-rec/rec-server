@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.openrec.graph.RecParams.SCENE_ID;
+import static com.openrec.graph.RecParams.SCENE;
 
 @Slf4j
 public class I2iNode extends SyncNode<I2iConfig> {
@@ -36,7 +36,7 @@ public class I2iNode extends SyncNode<I2iConfig> {
     @Override
     public void run(GraphContext context) {
 
-        String sceneId = context.getParams().getValueToString(SCENE_ID);
+        String sceneId = context.getParams().getValueToString(SCENE);
         List<String> keys = triggerItems.stream()
                 .map(i -> String.format(String.format(FILTER_KEY_FORMAT, bizType, sceneId, i)))
                 .collect(Collectors.toList());
