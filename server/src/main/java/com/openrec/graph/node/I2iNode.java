@@ -20,7 +20,7 @@ public class I2iNode extends SyncNode<I2iConfig> {
 
     private RedisService redisService = BeanUtil.getBean(RedisService.class);
     private String bizType = "i2i";
-    private String FILTER_KEY_FORMAT = "%s:%s:{%s}";
+    private String FILTER_KEY_FORMAT = "%s:{%s}:%s";
 
     @Import("triggerItems")
     private List<ScoreResult> triggerItems;
@@ -36,9 +36,9 @@ public class I2iNode extends SyncNode<I2iConfig> {
     @Override
     public void run(GraphContext context) {
 
-        String sceneId = context.getParams().getValueToString(SCENE);
+        String scene = context.getParams().getValueToString(SCENE);
         List<String> keys = triggerItems.stream()
-                .map(i -> String.format(String.format(FILTER_KEY_FORMAT, bizType, sceneId, i)))
+                .map(i -> String.format(String.format(FILTER_KEY_FORMAT, bizType, i.getId(), scene)))
                 .collect(Collectors.toList());
 
         int timeout = config.getTimeout();

@@ -19,7 +19,7 @@ public class UserTriggerNode extends SyncNode<UserTriggerConfig> {
     private RedisService redisService = BeanUtil.getBean(RedisService.class);
     private String bizType = "event";
     private String filterType = "click";
-    private String FILTER_KEY_FORMAT = "%s:%s:%s:{%s}";
+    private String FILTER_KEY_FORMAT = "%s:{%s}:%s:%s";
     @Export("triggerItems")
     private List<ScoreResult> triggerItems;
 
@@ -30,9 +30,9 @@ public class UserTriggerNode extends SyncNode<UserTriggerConfig> {
     @Override
     public void run(GraphContext context) {
 
-        String sceneId = context.getParams().getValueToString(SCENE);
+        String scene = context.getParams().getValueToString(SCENE);
         String userId = context.getParams().getValueToString(USER_ID);
-        String key = String.format(FILTER_KEY_FORMAT, bizType, sceneId, filterType, userId);
+        String key = String.format(FILTER_KEY_FORMAT, bizType, userId, scene, filterType);
 
         int timeout = config.getTimeout();
         boolean open = config.isOpen();

@@ -25,7 +25,7 @@ public class HotNodeTest {
         HotConfig hotConfig = new HotConfig();
 
         GraphContext context = new GraphContext();
-        context.addParam("sceneId", "sceneId-1");
+        context.addParam("scene", "scene-1");
 
         NodeConfig<HotConfig> nodeConfig = new NodeConfig<>();
         nodeConfig.setContent(hotConfig);

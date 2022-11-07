@@ -28,7 +28,7 @@ public class FilterNodeTest {
         filterConfig.setFilterMap(filterMap);
 
         GraphContext context = new GraphContext();
-        context.addParam("sceneId", "sceneId-1");
+        context.addParam("scene", "scene-1");
         context.addParam("userId", "userId-1");
 
         NodeConfig<FilterConfig> nodeConfig = new NodeConfig<>();

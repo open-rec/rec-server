@@ -28,9 +28,9 @@ public class HotNode extends SyncNode<HotConfig> {
     @Override
     public void run(GraphContext context) {
 
-        String sceneId = context.getParams().getValueToString(SCENE);
+        String scene = context.getParams().getValueToString(SCENE);
         String key = String.format(FILTER_KEY_FORMAT, bizType,
-                sceneId);
+                scene);
 
         int timeout = config.getTimeout();
         boolean open = config.isOpen();

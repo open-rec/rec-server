@@ -35,9 +35,9 @@ public class FilterNode extends SyncNode<FilterConfig> {
     @Override
     public void run(GraphContext context) {
 
-        String sceneId = context.getParams().getValueToString(SCENE);
+        String scene = context.getParams().getValueToString(SCENE);
         String userId = context.getParams().getValueToString(USER_ID);
-        String key = String.format(FILTER_KEY_FORMAT, bizType, userId, sceneId, filterType);
+        String key = String.format(FILTER_KEY_FORMAT, bizType, userId, scene, filterType);
 
         int timeout = config.getTimeout();
         boolean open = config.isOpen();

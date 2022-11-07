@@ -21,7 +21,7 @@ public class NewNodeTest {
         NewConfig newConfig = new NewConfig();
 
         GraphContext context = new GraphContext();
-        context.addParam("sceneId", "sceneId-1");
+        context.addParam("scene", "scene-1");
 
         NodeConfig<NewConfig> nodeConfig = new NodeConfig<>();
         nodeConfig.setContent(newConfig);
