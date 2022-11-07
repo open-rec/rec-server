@@ -7,7 +7,7 @@ import java.util.List;
 @Data
 public class RecommendReq {
 
-    private String sceneId;
+    private String scene;
     private int size;
     private String userId;
     private String deviceId;
