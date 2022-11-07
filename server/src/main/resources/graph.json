@@ -102,14 +102,6 @@
       "content": null
     },
     {
-      "name": "fakeExposure",
-      "clazz": "com.openrec.graph.node.FakeExposureNode",
-      "configClazz": null,
-      "open": true,
-      "timeout": 20,
-      "content": null
-    },
-    {
       "name": "collector",
       "clazz": "com.openrec.graph.node.CollectorNode",
       "configClazz": null,

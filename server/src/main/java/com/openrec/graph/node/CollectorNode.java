@@ -7,8 +7,10 @@ import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.redis.RedisService;
 import com.openrec.util.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.openrec.graph.RecParams.*;
@@ -32,8 +34,11 @@ public class CollectorNode extends SyncNode<Void> {
         String type = "expose";
         String biz = "event";
         String userId = context.getParams().getValueToString(USER_ID);
-        String fakeExposeKey = String.format("%s:%s:%s:{%s}", biz, userId, scene, type);
-        redisService.addZSets(fakeExposeKey, finalItems.stream().collect(Collectors.toMap(si->si.getId(), si->si.getScore())));
+        String fakeExposeKey = String.format("%s:{%s}:%s:%s", biz, userId, scene, type);
+        Map<String, Double> fakeExposeMap = finalItems.stream().collect(Collectors.toMap(si->si.getId(), si->si.getScore()));
+        if(!CollectionUtils.isEmpty(fakeExposeMap)) {
+            redisService.addZSets(fakeExposeKey, fakeExposeMap);
+        }
         log.info("write fake expose size:{}", finalItems.size());
     }
 
