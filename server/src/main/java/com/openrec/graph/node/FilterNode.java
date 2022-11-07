@@ -11,6 +11,8 @@ import com.openrec.util.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.openrec.graph.RecParams.SCENE;
 import static com.openrec.graph.RecParams.USER_ID;
@@ -22,8 +24,8 @@ public class FilterNode extends SyncNode<FilterConfig> {
     private String bizType = "event";
     private String filterType = "expose";
     private String FILTER_KEY_FORMAT = "%s:{%s}:%s:%s";
-    @Export("exposeItems")
-    private List<ScoreResult> exposeItems;
+    @Export("filterItemSet")
+    private Set<String> exposeItemSet;
 
 
     public FilterNode(NodeConfig nodeConfig) {
@@ -35,7 +37,7 @@ public class FilterNode extends SyncNode<FilterConfig> {
 
         String sceneId = context.getParams().getValueToString(SCENE);
         String userId = context.getParams().getValueToString(USER_ID);
-        String key = String.format(FILTER_KEY_FORMAT, bizType, sceneId, filterType, userId);
+        String key = String.format(FILTER_KEY_FORMAT, bizType, userId, sceneId, filterType);
 
         int timeout = config.getTimeout();
         boolean open = config.isOpen();
@@ -49,7 +51,8 @@ public class FilterNode extends SyncNode<FilterConfig> {
         int size = config.getContent().getFilterMap().get(RecEventType.EXPOSE.toString()).getSize();
         long nowSecs = System.currentTimeMillis() / 1000;
 
-        exposeItems = redisService.getZSet(key, nowSecs - duration, nowSecs, size);
-        log.info("{} with expose item size:{}", getName(), exposeItems.size());
+        exposeItemSet = redisService.getZSet(key, nowSecs - duration, nowSecs, size)
+                .stream().map(i->i.getId()).collect(Collectors.toSet());
+        log.info("{} with expose item size:{}", getName(), exposeItemSet.size());
     }
 }

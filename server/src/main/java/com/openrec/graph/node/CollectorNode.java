@@ -1,5 +1,6 @@
 package com.openrec.graph.node;
 
+import com.google.common.collect.Maps;
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Import;
@@ -35,7 +36,8 @@ public class CollectorNode extends SyncNode<Void> {
         String biz = "event";
         String userId = context.getParams().getValueToString(USER_ID);
         String fakeExposeKey = String.format("%s:{%s}:%s:%s", biz, userId, scene, type);
-        Map<String, Double> fakeExposeMap = finalItems.stream().collect(Collectors.toMap(si->si.getId(), si->si.getScore()));
+        Map<String, Double> fakeExposeMap = Maps.newHashMap();
+        finalItems.stream().forEach(si-> fakeExposeMap.put(si.getId(), (double) (System.currentTimeMillis()/1000)));
         if(!CollectionUtils.isEmpty(fakeExposeMap)) {
             redisService.addZSets(fakeExposeKey, fakeExposeMap);
         }

@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.util.Lists;
 
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 public class CombineNode extends SyncNode<CombineConfig> {
@@ -22,6 +23,9 @@ public class CombineNode extends SyncNode<CombineConfig> {
     @Import("hotItems")
     private List<ScoreResult> hotItems;
 
+    @Import("filterItemSet")
+    private Set<String> filterItemSet;
+
     @Export("combineItems")
     private List<ScoreResult> combineItems;
 
@@ -33,13 +37,20 @@ public class CombineNode extends SyncNode<CombineConfig> {
     @Override
     public void run(GraphContext context) {
 
-        combineItems = Lists.newArrayList();
-        combineItems.addAll(i2iItems);
-        combineItems.addAll(hotItems);
-        combineItems.addAll(newItems);
+        List<ScoreResult> allItems = Lists.newArrayList();
+        allItems.addAll(i2iItems);
+        allItems.addAll(hotItems);
+        allItems.addAll(newItems);
 
         int size = config.getContent().getSize();
-        combineItems = combineItems.subList(0, Math.min(combineItems.size(), size));
+        combineItems = Lists.newArrayList();
+        for (int i = 0, count = 0; i < allItems.size() && count < size; i++) {
+            ScoreResult scoreItem = allItems.get(i);
+            if (!filterItemSet.contains(scoreItem.getId())) {
+                combineItems.add(scoreItem);
+                count++;
+            }
+        }
         log.info("{} with result size:{}", getName(), combineItems.size());
     }
 }
