@@ -24,12 +24,13 @@ public class ApiDecorator {
     private final String API_EXP = "execution(* com.openrec.controller..*Controller.*(..))";
 
     private void setRequestIdByParams(Object[] args) {
-        Object request = args[0];
-        if (request instanceof JsonReq) {
-            MDC.put(REQUEST_ID, ((JsonReq) request).getRequestId());
-        } else {
-            MDC.put(REQUEST_ID, "inner_" + UUID.randomUUID());
+        for (Object request : args) {
+            if (request instanceof JsonReq) {
+                MDC.put(REQUEST_ID, ((JsonReq) request).getRequestId());
+                return;
+            }
         }
+        MDC.put(REQUEST_ID, "inner_" + UUID.randomUUID());
     }
 
     @Around(API_EXP)
