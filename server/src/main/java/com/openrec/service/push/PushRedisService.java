@@ -23,8 +23,11 @@ public class PushRedisService implements PushService {
     private String ITEM_KEY = "item:{%s}";
     private String EVENT_KEY = "event:%s:%s:{}";
 
+    private String NEW_KEY = "new:{%s}";
+
     @Autowired
     private RedisService redisService;
+
 
 
     @Override
@@ -33,6 +36,19 @@ public class PushRedisService implements PushService {
         if (itemReq.getCmd() == PushCmd.INSERT || itemReq.getCmd() == PushCmd.UPDATE) {
             redisService.addKvs(items.stream()
                     .collect(Collectors.toMap(item -> String.format(ITEM_KEY, item.getId()), item -> item)));
+
+            Map<String, Map<String, Double>> newItemMap = items.stream().collect(
+                    Collectors.groupingBy(
+                            item -> String.format(NEW_KEY, item.getScene()),
+                            Collectors.toMap(
+                                    item -> item.getId(),
+                                    item -> Double.valueOf(item.getPubTime())
+                            )
+                    )
+            );
+            for (Map.Entry<String, Map<String, Double>> itemEventEntry : newItemMap.entrySet()) {
+                redisService.addZSets(itemEventEntry.getKey(), itemEventEntry.getValue());
+            }
         } else {
             redisService.removeKs(items.stream().map(item -> String.format(ITEM_KEY, item.getId()))
                     .collect(Collectors.toList()));
