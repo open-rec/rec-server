@@ -1,5 +1,6 @@
 package com.openrec.service.redis;
 
+import com.openrec.proto.model.Item;
 import com.openrec.proto.model.ScoreResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.DefaultTypedTuple;
@@ -63,8 +64,8 @@ public class RedisService {
         redisTemplate.opsForValue().multiSet(kvs);
     }
 
-    public Object getV(String key) {
-        return redisTemplate.opsForValue().get(key);
+    public <T> T getV(String key) {
+        return (T) redisTemplate.opsForValue().get(key);
     }
 
     public void removeK(String key) {
@@ -75,7 +76,7 @@ public class RedisService {
         redisTemplate.delete(keys);
     }
 
-    public List<Object> getVs(List<String> keys) {
+    public <T> List<T> getVs(List<String> keys) {
         return redisTemplate.opsForValue().multiGet(keys);
     }
 }

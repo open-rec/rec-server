@@ -13,4 +13,5 @@ public class RecommendReq {
     private String deviceId;
     private List<String> itemIds;
     private String type;
+    private boolean debug;
 }

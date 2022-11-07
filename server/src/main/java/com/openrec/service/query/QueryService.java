@@ -21,11 +21,11 @@ public class QueryService {
 
 
     public Item queryItem(String id) {
-        return (Item) redisService.getV(String.format(ITEM_KEY, id));
+        return redisService.getV(String.format(ITEM_KEY, id));
     }
 
     public User queryUser(String id) {
-        return (User) redisService.getV(String.format(USER_KEY, id));
+        return redisService.getV(String.format(USER_KEY, id));
     }
 
     public List<ScoreResult> queryEvent(String userId, String scene, String type) {
