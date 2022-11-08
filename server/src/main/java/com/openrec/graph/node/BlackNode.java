@@ -21,7 +21,7 @@ public class BlackNode extends SyncNode<FilterConfig> {
 
     private RedisService redisService = BeanUtil.getBean(RedisService.class);
     private String bizType = "black";
-    private String FILTER_KEY_FORMAT = "%s:{%s}";
+    private String BLACK_KEY_FORMAT = "%s:{%s}";
     @Export("blackItemSet")
     private Set<String> blackItemSet;
 
@@ -34,7 +34,7 @@ public class BlackNode extends SyncNode<FilterConfig> {
     public void run(GraphContext context) {
 
         String scene = context.getParams().getValueToString(SCENE);
-        String key = String.format(FILTER_KEY_FORMAT, bizType, scene);
+        String key = String.format(BLACK_KEY_FORMAT, bizType, scene);
 
         int timeout = config.getTimeout();
         boolean open = config.isOpen();
