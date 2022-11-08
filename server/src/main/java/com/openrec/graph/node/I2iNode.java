@@ -9,6 +9,7 @@ import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.redis.RedisService;
 import com.openrec.util.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.util.Lists;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,6 +31,7 @@ public class I2iNode extends SyncNode<I2iConfig> {
 
     public I2iNode(NodeConfig nodeConfig) {
         super(nodeConfig);
+        this.i2iItems = Lists.newArrayList();
     }
 
 

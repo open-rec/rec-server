@@ -1,40 +1,34 @@
 package com.openrec.graph.node;
 
+import com.google.common.collect.Sets;
 import com.openrec.graph.GraphContext;
-import com.openrec.graph.RecEventType;
 import com.openrec.graph.config.FilterConfig;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.service.redis.RedisService;
 import com.openrec.util.BeanUtil;
-import com.openrec.util.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Set;
-import java.util.stream.Collectors;
-
-import static com.openrec.graph.RecParams.SCENE;
-import static com.openrec.graph.RecParams.USER_ID;
 
 @Slf4j
 public class BlackNode extends SyncNode<FilterConfig> {
 
     private RedisService redisService = BeanUtil.getBean(RedisService.class);
     private String bizType = "black";
-    private String BLACK_KEY_FORMAT = "%s:{%s}";
+    private String BLACK_KEY_FORMAT = "%s";
     @Export("blackItemSet")
     private Set<String> blackItemSet;
 
 
     public BlackNode(NodeConfig nodeConfig) {
         super(nodeConfig);
+        this.blackItemSet = Sets.newHashSet();
     }
 
     @Override
     public void run(GraphContext context) {
-
-        String scene = context.getParams().getValueToString(SCENE);
-        String key = String.format(BLACK_KEY_FORMAT, bizType, scene);
+        String key = String.format(BLACK_KEY_FORMAT, bizType);
 
         int timeout = config.getTimeout();
         boolean open = config.isOpen();
@@ -44,8 +38,7 @@ public class BlackNode extends SyncNode<FilterConfig> {
             return;
         }
 
-        blackItemSet = redisService.getZSet(key, 0, Double.MAX_VALUE, Integer.MAX_VALUE)
-                .stream().map(i -> i.getId()).collect(Collectors.toSet());
+        blackItemSet = redisService.getSet(key);
         log.info("{} with black item size:{}", getName(), blackItemSet.size());
     }
 }

@@ -8,6 +8,7 @@ import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.redis.RedisService;
 import com.openrec.util.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.util.Lists;
 
 import java.util.List;
 
@@ -23,6 +24,7 @@ public class HotNode extends SyncNode<HotConfig> {
 
     public HotNode(NodeConfig nodeConfig) {
         super(nodeConfig);
+        this.hotItems = Lists.newArrayList();
     }
 
     @Override

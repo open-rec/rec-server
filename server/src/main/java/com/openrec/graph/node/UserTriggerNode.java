@@ -27,6 +27,7 @@ public class UserTriggerNode extends SyncNode<UserTriggerConfig> {
 
     public UserTriggerNode(NodeConfig nodeConfig) {
         super(nodeConfig);
+        this.triggerItems = Lists.newArrayList();
     }
 
     @Override
@@ -46,8 +47,6 @@ public class UserTriggerNode extends SyncNode<UserTriggerConfig> {
         }
 
         int size = config.getContent().getSize();
-
-        triggerItems = Lists.newArrayList();
         if (itemIds != null) {
             triggerItems.addAll(itemIds.stream().
                     map(i -> new ScoreResult(i, TimeUtil.nowSecs()))

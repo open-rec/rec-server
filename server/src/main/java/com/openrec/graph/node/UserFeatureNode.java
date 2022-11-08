@@ -18,6 +18,7 @@ public class UserFeatureNode extends SyncNode<Void> {
 
     public UserFeatureNode(NodeConfig nodeConfig) {
         super(nodeConfig);
+        this.userFeatureMap = Maps.newHashMap();
     }
 
 

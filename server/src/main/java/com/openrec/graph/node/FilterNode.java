@@ -1,5 +1,6 @@
 package com.openrec.graph.node;
 
+import com.google.common.collect.Sets;
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.RecEventType;
 import com.openrec.graph.config.FilterConfig;
@@ -29,6 +30,7 @@ public class FilterNode extends SyncNode<FilterConfig> {
 
     public FilterNode(NodeConfig nodeConfig) {
         super(nodeConfig);
+        this.exposeItemSet = Sets.newHashSet();
     }
 
     @Override

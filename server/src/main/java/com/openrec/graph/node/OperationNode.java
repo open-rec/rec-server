@@ -2,10 +2,13 @@ package com.openrec.graph.node;
 
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.NodeConfig;
+import com.openrec.graph.contrib.operation.DefaultOperationRule;
+import com.openrec.graph.contrib.operation.OperationRule;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
 import com.openrec.proto.model.ScoreResult;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.util.Lists;
 
 import java.util.List;
 
@@ -19,15 +22,19 @@ public class OperationNode extends SyncNode<Void> {
     @Export("operationItems")
     private List<ScoreResult> operationItems;
 
+    private OperationRule operationRule;
+
     public OperationNode(NodeConfig nodeConfig) {
         super(nodeConfig);
+        this.operationItems = Lists.newArrayList();
+        this.operationRule = new DefaultOperationRule();
     }
 
 
     @Override
     public void run(GraphContext context) {
-        // TODO: 2022/11/2 for custom operation.
-        operationItems = rankItems;
+        // for custom operation, default pass.
+        operationItems = operationRule.handle(context, rankItems);
         log.info("{} with result size:{}", getName(), operationItems.size());
     }
 }

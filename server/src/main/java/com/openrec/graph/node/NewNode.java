@@ -9,6 +9,7 @@ import com.openrec.service.redis.RedisService;
 import com.openrec.util.BeanUtil;
 import com.openrec.util.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.util.Lists;
 
 import java.util.List;
 
@@ -25,6 +26,7 @@ public class NewNode extends SyncNode<NewConfig> {
 
     public NewNode(NodeConfig nodeConfig) {
         super(nodeConfig);
+        this.newItems = Lists.newArrayList();
     }
 
     @Override

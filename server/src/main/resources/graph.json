@@ -58,7 +58,7 @@
       "name": "black",
       "clazz": "com.openrec.graph.node.BlackNode",
       "configClazz": null,
-      "open": true,
+      "open": false,
       "timeout": 20,
       "content": null
     },

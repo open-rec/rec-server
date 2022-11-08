@@ -20,6 +20,10 @@ public class RedisService {
         redisTemplate.opsForSet().add(key, value);
     }
 
+    public void addSets(String key, Set<String> values) {
+        redisTemplate.opsForSet().add(key, values.toArray());
+    }
+
     public Set<String> getSet(String key) {
         return redisTemplate.opsForSet().members(key);
     }
