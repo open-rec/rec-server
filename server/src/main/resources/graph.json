@@ -55,6 +55,14 @@
       }
     },
     {
+      "name": "black",
+      "clazz": "com.openrec.graph.node.BlackNode",
+      "configClazz": null,
+      "open": true,
+      "timeout": 20,
+      "content": null
+    },
+    {
       "name": "i2i",
       "clazz": "com.openrec.graph.node.I2iNode",
       "configClazz": "com.openrec.graph.config.I2iConfig",
@@ -129,6 +137,10 @@
     },
     {
       "from": "filter",
+      "to": "combine"
+    },
+    {
+      "from": "black",
       "to": "combine"
     },
     {

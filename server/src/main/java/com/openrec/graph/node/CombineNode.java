@@ -26,6 +26,9 @@ public class CombineNode extends SyncNode<CombineConfig> {
     @Import("filterItemSet")
     private Set<String> filterItemSet;
 
+    @Import("blackItemSet")
+    private Set<String> blackItemSet;
+
     @Export("combineItems")
     private List<ScoreResult> combineItems;
 
@@ -46,7 +49,7 @@ public class CombineNode extends SyncNode<CombineConfig> {
         combineItems = Lists.newArrayList();
         for (int i = 0, count = 0; i < allItems.size() && count < size; i++) {
             ScoreResult scoreItem = allItems.get(i);
-            if (!filterItemSet.contains(scoreItem.getId())) {
+            if (!filterItemSet.contains(scoreItem.getId()) && !blackItemSet.contains(scoreItem.getId())) {
                 combineItems.add(scoreItem);
                 count++;
             }
