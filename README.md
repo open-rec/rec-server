@@ -2,11 +2,13 @@
 
 ## graph
 
-Async DAG tool package.
+Async DAG tool package. 
+
+![graph](doc/graph.jpeg "graph")
 
 ## proto
 
-Common protocols with rec-client.
+Common protocols with rec-client. Include recommend, query, push and operate.
 
 ## server
 
