@@ -14,7 +14,7 @@ public class QueryService {
 
     private String USER_KEY = "user:{%s}";
     private String ITEM_KEY = "item:{%s}";
-    private String EVENT_KEY = "event:{%s}";
+    private String EVENT_KEY = "event:{%s}:%s:%s";
 
     @Autowired
     private RedisService redisService;
@@ -29,7 +29,7 @@ public class QueryService {
     }
 
     public List<ScoreResult> queryEvent(String userId, String scene, String type) {
-        return redisService.getZSet(String.format(EVENT_KEY, scene, type, userId),
+        return redisService.getZSet(String.format(EVENT_KEY, userId, scene, type),
                 0, Double.MAX_VALUE, Integer.MAX_VALUE);
     }
 }
