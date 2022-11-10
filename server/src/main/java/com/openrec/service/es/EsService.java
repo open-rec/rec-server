@@ -5,6 +5,8 @@ import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.DeleteIndexRequest;
+import co.elastic.clients.elasticsearch.indices.ExistsRequest;
+import co.elastic.clients.transport.endpoints.BooleanResponse;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,10 +22,15 @@ public class EsService {
     private ElasticsearchClient esClient;
 
 
-    public void createIndex(String indexName, String indexDef) throws IOException {
-        CreateIndexRequest request = CreateIndexRequest
-                .of(i -> i.index(indexName).withJson(new StringReader(indexDef)));
-        esClient.indices().create(request).acknowledged();
+    public boolean createIndex(String indexName, String indexDef) throws IOException {
+        ExistsRequest existsRequest = ExistsRequest.of(i->i.index(indexName));
+        BooleanResponse response = esClient.indices().exists(existsRequest);
+        if(!response.value()) {
+            CreateIndexRequest indexRequest = CreateIndexRequest
+                    .of(i -> i.index(indexName).withJson(new StringReader(indexDef)));
+            return esClient.indices().create(indexRequest).acknowledged();
+        }
+        return true;
     }
 
     public void deleteIndex(String indexName) throws IOException {
