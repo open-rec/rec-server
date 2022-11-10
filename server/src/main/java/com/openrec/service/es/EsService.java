@@ -17,19 +17,19 @@ import java.util.List;
 public class EsService {
 
     @Autowired
-    private ElasticsearchClient elasticsearchClient;
+    private ElasticsearchClient esClient;
 
 
     public void createIndex(String indexName, String indexDef) throws IOException {
         CreateIndexRequest request = CreateIndexRequest
                 .of(i -> i.index(indexName).withJson(new StringReader(indexDef)));
-        elasticsearchClient.indices().create(request).acknowledged();
+        esClient.indices().create(request).acknowledged();
     }
 
     public void deleteIndex(String indexName) throws IOException {
         DeleteIndexRequest request = DeleteIndexRequest
                 .of(i -> i.index(indexName));
-        elasticsearchClient.indices().delete(request);
+        esClient.indices().delete(request);
     }
 
     public void bulk(String indexName, List<Pair<Integer, Object>> docs) throws IOException {
@@ -39,12 +39,12 @@ public class EsService {
                     .id(String.valueOf(doc.getLeft()))
                     .document(doc.getRight())));
         }
-        elasticsearchClient.bulk(bulkReqBuilder.build());
+        esClient.bulk(bulkReqBuilder.build());
     }
 
     public void search(String indexName, String query) throws IOException {
         SearchRequest request = SearchRequest
                 .of(i -> i.index(indexName).withJson(new StringReader(query)));
-        elasticsearchClient.search(request, Void.class);
+        esClient.search(request, Void.class);
     }
 }
