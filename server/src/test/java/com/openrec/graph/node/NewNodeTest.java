@@ -2,15 +2,12 @@ package com.openrec.graph.node;
 
 import com.openrec.RecServer;
 import com.openrec.graph.GraphContext;
-import com.openrec.graph.config.HotConfig;
 import com.openrec.graph.config.NewConfig;
 import com.openrec.graph.config.NodeConfig;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = RecServer.class)
