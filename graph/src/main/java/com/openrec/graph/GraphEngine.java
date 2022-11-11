@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.node.Node;
 import com.openrec.graph.node.RootNode;
+import jdk.nashorn.internal.codegen.CompilerConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -25,9 +26,47 @@ public class GraphEngine {
             TimeUnit.SECONDS,
             new SynchronousQueue<>(),
             new ThreadFactoryBuilder().setNameFormat("graph-engine-pool").build());
+
+    private static ExecutorService timeoutThreadPool = new ThreadPoolExecutor(
+            Runtime.getRuntime().availableProcessors(),
+            Integer.MAX_VALUE,
+            60L,
+            TimeUnit.SECONDS,
+            new SynchronousQueue<>(),
+            new ThreadFactoryBuilder().setNameFormat("graph-timeout-pool").build());
+
     private GraphContext context;
     private Queue<Node> queue;
     private Set<String> nodeSet;
+
+
+    class TimeoutTask implements Callable<Void> {
+        private Future future;
+        private int timeout;
+
+        public TimeoutTask(Future future, int timeout) {
+            this.future = future;
+            this.timeout = timeout;
+        }
+
+
+        @Override
+        public Void call() throws Exception {
+            if(future!=null) {
+                long start = System.currentTimeMillis();
+                try {
+                    future.get(timeout, TimeUnit.MILLISECONDS);
+                } catch (Exception e) {
+                    long cost = System.currentTimeMillis() - start;
+                    if(!future.isCancelled()) {
+                        future.cancel(true);
+                    }
+                    log.error("graph node exec timeout, config: %d ms, in fact: %d ms", timeout, cost);
+                }
+            }
+            return null;
+        }
+    }
 
 
     private GraphEngine() {
@@ -116,7 +155,7 @@ public class GraphEngine {
                 CountDownLatch latch = new CountDownLatch(batch);
                 for (Node node : readyNodes) {
                     node.start();
-                    threadPool.submit(() -> {
+                    Future future = threadPool.submit(() -> {
                         try {
                             context.importNodeData(node);
                             node.run(context);
@@ -128,6 +167,7 @@ public class GraphEngine {
                             latch.countDown();
                         }
                     });
+                    timeoutThreadPool.submit(new TimeoutTask(future, node.getConfig().getTimeout()));
                 }
                 try {
                     latch.await();

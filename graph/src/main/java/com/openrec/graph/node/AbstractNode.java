@@ -94,6 +94,11 @@ public abstract class AbstractNode<C> implements Node {
         this.config = config;
     }
 
+    @Override
+    public NodeConfig getConfig() {
+        return config;
+    }
+
     public void destroy() {
         this.children.clear();
         this.parents.clear();
