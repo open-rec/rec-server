@@ -22,7 +22,7 @@ user&item trigger | ✅
 blacklist  | ✅
 exposure filter | ✅
 i2i  | ✅
-embedding | ❎
+embedding | ✅
 search | ❎
 hot | ✅
 new  | ✅
