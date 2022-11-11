@@ -7,7 +7,6 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.node.Node;
 import com.openrec.graph.node.RootNode;
-import jdk.nashorn.internal.codegen.CompilerConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -52,13 +51,13 @@ public class GraphEngine {
 
         @Override
         public Void call() throws Exception {
-            if(future!=null) {
+            if (future != null) {
                 long start = System.currentTimeMillis();
                 try {
                     future.get(timeout, TimeUnit.MILLISECONDS);
                 } catch (Exception e) {
                     long cost = System.currentTimeMillis() - start;
-                    if(!future.isCancelled()) {
+                    if (!future.isCancelled()) {
                         future.cancel(true);
                     }
                     log.error("graph node exec timeout, config: %d ms, in fact: %d ms", timeout, cost);
