@@ -26,6 +26,7 @@ public class BlackNode extends SyncNode<FilterConfig> {
         this.blackItemSet = Sets.newHashSet();
     }
 
+
     @Override
     public void run(GraphContext context) {
         String key = String.format(BLACK_KEY_FORMAT, bizType);

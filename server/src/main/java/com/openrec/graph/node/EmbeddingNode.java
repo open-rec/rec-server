@@ -74,7 +74,7 @@ public class EmbeddingNode extends SyncNode<EmbeddingConfig> {
             SearchResponse<VectorResult> response = esService.search(indexName,
                     String.format(VECTORS_QUERY, JsonUtil.objToJson(items)), VectorResult.class);
             vectors = response.hits().hits().stream().map(i -> i.source().getVector()).collect(Collectors.toList());
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("{} query vectors failed: {}", ExceptionUtils.getStackTrace(e));
         }
         return vectors;
@@ -105,6 +105,7 @@ public class EmbeddingNode extends SyncNode<EmbeddingConfig> {
             log.error("{} query vectors failed: {}", ExceptionUtils.getStackTrace(e));
         }
     }
+
 
     @Override
     public void run(GraphContext context) {

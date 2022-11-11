@@ -29,6 +29,7 @@ public class NewNode extends SyncNode<NewConfig> {
         this.newItems = Lists.newArrayList();
     }
 
+
     @Override
     public void run(GraphContext context) {
 

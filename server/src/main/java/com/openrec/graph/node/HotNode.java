@@ -27,6 +27,7 @@ public class HotNode extends SyncNode<HotConfig> {
         this.hotItems = Lists.newArrayList();
     }
 
+
     @Override
     public void run(GraphContext context) {
 

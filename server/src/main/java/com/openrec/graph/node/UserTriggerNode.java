@@ -30,6 +30,7 @@ public class UserTriggerNode extends SyncNode<UserTriggerConfig> {
         this.triggerItems = Lists.newArrayList();
     }
 
+
     @Override
     public void run(GraphContext context) {
 

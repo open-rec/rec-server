@@ -33,6 +33,7 @@ public class FilterNode extends SyncNode<FilterConfig> {
         this.exposeItemSet = Sets.newHashSet();
     }
 
+
     @Override
     public void run(GraphContext context) {
 
