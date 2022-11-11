@@ -40,10 +40,12 @@ public class GraphEngine {
 
 
     class TimeoutTask implements Callable<Void> {
+        private String name;
         private Future future;
         private int timeout;
 
-        public TimeoutTask(Future future, int timeout) {
+        public TimeoutTask(String name, Future future, int timeout) {
+            this.name = name;
             this.future = future;
             this.timeout = timeout;
         }
@@ -52,15 +54,13 @@ public class GraphEngine {
         @Override
         public Void call() throws Exception {
             if (future != null) {
-                long start = System.currentTimeMillis();
                 try {
                     future.get(timeout, TimeUnit.MILLISECONDS);
                 } catch (Exception e) {
-                    long cost = System.currentTimeMillis() - start;
                     if (!future.isCancelled()) {
                         future.cancel(true);
                     }
-                    log.error("graph node exec timeout, config: %d ms, in fact: %d ms", timeout, cost);
+                    log.error("graph node:{} exec timeout, canceled by engine", name);
                 }
             }
             return null;
@@ -155,18 +155,23 @@ public class GraphEngine {
                 for (Node node : readyNodes) {
                     node.start();
                     Future future = threadPool.submit(() -> {
+                        long start = System.currentTimeMillis();
                         try {
                             context.importNodeData(node);
                             node.run(context);
                             context.exportNodeData(node);
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            log.error("node:{} exec with exception:{}", ExceptionUtils.getStackTrace(e));
                         } finally {
                             node.stop();
                             latch.countDown();
+                            log.info("node:{} exec cost time: {}ms",
+                                    node.getName(),
+                                    System.currentTimeMillis() - start
+                            );
                         }
                     });
-                    timeoutThreadPool.submit(new TimeoutTask(future, node.getConfig().getTimeout()));
+                    timeoutThreadPool.submit(new TimeoutTask(node.getName(), future, node.getTimeout()));
                 }
                 try {
                     latch.await();

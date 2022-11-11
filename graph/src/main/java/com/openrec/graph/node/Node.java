@@ -37,6 +37,8 @@ public interface Node {
 
     NodeConfig getConfig();
 
+    int getTimeout();
+
     void refresh(NodeConfig config);
 
     void destroy();

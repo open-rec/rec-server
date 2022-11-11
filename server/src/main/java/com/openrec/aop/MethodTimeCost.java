@@ -24,7 +24,7 @@ public class MethodTimeCost {
         String method = joinPoint.getSignature().getName();
         long start = System.currentTimeMillis();
         Object result = joinPoint.proceed();
-        log.info("{}:{} exec cost:{}", clazz, method, System.currentTimeMillis() - start);
+        log.info("{}:{} exec cost:{}ms", clazz, method, System.currentTimeMillis() - start);
         return result;
     }
 }

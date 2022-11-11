@@ -7,6 +7,8 @@ import java.util.List;
 
 public abstract class AbstractNode<C> implements Node {
 
+    private static final int DEFAULT_TIMEOUT = 5;
+
     protected String id;
     protected String name;
     protected boolean open;
@@ -87,6 +89,11 @@ public abstract class AbstractNode<C> implements Node {
     @Override
     public List<Node> getParents() {
         return parents;
+    }
+
+    @Override
+    public int getTimeout() {
+        return config == null ? DEFAULT_TIMEOUT : config.getTimeout();
     }
 
     @Override

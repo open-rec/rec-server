@@ -46,6 +46,6 @@ public class RankNode extends SyncNode<RankConfig> {
         rankItems = combineItems.subList(0, Math.min(size, combineItems.size()));
         // TODO: 2022/11/2 add tf-serving later.
         rankItems.addAll(combineItems.subList(rankItems.size(), combineItems.size()));
-        log.info("{} with result size:{}", getName(), rankItems);
+        log.info("{} with result size:{}", getName(), rankItems.size());
     }
 }
