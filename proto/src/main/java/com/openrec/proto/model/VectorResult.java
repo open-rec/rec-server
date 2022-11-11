@@ -10,6 +10,8 @@ import java.util.List;
 @Data
 public class VectorResult implements Serializable {
 
+    public VectorResult() {}
+
     private String id;
     private List<Double> vector;
 }

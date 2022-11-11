@@ -9,6 +9,8 @@ import java.io.Serializable;
 @Data
 public class ScoreResult implements Serializable {
 
+    public ScoreResult() {}
+
     private String id;
     private double score;
 }

@@ -17,6 +17,9 @@ public class CombineNode extends SyncNode<CombineConfig> {
     @Import("i2iItems")
     private List<ScoreResult> i2iItems;
 
+    @Import("embeddingItems")
+    private List<ScoreResult> embeddingItems;
+
     @Import("newItems")
     private List<ScoreResult> newItems;
 
@@ -42,6 +45,7 @@ public class CombineNode extends SyncNode<CombineConfig> {
 
         List<ScoreResult> allItems = Lists.newArrayList();
         allItems.addAll(i2iItems);
+        allItems.addAll(embeddingItems);
         allItems.addAll(hotItems);
         allItems.addAll(newItems);
 

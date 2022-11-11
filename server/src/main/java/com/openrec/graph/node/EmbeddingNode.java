@@ -9,6 +9,7 @@ import com.openrec.proto.model.ScoreResult;
 import com.openrec.proto.model.VectorResult;
 import com.openrec.service.es.EsService;
 import com.openrec.util.BeanUtil;
+import com.openrec.util.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -75,7 +76,7 @@ public class EmbeddingNode extends SyncNode<Void> {
         List<List<Double>> vectors=null;
         try {
             SearchResponse response=esService.search(indexName,
-                    String.format(VECTORS_QUERY, ArrayUtils.toString(items)), VectorResult.class);
+                    String.format(VECTORS_QUERY, JsonUtil.objToJson(items)), VectorResult.class);
         } catch (IOException e) {
             log.error("{} query vectors failed: {}", ExceptionUtils.getStackTrace(e));
         }
