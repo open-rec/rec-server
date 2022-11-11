@@ -24,9 +24,9 @@ public class EsService {
 
 
     public boolean createIndex(String indexName, String indexDef) throws IOException {
-        ExistsRequest existsRequest = ExistsRequest.of(i->i.index(indexName));
+        ExistsRequest existsRequest = ExistsRequest.of(i -> i.index(indexName));
         BooleanResponse response = esClient.indices().exists(existsRequest);
-        if(!response.value()) {
+        if (!response.value()) {
             CreateIndexRequest indexRequest = CreateIndexRequest
                     .of(i -> i.index(indexName).withJson(new StringReader(indexDef)));
             return esClient.indices().create(indexRequest).acknowledged();
