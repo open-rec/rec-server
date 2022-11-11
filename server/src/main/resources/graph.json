@@ -73,6 +73,18 @@
       }
     },
     {
+      "name": "embedding",
+      "clazz": "com.openrec.graph.node.EmbeddingNode",
+      "configClazz": "com.openrec.graph.config.EmbeddingConfig",
+      "open": true,
+      "timeout": 20,
+      "content": {
+        "size": 1000,
+        "vectorField" : "vector",
+        "idField": "id"
+      }
+    },
+    {
       "name": "combine",
       "clazz": "com.openrec.graph.node.CombineNode",
       "configClazz": "com.openrec.graph.config.CombineConfig",
@@ -124,7 +136,15 @@
       "to": "i2i"
     },
     {
+      "from": "userTrigger",
+      "to": "embedding"
+    },
+    {
       "from": "i2i",
+      "to": "combine"
+    },
+    {
+      "from": "embedding",
       "to": "combine"
     },
     {
