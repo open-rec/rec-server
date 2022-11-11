@@ -5,7 +5,7 @@
       "clazz": "com.openrec.graph.node.UserTriggerNode",
       "configClazz": "com.openrec.graph.config.UserTriggerConfig",
       "open": true,
-      "timeout": 20,
+      "timeout": 50,
       "content": {
         "size": 10
       }
@@ -23,7 +23,7 @@
       "clazz": "com.openrec.graph.node.NewNode",
       "configClazz": "com.openrec.graph.config.NewConfig",
       "open": true,
-      "timeout": 20,
+      "timeout": 50,
       "content": {
         "size": 100,
         "duration": 86400
@@ -34,7 +34,7 @@
       "clazz": "com.openrec.graph.node.HotNode",
       "configClazz": "com.openrec.graph.config.HotConfig",
       "open": true,
-      "timeout": 20,
+      "timeout": 100,
       "content": {
         "size": 1000
       }
@@ -44,7 +44,7 @@
       "clazz": "com.openrec.graph.node.FilterNode",
       "configClazz": "com.openrec.graph.config.FilterConfig",
       "open": true,
-      "timeout": 20,
+      "timeout": 50,
       "content": {
         "filterMap": {
           "expose": {
@@ -77,7 +77,7 @@
       "clazz": "com.openrec.graph.node.EmbeddingNode",
       "configClazz": "com.openrec.graph.config.EmbeddingConfig",
       "open": true,
-      "timeout": 20,
+      "timeout": 100,
       "content": {
         "size": 1000,
         "vectorField" : "vector",
@@ -89,7 +89,7 @@
       "clazz": "com.openrec.graph.node.CombineNode",
       "configClazz": "com.openrec.graph.config.CombineConfig",
       "open": true,
-      "timeout": 20,
+      "timeout": 10,
       "content": {
         "size": 3000
       }
@@ -99,7 +99,7 @@
       "clazz": "com.openrec.graph.node.RankNode",
       "configClazz": "com.openrec.graph.config.RankConfig",
       "open": true,
-      "timeout": 20,
+      "timeout": 200,
       "content": {
         "size": 100,
         "endpoint": ""
@@ -110,7 +110,7 @@
       "clazz": "com.openrec.graph.node.ItemFeatureNode",
       "configClazz": null,
       "open": true,
-      "timeout": 20,
+      "timeout": 50,
       "content": null
     },
     {
@@ -126,7 +126,7 @@
       "clazz": "com.openrec.graph.node.CollectorNode",
       "configClazz": null,
       "open": true,
-      "timeout": 20,
+      "timeout": 10,
       "content": null
     }
   ],
