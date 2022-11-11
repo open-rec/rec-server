@@ -3,6 +3,7 @@ package com.openrec.service.es;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.DeleteIndexRequest;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
@@ -49,9 +50,9 @@ public class EsService {
         esClient.bulk(bulkReqBuilder.build());
     }
 
-    public void search(String indexName, String query) throws IOException {
+    public <T> SearchResponse<T> search(String indexName, String query, Class<T> clazz) throws IOException {
         SearchRequest request = SearchRequest
                 .of(i -> i.index(indexName).withJson(new StringReader(query)));
-        esClient.search(request, Void.class);
+        return esClient.search(request, clazz);
     }
 }

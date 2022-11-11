@@ -22,7 +22,7 @@ public class EsServiceTest {
     private static final String TEST_INDEX_DEF = "{\n" +
             "  \"mappings\": {\n" +
             "    \"properties\": {\n" +
-            "      \"id-vector\": {\n" +
+            "      \"vector\": {\n" +
             "        \"type\": \"dense_vector\",\n" +
             "        \"dims\": 10,\n" +
             "        \"index\": true,\n" +
