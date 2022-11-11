@@ -58,7 +58,7 @@ public class EsServiceTest {
             bulkList.add(Pair.of(i, new VectorResult(String.valueOf(i), Arrays.asList(new Double[]{0.1, 0.2, 0.3}))));
         }
         esService.bulk(TEST_INDEX_NAME, bulkList);
-        esService.search(TEST_INDEX_NAME, TEST_QUERY);
+        esService.search(TEST_INDEX_NAME, TEST_QUERY, VectorResult.class);
         esService.deleteIndex(TEST_INDEX_NAME);
     }
 }

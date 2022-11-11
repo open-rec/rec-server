@@ -2,6 +2,7 @@ package com.openrec.graph.node;
 
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.openrec.graph.GraphContext;
+import com.openrec.graph.config.EmbeddingConfig;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
@@ -26,7 +27,7 @@ import static com.openrec.graph.RecParams.SCENE;
 
 
 @Slf4j
-public class EmbeddingNode extends SyncNode<Void> {
+public class EmbeddingNode extends SyncNode<EmbeddingConfig> {
 
 
     private EsService esService = BeanUtil.getBean(EsService.class);
@@ -75,8 +76,9 @@ public class EmbeddingNode extends SyncNode<Void> {
     private List<List<Double>> getVectors(String indexName, List<String> items) {
         List<List<Double>> vectors=null;
         try {
-            SearchResponse response=esService.search(indexName,
+            SearchResponse<VectorResult> response=esService.search(indexName,
                     String.format(VECTORS_QUERY, JsonUtil.objToJson(items)), VectorResult.class);
+            vectors = response.hits().hits().stream().map(i->i.source().getVector()).collect(Collectors.toList());
         } catch (IOException e) {
             log.error("{} query vectors failed: {}", ExceptionUtils.getStackTrace(e));
         }
@@ -84,11 +86,29 @@ public class EmbeddingNode extends SyncNode<Void> {
     }
 
     private List<Double> parseVectors(List<List<Double>> vectors){
-        return null;
+        List<Double> avgVector = Lists.newArrayList();
+        int length = vectors.size();
+        int dim = vectors.get(0).size();
+
+        for(int i=0;i<dim;i++) {
+            double _sum=0;
+            for(int j=0;j<length;j++) {
+                _sum+=vectors.get(j).get(i);
+            }
+            avgVector.add(_sum/length);
+        }
+        return avgVector;
     }
 
-    private void recallItems(String indexName, List<Double> vector) {
-
+    private void recallItems(String indexName, List<Double> vector, int size) {
+        try {
+            SearchResponse<VectorResult> response=esService.search(indexName,
+                    String.format(VECTOR_RECALL, JsonUtil.objToJson(vector), size), VectorResult.class);
+            embeddingItems = response.hits().hits().stream()
+                    .map(i->new ScoreResult(i.source().getId(),i.score())).collect(Collectors.toList());
+        } catch (IOException e) {
+            log.error("{} query vectors failed: {}", ExceptionUtils.getStackTrace(e));
+        }
     }
 
     @Override
@@ -104,11 +124,12 @@ public class EmbeddingNode extends SyncNode<Void> {
             return;
         }
 
+        int size = config.getContent().getSize();
         List<String> itemIds = triggerItems.stream().map(i->i.getId()).collect(Collectors.toList());
         List<List<Double>> vectors= getVectors(indexName, itemIds);
         if(!CollectionUtils.isEmpty(vectors)) {
             List<Double> vector=parseVectors(vectors);
-            recallItems(indexName, vector);
+            recallItems(indexName, vector, size);
         }
         log.info("{} with embedding size:{}", getName(), embeddingItems.size());
     }
