@@ -3,6 +3,7 @@ package com.openrec.graph;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.node.Node;
 import com.openrec.graph.node.RootNode;
@@ -12,14 +13,18 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 @Slf4j
 public class GraphEngine {
 
-    private static ExecutorService threadPool = Executors.newCachedThreadPool();
+    private static ExecutorService threadPool = new ThreadPoolExecutor(
+            Runtime.getRuntime().availableProcessors() * 2,
+            Integer.MAX_VALUE,
+            60L,
+            TimeUnit.SECONDS,
+            new SynchronousQueue<>(),
+            new ThreadFactoryBuilder().setNameFormat("graph-engine-pool").build());
     private GraphContext context;
     private Queue<Node> queue;
     private Set<String> nodeSet;
