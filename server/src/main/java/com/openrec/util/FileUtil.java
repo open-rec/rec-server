@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 public class FileUtil {
 
     public static String read(String fileName) {
-        InputStream inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream(fileName);
+        InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(fileName);
         InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
         BufferedReader bufferedReader = new BufferedReader(streamReader);
         StringBuffer sb = new StringBuffer();
