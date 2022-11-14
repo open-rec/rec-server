@@ -68,11 +68,11 @@ public class EmbeddingNode extends SyncNode<EmbeddingConfig> {
     }
 
 
-    private List<List<Double>> getVectors(String indexName, List<String> items) {
+    private List<List<Double>> getVectors(String indexName, List<String> items, String timeout) {
         List<List<Double>> vectors = null;
         try {
             SearchResponse<VectorResult> response = esService.search(indexName,
-                    String.format(VECTORS_QUERY, JsonUtil.objToJson(items)), VectorResult.class);
+                    String.format(VECTORS_QUERY, JsonUtil.objToJson(items)), VectorResult.class, timeout);
             vectors = response.hits().hits().stream().map(i -> i.source().getVector()).collect(Collectors.toList());
         } catch (Exception e) {
             log.error("{} query vectors failed: {}", ExceptionUtils.getStackTrace(e));
@@ -95,10 +95,10 @@ public class EmbeddingNode extends SyncNode<EmbeddingConfig> {
         return avgVector;
     }
 
-    private void recallItems(String indexName, List<Double> vector, int size) {
+    private void recallItems(String indexName, List<Double> vector, int size, String timeout) {
         try {
             SearchResponse<VectorResult> response = esService.search(indexName,
-                    String.format(VECTOR_RECALL, JsonUtil.objToJson(vector), size), VectorResult.class);
+                    String.format(VECTOR_RECALL, JsonUtil.objToJson(vector), size), VectorResult.class, timeout);
             embeddingItems = response.hits().hits().stream()
                     .map(i -> new ScoreResult(i.source().getId(), i.score())).collect(Collectors.toList());
         } catch (IOException e) {
@@ -121,11 +121,12 @@ public class EmbeddingNode extends SyncNode<EmbeddingConfig> {
         }
 
         int size = config.getContent().getSize();
+        String esTimeout = String.format("%dms", timeout);
         List<String> itemIds = triggerItems.stream().map(i -> i.getId()).collect(Collectors.toList());
-        List<List<Double>> vectors = getVectors(indexName, itemIds);
+        List<List<Double>> vectors = getVectors(indexName, itemIds, esTimeout);
         if (!CollectionUtils.isEmpty(vectors)) {
             List<Double> vector = parseVectors(vectors);
-            recallItems(indexName, vector, size);
+            recallItems(indexName, vector, size, esTimeout);
         }
         log.info("{} with embedding size:{}", getName(), embeddingItems.size());
     }

@@ -19,6 +19,8 @@ import java.util.List;
 @Service
 public class EsService {
 
+    private static final String DEFAULT_TIMEOUT = "1000ms";
+
     @Autowired
     private ElasticsearchClient esClient;
 
@@ -51,8 +53,12 @@ public class EsService {
     }
 
     public <T> SearchResponse<T> search(String indexName, String query, Class<T> clazz) throws IOException {
+        return search(indexName, query, clazz, DEFAULT_TIMEOUT);
+    }
+
+    public <T> SearchResponse<T> search(String indexName, String query, Class<T> clazz, String timeout) throws IOException {
         SearchRequest request = SearchRequest
-                .of(i -> i.index(indexName).withJson(new StringReader(query)));
+                .of(i -> i.index(indexName).timeout(timeout).withJson(new StringReader(query)));
         return esClient.search(request, clazz);
     }
 }
