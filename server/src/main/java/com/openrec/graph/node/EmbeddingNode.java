@@ -101,7 +101,7 @@ public class EmbeddingNode extends SyncNode<EmbeddingConfig> {
                     String.format(VECTOR_RECALL, JsonUtil.objToJson(vector), size), VectorResult.class, timeout);
             embeddingItems = response.hits().hits().stream()
                     .map(i -> new ScoreResult(i.source().getId(), i.score())).collect(Collectors.toList());
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("{} query vectors failed: {}", ExceptionUtils.getStackTrace(e));
         }
     }

@@ -2,9 +2,11 @@ package com.openrec.config;
 
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.InfoResponse;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
+import lombok.extern.slf4j.Slf4j;
 import nl.altindag.ssl.SSLFactory;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -16,6 +18,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.IOException;
+
+@Slf4j
 @Configuration
 public class EsConfig {
 
@@ -48,6 +53,12 @@ public class EsConfig {
                 )
                 .build();
         ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
-        return new ElasticsearchClient(transport);
+        ElasticsearchClient esClient = new ElasticsearchClient(transport);
+        try {
+            log.info("elasticsearch cluster info:{}", esClient.info().toString());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return esClient;
     }
 }
