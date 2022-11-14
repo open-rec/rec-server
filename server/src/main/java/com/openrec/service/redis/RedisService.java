@@ -42,7 +42,7 @@ public class RedisService {
 
     public List<ScoreResult> getZSet(String key, double scoreMin, double scoreMax, int size) {
         Set<ZSetOperations.TypedTuple<String>> tupleSet = redisTemplate.opsForZSet()
-                .rangeByScoreWithScores(key, scoreMin, scoreMax, 0, size);
+                .reverseRangeByScoreWithScores(key, scoreMin, scoreMax, 0, size);
         return tupleSet.stream().map(t -> new ScoreResult(t.getValue(), t.getScore()))
                 .collect(Collectors.toList());
     }
@@ -52,7 +52,7 @@ public class RedisService {
         String tmpKey = "tmp_" + UUID.randomUUID().toString();
         redisTemplate.opsForZSet().unionAndStore(tmpKey, keys, tmpKey);
         Set<ZSetOperations.TypedTuple<String>> tupleSet = redisTemplate.opsForZSet()
-                .rangeByScoreWithScores(tmpKey, scoreMin, scoreMax, 0, size);
+                .reverseRangeByScoreWithScores(tmpKey, scoreMin, scoreMax, 0, size);
         List<ScoreResult> mergeResult = tupleSet.stream().map(t -> new ScoreResult(t.getValue(), t.getScore()))
                 .collect(Collectors.toList());
         redisTemplate.delete(tmpKey);
