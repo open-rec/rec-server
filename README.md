@@ -27,4 +27,4 @@ search | ❎
 hot | ✅
 new  | ✅
 rank | ❎
-debug | ✅
+debug info | ✅

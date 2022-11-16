@@ -116,10 +116,12 @@
     {
       "name": "operation",
       "clazz": "com.openrec.graph.node.OperationNode",
-      "configClazz": null,
+      "configClazz": "com.openrec.graph.config.OperationConfig",
       "open": true,
       "timeout": 20,
-      "content": null
+      "content": {
+        "operationName": "DefaultOperationRule"
+      }
     },
     {
       "name": "collector",

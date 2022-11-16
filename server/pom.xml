@@ -27,6 +27,10 @@
             <groupId>com.openrec</groupId>
             <artifactId>rec-graph</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.openrec</groupId>
+            <artifactId>rec-contrib</artifactId>
+        </dependency>
 
         <!-- webflux -->
         <dependency>
