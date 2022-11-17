@@ -2,6 +2,7 @@ package com.openrec.graph.node;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.assertj.core.util.Lists;
 
@@ -34,6 +35,9 @@ public class CombineNode extends SyncNode<CombineConfig> {
     @Import("blackItemSet")
     private Set<String> blackItemSet;
 
+    @Import("triggerItems")
+    private List<ScoreResult> triggerItems;
+
     @Export("combineItems")
     private List<ScoreResult> combineItems;
 
@@ -52,13 +56,26 @@ public class CombineNode extends SyncNode<CombineConfig> {
 
         int size = config.getContent().getSize();
         combineItems = Lists.newArrayList();
+        Set<String> triggerItemSet = triggerItems.stream().map(i -> i.getId()).collect(Collectors.toSet());
+
+        int triggerCount = 0, filterCount = 0, blackCount = 0;
         for (int i = 0, count = 0; i < allItems.size() && count < size; i++) {
             ScoreResult scoreItem = allItems.get(i);
-            if (!filterItemSet.contains(scoreItem.getId()) && !blackItemSet.contains(scoreItem.getId())) {
-                combineItems.add(scoreItem);
-                count++;
+            if (filterItemSet.contains(scoreItem.getId())) {
+                filterCount++;
+                continue;
             }
+            if (blackItemSet.contains(scoreItem.getId())) {
+                blackCount++;
+                continue;
+            }
+            if (triggerItemSet.contains(scoreItem.getId())) {
+                triggerCount++;
+                continue;
+            }
+            combineItems.add(scoreItem);
         }
-        log.info("{} with result size:{}", getName(), combineItems.size());
+        log.info("{} with result size:{}, filter count:{}, black count:{}, trigger count:{}", getName(),
+            combineItems.size(), filterCount, blackCount, triggerCount);
     }
 }
