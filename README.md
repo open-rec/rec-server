@@ -21,15 +21,50 @@ The real recommend online server.
 
 ### function point
 
-Function Point | Available
-------------- | -------------
-user&item trigger | ✅
-blacklist  | ✅
-exposure filter | ✅
-i2i  | ✅
-embedding | ✅
-hot | ✅
-new  | ✅
-rank | ❎
-custom operation | ✅
-debug info | ✅
+<table>
+	<tr>
+	    <th>Biz</th>
+	    <th>Detail</th>
+	    <th>Status</th>  
+	</tr >
+	<tr >
+	    <td rowspan="4">recall</td>
+	    <td>i2i</td>
+	    <td>✅</td>
+	</tr>
+	<tr>
+	    <td>embedding</td>
+	    <td>✅</td>
+	</tr>
+	<tr>
+	    <td>hot</td>
+	    <td>✅</td>
+	</tr>
+	<tr>
+	    <td>new</td>
+	    <td>✅</td>
+	</tr>
+    <tr >
+	    <td rowspan="3">operation</td>
+	    <td>blacklist</td>
+	    <td>✅</td>
+	</tr>
+	<tr>
+	    <td>exposure filter</td>
+	    <td>✅</td>
+	</tr>
+	<tr>
+	    <td>custom operation plugins</td>
+	    <td>✅</td>
+	</tr>
+    <tr>
+	    <td>rank</td>
+	    <td>todo</td>
+        <td>❎</td>
+	</tr>
+    <tr>
+	    <td>tools</td>
+	    <td>debug info</td>
+        <td>✅</td>
+	</tr>
+</table>
