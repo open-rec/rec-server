@@ -1,5 +1,12 @@
 package com.openrec.graph;
 
+import java.lang.reflect.Field;
+import java.util.*;
+import java.util.concurrent.*;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -7,66 +14,23 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.node.Node;
 import com.openrec.graph.node.RootNode;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
-import java.lang.reflect.Field;
-import java.util.*;
-import java.util.concurrent.*;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GraphEngine {
 
-    private static ExecutorService threadPool = new ThreadPoolExecutor(
-            Runtime.getRuntime().availableProcessors() * 2,
-            Integer.MAX_VALUE,
-            60L,
-            TimeUnit.SECONDS,
-            new SynchronousQueue<>(),
-            new ThreadFactoryBuilder().setNameFormat("graph-engine-pool").build());
+    private static ExecutorService threadPool =
+        new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+            new SynchronousQueue<>(), new ThreadFactoryBuilder().setNameFormat("graph-engine-pool").build());
 
-    private static ExecutorService timeoutThreadPool = new ThreadPoolExecutor(
-            Runtime.getRuntime().availableProcessors(),
-            Integer.MAX_VALUE,
-            60L,
-            TimeUnit.SECONDS,
-            new SynchronousQueue<>(),
-            new ThreadFactoryBuilder().setNameFormat("graph-timeout-pool").build());
+    private static ExecutorService timeoutThreadPool =
+        new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+            new SynchronousQueue<>(), new ThreadFactoryBuilder().setNameFormat("graph-timeout-pool").build());
 
     private GraphContext context;
     private Queue<Node> queue;
     private Set<String> nodeSet;
-
-
-    class TimeoutTask implements Callable<Void> {
-        private String name;
-        private Future future;
-        private int timeout;
-
-        public TimeoutTask(String name, Future future, int timeout) {
-            this.name = name;
-            this.future = future;
-            this.timeout = timeout;
-        }
-
-
-        @Override
-        public Void call() throws Exception {
-            if (future != null) {
-                try {
-                    future.get(timeout, TimeUnit.MILLISECONDS);
-                } catch (Exception e) {
-                    if (!future.isCancelled()) {
-                        future.cancel(true);
-                    }
-                    log.error("graph node:{} exec timeout, canceled by engine", name);
-                }
-            }
-            return null;
-        }
-    }
-
 
     private GraphEngine() {
         this.queue = Lists.newLinkedList();
@@ -98,9 +62,8 @@ public class GraphEngine {
             context.addConfig(nodeConfig.getName(), nodeConfig);
             if (StringUtils.isNotEmpty(nodeConfig.getClazz())) {
                 try {
-                    Node node = (Node) Class.forName(nodeConfig.getClazz())
-                            .getDeclaredConstructor(NodeConfig.class)
-                            .newInstance(nodeConfig);
+                    Node node = (Node)Class.forName(nodeConfig.getClazz()).getDeclaredConstructor(NodeConfig.class)
+                        .newInstance(nodeConfig);
                     node.setConfig(nodeConfig);
                     nodeMap.put(node.getName(), node);
                 } catch (Exception e) {
@@ -165,10 +128,8 @@ public class GraphEngine {
                         } finally {
                             node.stop();
                             latch.countDown();
-                            log.info("node:{} exec cost time: {}ms",
-                                    node.getName(),
-                                    System.currentTimeMillis() - start
-                            );
+                            log.info("node:{} exec cost time: {}ms", node.getName(),
+                                System.currentTimeMillis() - start);
                         }
                     });
                     timeoutThreadPool.submit(new TimeoutTask(node.getName(), future, node.getTimeout()));
@@ -184,7 +145,7 @@ public class GraphEngine {
     }
 
     public <T> T getResult() {
-        return (T) context.getResult();
+        return (T)context.getResult();
     }
 
     public void refresh() {
@@ -196,5 +157,32 @@ public class GraphEngine {
         this.queue.clear();
         this.nodeSet.clear();
         this.context.clean();
+    }
+
+    class TimeoutTask implements Callable<Void> {
+        private String name;
+        private Future future;
+        private int timeout;
+
+        public TimeoutTask(String name, Future future, int timeout) {
+            this.name = name;
+            this.future = future;
+            this.timeout = timeout;
+        }
+
+        @Override
+        public Void call() throws Exception {
+            if (future != null) {
+                try {
+                    future.get(timeout, TimeUnit.MILLISECONDS);
+                } catch (Exception e) {
+                    if (!future.isCancelled()) {
+                        future.cancel(true);
+                    }
+                    log.error("graph node:{} exec timeout, canceled by engine", name);
+                }
+            }
+            return null;
+        }
     }
 }

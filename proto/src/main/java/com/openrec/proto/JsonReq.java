@@ -1,9 +1,8 @@
 package com.openrec.proto;
 
+import java.util.UUID;
 
 import lombok.Data;
-
-import java.util.UUID;
 
 @Data
 public class JsonReq<T> {

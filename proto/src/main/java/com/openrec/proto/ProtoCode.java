@@ -1,6 +1,5 @@
 package com.openrec.proto;
 
-
 public interface ProtoCode {
 
     int SUCCESS = 200;

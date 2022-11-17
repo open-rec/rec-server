@@ -1,9 +1,10 @@
 package com.openrec.graph;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.util.FileUtil;
 import com.openrec.util.JsonUtil;
-import org.apache.commons.lang3.StringUtils;
 
 public class RecTemplate {
 

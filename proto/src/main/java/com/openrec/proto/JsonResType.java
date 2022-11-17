@@ -10,7 +10,7 @@ public class JsonResType implements ParameterizedType {
 
     public JsonResType(Class config) {
         this.rawType = JsonRes.class;
-        this.typeArguments = new Type[]{config};
+        this.typeArguments = new Type[] {config};
     }
 
     @Override
@@ -28,4 +28,3 @@ public class JsonResType implements ParameterizedType {
         return null;
     }
 }
-

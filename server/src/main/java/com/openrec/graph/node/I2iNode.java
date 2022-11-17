@@ -1,5 +1,12 @@
 package com.openrec.graph.node;
 
+import static com.openrec.graph.RecParams.SCENE;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.assertj.core.util.Lists;
+
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.I2iConfig;
 import com.openrec.graph.config.NodeConfig;
@@ -8,13 +15,8 @@ import com.openrec.graph.tools.anno.Import;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.redis.RedisService;
 import com.openrec.util.BeanUtil;
+
 import lombok.extern.slf4j.Slf4j;
-import org.assertj.core.util.Lists;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static com.openrec.graph.RecParams.SCENE;
 
 @Slf4j
 public class I2iNode extends SyncNode<I2iConfig> {
@@ -34,13 +36,12 @@ public class I2iNode extends SyncNode<I2iConfig> {
         this.i2iItems = Lists.newArrayList();
     }
 
-
     @Override
     public void run(GraphContext context) {
 
         String scene = context.getParams().getValueToString(SCENE);
-        List<String> keys = triggerItems.stream()
-                .map(i -> String.format(String.format(FILTER_KEY_FORMAT, bizType, i.getId(), scene)))
+        List<String> keys =
+            triggerItems.stream().map(i -> String.format(String.format(FILTER_KEY_FORMAT, bizType, i.getId(), scene)))
                 .collect(Collectors.toList());
 
         int timeout = config.getTimeout();

@@ -10,7 +10,6 @@ public class ItemFeatureNode extends SyncNode<Void> {
         super(nodeConfig);
     }
 
-
     @Override
     public void run(GraphContext context) {
 

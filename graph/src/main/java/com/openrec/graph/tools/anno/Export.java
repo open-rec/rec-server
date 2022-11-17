@@ -1,6 +1,5 @@
 package com.openrec.graph.tools.anno;
 
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

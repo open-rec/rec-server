@@ -1,14 +1,15 @@
 package com.openrec.graph;
 
+import java.lang.reflect.Field;
+import java.util.Map;
+
 import com.google.common.collect.Maps;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.node.Node;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
-import lombok.extern.slf4j.Slf4j;
 
-import java.lang.reflect.Field;
-import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GraphContext {
@@ -57,7 +58,6 @@ public class GraphContext {
         }
     }
 
-
     public void addData(String key, Object data) {
         dataMap.put(key, data);
     }
@@ -82,12 +82,12 @@ public class GraphContext {
         return configMap.get(key);
     }
 
-    public void setResult(Object result) {
-        this.result = result;
-    }
-
     public Object getResult() {
         return result;
+    }
+
+    public void setResult(Object result) {
+        this.result = result;
     }
 
     public void clean() {

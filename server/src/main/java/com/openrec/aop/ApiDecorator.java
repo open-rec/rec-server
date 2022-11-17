@@ -1,8 +1,8 @@
 package com.openrec.aop;
 
-import com.openrec.proto.JsonReq;
-import com.openrec.util.JsonUtil;
-import lombok.extern.slf4j.Slf4j;
+import java.lang.reflect.Method;
+import java.util.UUID;
+
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -11,8 +11,10 @@ import org.slf4j.MDC;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Method;
-import java.util.UUID;
+import com.openrec.proto.JsonReq;
+import com.openrec.util.JsonUtil;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Aspect
@@ -26,7 +28,7 @@ public class ApiDecorator {
     private void setRequestIdByParams(Object[] args) {
         for (Object request : args) {
             if (request instanceof JsonReq) {
-                MDC.put(REQUEST_ID, ((JsonReq) request).getRequestId());
+                MDC.put(REQUEST_ID, ((JsonReq)request).getRequestId());
                 return;
             }
         }
@@ -37,7 +39,7 @@ public class ApiDecorator {
     public Object apiAccessDecorator(ProceedingJoinPoint joinPoint) throws Throwable {
         long start = System.currentTimeMillis();
         String clazz = joinPoint.getTarget().getClass().getName();
-        Method method = ((MethodSignature) joinPoint.getSignature()).getMethod();
+        Method method = ((MethodSignature)joinPoint.getSignature()).getMethod();
         String methodName = method.getName();
         LocalVariableTableParameterNameDiscoverer paramDiscoverer = new LocalVariableTableParameterNameDiscoverer();
         String[] params = paramDiscoverer.getParameterNames(method);
@@ -45,12 +47,8 @@ public class ApiDecorator {
         setRequestIdByParams(args);
 
         Object res = joinPoint.proceed(args);
-        log.info("API-{}:{} access with request:{}, response:{}, cost time:{}",
-                clazz,
-                methodName,
-                JsonUtil.objToJson(args),
-                JsonUtil.objToJson(res),
-                System.currentTimeMillis() - start);
+        log.info("API-{}:{} access with request:{}, response:{}, cost time:{}", clazz, methodName,
+            JsonUtil.objToJson(args), JsonUtil.objToJson(res), System.currentTimeMillis() - start);
         return res;
     }
 }

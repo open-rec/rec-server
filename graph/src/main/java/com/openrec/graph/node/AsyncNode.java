@@ -1,8 +1,8 @@
 package com.openrec.graph.node;
 
-import com.openrec.graph.GraphContext;
-
 import java.util.Map;
+
+import com.openrec.graph.GraphContext;
 
 /**
  * for NIO
@@ -10,7 +10,6 @@ import java.util.Map;
  * @param <T>
  */
 public abstract class AsyncNode<T> extends AbstractNode {
-
 
     public abstract Map<String, String> buildQuery(GraphContext context);
 

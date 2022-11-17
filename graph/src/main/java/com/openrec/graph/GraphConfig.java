@@ -1,9 +1,10 @@
 package com.openrec.graph;
 
-import com.openrec.graph.config.NodeConfig;
-import lombok.Data;
-
 import java.util.List;
+
+import com.openrec.graph.config.NodeConfig;
+
+import lombok.Data;
 
 @Data
 public class GraphConfig {

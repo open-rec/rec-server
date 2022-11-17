@@ -1,11 +1,11 @@
 package com.openrec.proto.biz.recommend;
 
-import com.openrec.proto.model.ScoreResult;
-import lombok.Data;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import com.openrec.proto.model.ScoreResult;
+
+import lombok.Data;
 
 @Data
 public class RecommendRes<T> {

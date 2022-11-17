@@ -1,13 +1,13 @@
 # rec-server
 
 ## contrib
-User custom contribution module. Only support operation rule custom now. 
-After release the rec-server could load the plugin and exec the custom operation rule by config `operationName`
 
+User custom contribution module. Only support operation rule custom now.
+After release the rec-server could load the plugin and exec the custom operation rule by config `operationName`
 
 ## graph
 
-Async DAG tool package. 
+Async DAG tool package.
 
 ![graph](doc/graph.jpeg "graph")
 

@@ -1,6 +1,5 @@
 package com.openrec.proto;
 
-
 import lombok.Data;
 
 @Data

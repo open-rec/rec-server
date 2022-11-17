@@ -1,8 +1,8 @@
 package com.openrec.proto.biz.recommend;
 
-import lombok.Data;
-
 import java.util.List;
+
+import lombok.Data;
 
 @Data
 public class RecommendReq {

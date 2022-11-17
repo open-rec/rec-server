@@ -1,13 +1,7 @@
 package com.openrec.config;
 
+import java.io.IOException;
 
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch.core.InfoResponse;
-import co.elastic.clients.json.jackson.JacksonJsonpMapper;
-import co.elastic.clients.transport.ElasticsearchTransport;
-import co.elastic.clients.transport.rest_client.RestClientTransport;
-import lombok.extern.slf4j.Slf4j;
-import nl.altindag.ssl.SSLFactory;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -18,7 +12,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.IOException;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import co.elastic.clients.transport.ElasticsearchTransport;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
+import lombok.extern.slf4j.Slf4j;
+import nl.altindag.ssl.SSLFactory;
 
 @Slf4j
 @Configuration
@@ -38,19 +37,14 @@ public class EsConfig {
 
     @Bean
     public ElasticsearchClient esClient() {
-        SSLFactory sslFactory = SSLFactory.builder()
-                .withUnsafeTrustMaterial()
-                .withUnsafeHostnameVerifier()
-                .build();
+        SSLFactory sslFactory = SSLFactory.builder().withUnsafeTrustMaterial().withUnsafeHostnameVerifier().build();
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(user, password));
-        RestClient restClient = RestClient.builder(new HttpHost(host, port, "https"))
-                .setHttpClientConfigCallback(
-                        httpAsyncClientBuilder ->
-                                httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
-                                        .setSSLContext(sslFactory.getSslContext())
-                                        .setSSLHostnameVerifier(sslFactory.getHostnameVerifier())
-                )
+        RestClient restClient =
+            RestClient.builder(new HttpHost(host, port, "https"))
+                .setHttpClientConfigCallback(httpAsyncClientBuilder -> httpAsyncClientBuilder
+                    .setDefaultCredentialsProvider(credentialsProvider).setSSLContext(sslFactory.getSslContext())
+                    .setSSLHostnameVerifier(sslFactory.getHostnameVerifier()))
                 .build();
         ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
         ElasticsearchClient esClient = new ElasticsearchClient(transport);

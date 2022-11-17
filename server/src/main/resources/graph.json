@@ -80,7 +80,7 @@
       "timeout": 100,
       "content": {
         "size": 1000,
-        "vectorField" : "vector",
+        "vectorField": "vector",
         "idField": "id"
       }
     },

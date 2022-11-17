@@ -1,5 +1,7 @@
 package com.openrec.graph.node;
 
+import java.util.Set;
+
 import com.google.common.collect.Sets;
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.FilterConfig;
@@ -7,9 +9,8 @@ import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.service.redis.RedisService;
 import com.openrec.util.BeanUtil;
-import lombok.extern.slf4j.Slf4j;
 
-import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class BlackNode extends SyncNode<FilterConfig> {
@@ -20,12 +21,10 @@ public class BlackNode extends SyncNode<FilterConfig> {
     @Export("blackItemSet")
     private Set<String> blackItemSet;
 
-
     public BlackNode(NodeConfig nodeConfig) {
         super(nodeConfig);
         this.blackItemSet = Sets.newHashSet();
     }
-
 
     @Override
     public void run(GraphContext context) {

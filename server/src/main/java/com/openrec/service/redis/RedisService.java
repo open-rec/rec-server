@@ -1,14 +1,15 @@
 package com.openrec.service.redis;
 
-import com.openrec.proto.model.ScoreResult;
+import java.util.*;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.DefaultTypedTuple;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import com.openrec.proto.model.ScoreResult;
 
 @Service
 public class RedisService {
@@ -41,20 +42,19 @@ public class RedisService {
     }
 
     public List<ScoreResult> getZSet(String key, double scoreMin, double scoreMax, int size) {
-        Set<ZSetOperations.TypedTuple<String>> tupleSet = redisTemplate.opsForZSet()
-                .reverseRangeByScoreWithScores(key, scoreMin, scoreMax, 0, size);
-        return tupleSet.stream().map(t -> new ScoreResult(t.getValue(), t.getScore()))
-                .collect(Collectors.toList());
+        Set<ZSetOperations.TypedTuple<String>> tupleSet =
+            redisTemplate.opsForZSet().reverseRangeByScoreWithScores(key, scoreMin, scoreMax, 0, size);
+        return tupleSet.stream().map(t -> new ScoreResult(t.getValue(), t.getScore())).collect(Collectors.toList());
     }
 
     public List<ScoreResult> getZSet(List<String> keys, double scoreMin, double scoreMax, int size) {
 
         String tmpKey = "tmp_" + UUID.randomUUID().toString();
         redisTemplate.opsForZSet().unionAndStore(tmpKey, keys, tmpKey);
-        Set<ZSetOperations.TypedTuple<String>> tupleSet = redisTemplate.opsForZSet()
-                .reverseRangeByScoreWithScores(tmpKey, scoreMin, scoreMax, 0, size);
-        List<ScoreResult> mergeResult = tupleSet.stream().map(t -> new ScoreResult(t.getValue(), t.getScore()))
-                .collect(Collectors.toList());
+        Set<ZSetOperations.TypedTuple<String>> tupleSet =
+            redisTemplate.opsForZSet().reverseRangeByScoreWithScores(tmpKey, scoreMin, scoreMax, 0, size);
+        List<ScoreResult> mergeResult =
+            tupleSet.stream().map(t -> new ScoreResult(t.getValue(), t.getScore())).collect(Collectors.toList());
         redisTemplate.delete(tmpKey);
         return mergeResult;
     }
@@ -68,7 +68,7 @@ public class RedisService {
     }
 
     public <T> T getV(String key) {
-        return (T) redisTemplate.opsForValue().get(key);
+        return (T)redisTemplate.opsForValue().get(key);
     }
 
     public void removeK(String key) {

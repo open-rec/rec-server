@@ -1,5 +1,11 @@
 package com.openrec.graph.node;
 
+import static com.openrec.graph.RecParams.SCENE;
+import static com.openrec.graph.RecParams.USER_ID;
+
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import com.google.common.collect.Sets;
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.RecEventType;
@@ -9,13 +15,8 @@ import com.openrec.graph.tools.anno.Export;
 import com.openrec.service.redis.RedisService;
 import com.openrec.util.BeanUtil;
 import com.openrec.util.TimeUtil;
+
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static com.openrec.graph.RecParams.SCENE;
-import static com.openrec.graph.RecParams.USER_ID;
 
 @Slf4j
 public class FilterNode extends SyncNode<FilterConfig> {
@@ -27,12 +28,10 @@ public class FilterNode extends SyncNode<FilterConfig> {
     @Export("filterItemSet")
     private Set<String> exposeItemSet;
 
-
     public FilterNode(NodeConfig nodeConfig) {
         super(nodeConfig);
         this.exposeItemSet = Sets.newHashSet();
     }
-
 
     @Override
     public void run(GraphContext context) {
@@ -53,8 +52,8 @@ public class FilterNode extends SyncNode<FilterConfig> {
         int size = config.getContent().getFilterMap().get(RecEventType.EXPOSE.toString()).getSize();
         long nowSecs = TimeUtil.nowSecs();
 
-        exposeItemSet = redisService.getZSet(key, nowSecs - duration, nowSecs, size)
-                .stream().map(i -> i.getId()).collect(Collectors.toSet());
+        exposeItemSet = redisService.getZSet(key, nowSecs - duration, nowSecs, size).stream().map(i -> i.getId())
+            .collect(Collectors.toSet());
         log.info("{} with expose item size:{}", getName(), exposeItemSet.size());
     }
 }

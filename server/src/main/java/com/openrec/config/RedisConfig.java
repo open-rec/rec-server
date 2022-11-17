@@ -9,6 +9,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+
 import redis.clients.jedis.JedisPoolConfig;
 
 @Configuration
@@ -31,7 +32,6 @@ public class RedisConfig {
 
     @Value("${redis.testOnBorrow}")
     private boolean testOnBorrow;
-
 
     @Autowired
     private Environment environment;
@@ -56,7 +56,7 @@ public class RedisConfig {
         redisTemplate.setConnectionFactory(redisConnectionFactory);
         redisTemplate.afterPropertiesSet();
         redisTemplate.setKeySerializer(new StringRedisSerializer());
-        //redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(Object.class));
+        // redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(Object.class));
         return redisTemplate;
     }
 }

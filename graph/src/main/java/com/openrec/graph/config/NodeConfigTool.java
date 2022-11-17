@@ -1,9 +1,9 @@
 package com.openrec.graph.config;
 
+import java.lang.reflect.Type;
+
 import com.google.gson.internal.$Gson$Preconditions;
 import com.google.gson.internal.$Gson$Types;
-
-import java.lang.reflect.Type;
 
 public class NodeConfigTool {
 

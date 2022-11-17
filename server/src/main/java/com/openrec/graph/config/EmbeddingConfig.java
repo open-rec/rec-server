@@ -1,6 +1,5 @@
 package com.openrec.graph.config;
 
-
 import lombok.Data;
 
 @Data

@@ -1,13 +1,14 @@
 package com.openrec.service.query;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.openrec.proto.model.Item;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.proto.model.User;
 import com.openrec.service.redis.RedisService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class QueryService {
@@ -19,7 +20,6 @@ public class QueryService {
     @Autowired
     private RedisService redisService;
 
-
     public Item queryItem(String id) {
         return redisService.getV(String.format(ITEM_KEY, id));
     }
@@ -29,7 +29,7 @@ public class QueryService {
     }
 
     public List<ScoreResult> queryEvent(String userId, String scene, String type) {
-        return redisService.getZSet(String.format(EVENT_KEY, userId, scene, type),
-                0, Double.MAX_VALUE, Integer.MAX_VALUE);
+        return redisService.getZSet(String.format(EVENT_KEY, userId, scene, type), 0, Double.MAX_VALUE,
+            Integer.MAX_VALUE);
     }
 }

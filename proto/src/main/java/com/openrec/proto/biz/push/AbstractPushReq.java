@@ -1,8 +1,8 @@
 package com.openrec.proto.biz.push;
 
-import lombok.Data;
-
 import java.util.List;
+
+import lombok.Data;
 
 @Data
 public abstract class AbstractPushReq<T> {

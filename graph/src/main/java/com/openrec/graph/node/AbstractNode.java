@@ -1,9 +1,9 @@
 package com.openrec.graph.node;
 
+import java.util.List;
+
 import com.google.common.collect.Lists;
 import com.openrec.graph.config.NodeConfig;
-
-import java.util.List;
 
 public abstract class AbstractNode<C> implements Node {
 
@@ -97,13 +97,13 @@ public abstract class AbstractNode<C> implements Node {
     }
 
     @Override
-    public void setConfig(NodeConfig config) {
-        this.config = config;
+    public NodeConfig getConfig() {
+        return config;
     }
 
     @Override
-    public NodeConfig getConfig() {
-        return config;
+    public void setConfig(NodeConfig config) {
+        this.config = config;
     }
 
     public void destroy() {

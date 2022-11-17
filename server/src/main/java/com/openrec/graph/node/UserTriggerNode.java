@@ -1,5 +1,12 @@
 package com.openrec.graph.node;
 
+import static com.openrec.graph.RecParams.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.assertj.core.util.Lists;
+
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.config.UserTriggerConfig;
@@ -8,13 +15,8 @@ import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.redis.RedisService;
 import com.openrec.util.BeanUtil;
 import com.openrec.util.TimeUtil;
+
 import lombok.extern.slf4j.Slf4j;
-import org.assertj.core.util.Lists;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static com.openrec.graph.RecParams.*;
 
 @Slf4j
 public class UserTriggerNode extends SyncNode<UserTriggerConfig> {
@@ -29,7 +31,6 @@ public class UserTriggerNode extends SyncNode<UserTriggerConfig> {
         super(nodeConfig);
         this.triggerItems = Lists.newArrayList();
     }
-
 
     @Override
     public void run(GraphContext context) {
@@ -49,9 +50,8 @@ public class UserTriggerNode extends SyncNode<UserTriggerConfig> {
 
         int size = config.getContent().getSize();
         if (itemIds != null) {
-            triggerItems.addAll(itemIds.stream().
-                    map(i -> new ScoreResult(i, TimeUtil.nowSecs()))
-                    .collect(Collectors.toList()));
+            triggerItems
+                .addAll(itemIds.stream().map(i -> new ScoreResult(i, TimeUtil.nowSecs())).collect(Collectors.toList()));
         }
         triggerItems.addAll(redisService.getZSet(key, 0, Double.MAX_VALUE, size));
         log.info("{} with trigger size:{}", getName(), triggerItems.size());

@@ -2,12 +2,11 @@ package com.openrec.graph.node;
 
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.NodeConfig;
-import lombok.extern.slf4j.Slf4j;
 
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class EmptyNode extends SyncNode {
-
 
     public EmptyNode() {
         super();

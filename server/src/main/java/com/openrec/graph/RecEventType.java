@@ -2,16 +2,9 @@ package com.openrec.graph;
 
 public enum RecEventType {
 
-    CLICK,
-    EXPOSE,
-    COLLECT,
-    LIKE,
-    COMMENT,
-    BUY,
-    DISLIKE;
+    CLICK, EXPOSE, COLLECT, LIKE, COMMENT, BUY, DISLIKE;
 
-    RecEventType() {
-    }
+    RecEventType() {}
 
     @Override
     public String toString() {

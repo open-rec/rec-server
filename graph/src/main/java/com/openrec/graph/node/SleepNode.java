@@ -1,11 +1,11 @@
 package com.openrec.graph.node;
 
-import com.openrec.graph.GraphContext;
-import com.openrec.graph.config.NodeConfig;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.concurrent.TimeUnit;
 
+import com.openrec.graph.GraphContext;
+import com.openrec.graph.config.NodeConfig;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SleepNode extends SyncNode {

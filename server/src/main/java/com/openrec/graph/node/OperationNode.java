@@ -1,5 +1,9 @@
 package com.openrec.graph.node;
 
+import java.util.List;
+
+import org.assertj.core.util.Lists;
+
 import com.openrec.contrib.operation.OperationRule;
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.NodeConfig;
@@ -8,11 +12,8 @@ import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
 import com.openrec.plugin.OperationRuleManager;
 import com.openrec.proto.model.ScoreResult;
+
 import lombok.extern.slf4j.Slf4j;
-import org.assertj.core.util.Lists;
-
-import java.util.List;
-
 
 @Slf4j
 public class OperationNode extends SyncNode<OperationConfig> {
@@ -31,13 +32,12 @@ public class OperationNode extends SyncNode<OperationConfig> {
         this.operationRule = OperationRuleManager.getOperationRuleByName(config.getContent().getOperationName());
     }
 
-
     @Override
     public void run(GraphContext context) {
-        if(operationRule!=null) {
+        if (operationRule != null) {
             operationItems = operationRule.handle(context, rankItems);
-            log.info("{}:{} exec finished",getName(), config.getContent().getOperationName());
-        }else {
+            log.info("{}:{} exec finished", getName(), config.getContent().getOperationName());
+        } else {
             operationItems = rankItems;
             log.warn("{} load {} failed, please check again", getName(), config.getContent().getOperationName());
         }

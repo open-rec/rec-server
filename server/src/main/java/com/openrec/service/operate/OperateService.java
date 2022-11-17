@@ -1,11 +1,11 @@
 package com.openrec.service.operate;
 
-import com.openrec.service.redis.RedisService;
+import java.util.Set;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Set;
-
+import com.openrec.service.redis.RedisService;
 
 @Service
 public class OperateService {

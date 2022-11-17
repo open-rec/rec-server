@@ -1,8 +1,8 @@
 package com.openrec.proto.model;
 
-import lombok.Data;
-
 import java.io.Serializable;
+
+import lombok.Data;
 
 @Data
 public class Item implements Serializable {

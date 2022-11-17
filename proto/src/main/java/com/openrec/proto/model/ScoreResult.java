@@ -1,16 +1,15 @@
 package com.openrec.proto.model;
 
+import java.io.Serializable;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import java.io.Serializable;
 
 @AllArgsConstructor
 @Data
 public class ScoreResult implements Serializable {
 
-    public ScoreResult() {}
-
     private String id;
     private double score;
+    public ScoreResult() {}
 }

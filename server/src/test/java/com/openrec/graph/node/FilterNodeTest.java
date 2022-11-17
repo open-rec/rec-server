@@ -1,17 +1,18 @@
 package com.openrec.graph.node;
 
+import java.util.Map;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
 import com.google.common.collect.Maps;
 import com.openrec.RecServer;
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.RecEventType;
 import com.openrec.graph.config.FilterConfig;
 import com.openrec.graph.config.NodeConfig;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-
-import java.util.Map;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = RecServer.class)

@@ -9,7 +9,6 @@ public class SearchNode extends SyncNode<Void> {
         super(nodeConfig);
     }
 
-
     @Override
     public void run(GraphContext context) {
 

@@ -1,9 +1,9 @@
 package com.openrec.graph.node;
 
+import java.util.List;
+
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.NodeConfig;
-
-import java.util.List;
 
 public interface Node {
 
@@ -33,9 +33,9 @@ public interface Node {
 
     List<Node> getParents();
 
-    void setConfig(NodeConfig config);
-
     NodeConfig getConfig();
+
+    void setConfig(NodeConfig config);
 
     int getTimeout();
 

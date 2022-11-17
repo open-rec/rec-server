@@ -1,5 +1,12 @@
 package com.openrec.graph.node;
 
+import static com.openrec.graph.RecParams.*;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.util.CollectionUtils;
+
 import com.google.common.collect.Maps;
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.NodeConfig;
@@ -7,17 +14,11 @@ import com.openrec.graph.tools.anno.Import;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.redis.RedisService;
 import com.openrec.util.BeanUtil;
+
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.CollectionUtils;
-
-import java.util.List;
-import java.util.Map;
-
-import static com.openrec.graph.RecParams.*;
 
 @Slf4j
 public class CollectorNode extends SyncNode<Void> {
-
 
     @Import("operationItems")
     private List<ScoreResult> finalItems;
@@ -35,13 +36,12 @@ public class CollectorNode extends SyncNode<Void> {
         String userId = context.getParams().getValueToString(USER_ID);
         String fakeExposeKey = String.format("%s:{%s}:%s:%s", biz, userId, scene, type);
         Map<String, Double> fakeExposeMap = Maps.newHashMap();
-        finalItems.stream().forEach(si -> fakeExposeMap.put(si.getId(), (double) (System.currentTimeMillis() / 1000)));
+        finalItems.stream().forEach(si -> fakeExposeMap.put(si.getId(), (double)(System.currentTimeMillis() / 1000)));
         if (!CollectionUtils.isEmpty(fakeExposeMap)) {
             redisService.addZSets(fakeExposeKey, fakeExposeMap);
         }
         log.info("write fake expose size:{}", finalItems.size());
     }
-
 
     @Override
     public void run(GraphContext context) {

@@ -1,6 +1,7 @@
 package com.openrec.graph.node;
 
 import com.openrec.graph.GraphContext;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

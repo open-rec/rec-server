@@ -1,10 +1,10 @@
 package com.openrec.service.push;
 
+import org.springframework.stereotype.Service;
 
 import com.openrec.proto.biz.push.EventReq;
 import com.openrec.proto.biz.push.ItemReq;
 import com.openrec.proto.biz.push.UserReq;
-import org.springframework.stereotype.Service;
 
 @Service
 public interface PushService {
