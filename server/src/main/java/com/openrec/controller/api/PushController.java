@@ -15,13 +15,15 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import reactor.core.publisher.Mono;
 
+import javax.annotation.Resource;
+
 @Api(tags = "数据推送接口")
 @RestController
 @RequestMapping("/api/push")
 public class PushController {
 
     @Autowired
-    @Qualifier("pushRedisService")
+    @Resource(name = "${server.pushService}")
     private PushService pushService;
 
     @ApiOperation("用户表推送")
