@@ -21,7 +21,7 @@ import reactor.core.publisher.Mono;
 public class PushController {
 
     @Autowired
-    @Qualifier("pushRedisService")
+    @Qualifier("pushKafkaService")
     private PushService pushService;
 
     @ApiOperation("用户表推送")
