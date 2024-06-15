@@ -1,0 +1,1 @@
+python server/bin/graph.py server/src/main/resources/graph.json
