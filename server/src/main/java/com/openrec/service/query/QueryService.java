@@ -1,7 +1,9 @@
 package com.openrec.service.query;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,16 +22,26 @@ public class QueryService {
     @Autowired
     private RedisService redisService;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     public Item queryItem(String id) {
-        return redisService.getV(String.format(ITEM_KEY, id));
+        String itemKey = String.format(ITEM_KEY, id);
+        return queryJsonData(itemKey, Item.class);
     }
 
     public User queryUser(String id) {
-        return redisService.getV(String.format(USER_KEY, id));
+        String userKey = String.format(USER_KEY, id);
+        return queryJsonData(userKey, User.class);
     }
 
+    public <T> T queryJsonData(String key, Class<T> objClass) {
+        LinkedHashMap data = redisService.getJsonV(key);
+        return objectMapper.convertValue(data, objClass);
+    }
     public List<ScoreResult> queryEvent(String userId, String scene, String type) {
-        return redisService.getZSet(String.format(EVENT_KEY, userId, scene, type), 0, Double.MAX_VALUE,
+        String eventKey = String.format(EVENT_KEY, userId, scene, type);
+        return redisService.getZSet(eventKey, 0, Double.MAX_VALUE,
             Integer.MAX_VALUE);
     }
 }

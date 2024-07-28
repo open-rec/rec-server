@@ -17,6 +17,9 @@ public class RedisService {
     @Autowired
     private RedisTemplate redisTemplate;
 
+    @Autowired
+    private RedisTemplate redisJsonTemplate;
+
     public void addSet(String key, String value) {
         redisTemplate.opsForSet().add(key, value);
     }
@@ -44,7 +47,7 @@ public class RedisService {
     public List<ScoreResult> getZSet(String key, double scoreMin, double scoreMax, int size) {
         Set<ZSetOperations.TypedTuple<String>> tupleSet =
             redisTemplate.opsForZSet().reverseRangeByScoreWithScores(key, scoreMin, scoreMax, 0, size);
-        return tupleSet.stream().map(t -> new ScoreResult(t.getValue(), t.getScore())).collect(Collectors.toList());
+        return tupleSet.stream().map(t -> new ScoreResult(t.getValue().replaceAll("^\"|\"$", ""), t.getScore())).collect(Collectors.toList());
     }
 
     public List<ScoreResult> getZSet(List<String> keys, double scoreMin, double scoreMax, int size) {
@@ -71,6 +74,9 @@ public class RedisService {
         return (T)redisTemplate.opsForValue().get(key);
     }
 
+    public LinkedHashMap getJsonV(String key) {
+        return (LinkedHashMap) redisJsonTemplate.opsForValue().get(key);
+    }
     public void removeK(String key) {
         redisTemplate.delete(key);
     }
