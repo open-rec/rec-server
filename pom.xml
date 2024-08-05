@@ -114,6 +114,11 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>4.8.0</version>
+            </dependency>
 
             <!--rec server-->
             <dependency>

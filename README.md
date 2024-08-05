@@ -59,8 +59,8 @@ The real recommend online server.
 	</tr>
     <tr>
 	    <td>rank</td>
-	    <td>todo</td>
-        <td>❎</td>
+	    <td>LR</td>
+        <td>✅</td>
 	</tr>
     <tr>
 	    <td>tools</td>

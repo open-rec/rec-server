@@ -25,8 +25,8 @@ public class UserFeatureNode extends SyncNode<Void> {
     @Override
     public void run(GraphContext context) {
         String userId = context.getParams().getValueToString(USER_ID);
-        // TODO: 2022/11/2 get user feature.
         userFeatureMap = Maps.newHashMap();
+        userFeatureMap.put(USER_ID, userId);
         log.info("{} with size:{}", getName(), userFeatureMap.size());
     }
 }
