@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.assertj.core.util.Lists;
 
 import com.openrec.graph.GraphContext;
@@ -60,10 +61,14 @@ public class RankNode extends SyncNode<RankConfig> {
 
         String userId = userFeatureMap.get(USER_ID);
         List<String> itemIds = rankItems.stream().map(ScoreResult::getId).collect(Collectors.toList());
-        Map<String, Double> rankResult = rankService.score(userId, itemIds);
-        for (ScoreResult itemScore : rankItems) {
-            // TODO: 2024/8/5 provide a simple weight fusion function.
-            itemScore.setScore(itemScore.getScore() + rankResult.getOrDefault(itemScore.getId(), 0d));
+        try {
+            Map<String, Double> rankResult = rankService.score(userId, itemIds);
+            for (ScoreResult itemScore : rankItems) {
+                // TODO: 2024/8/5 provide a simple weight fusion function.
+                itemScore.setScore(itemScore.getScore() + rankResult.getOrDefault(itemScore.getId(), 0d));
+            }
+        } catch (Exception e) {
+            log.warn("rank score failed with exception: {}", ExceptionUtils.getStackTrace(e));
         }
         log.info("{} with result size:{}", getName(), rankItems.size());
     }

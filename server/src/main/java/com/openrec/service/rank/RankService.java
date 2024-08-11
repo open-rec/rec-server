@@ -1,9 +1,14 @@
 package com.openrec.service.rank;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Maps;
 import lombok.Data;
+import org.assertj.core.util.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -26,7 +31,11 @@ public class RankService {
 
     @Data
     public static class RankUserItems {
+
+        @JsonProperty("user_id")
         private String userId;
+
+        @JsonProperty("item_ids")
         private List<String> itemIds;
 
         public RankUserItems(String userId, List<String> itemIds) {
@@ -46,9 +55,13 @@ public class RankService {
     public Map<String, Double> score(String userId, List<String> itemIds) {
         String scoreUrl = String.format("http://%s:%s%s", rankHost, rankPort, SCORE_PATH);
         RankUserItems rUserItems = new RankUserItems(userId, itemIds);
-        RankItemScores rankItemScores = restTemplate.postForObject(scoreUrl, rUserItems, RankItemScores.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Lists.list(MediaType.APPLICATION_JSON));
+        HttpEntity<RankUserItems> reqEntity = new HttpEntity<>(rUserItems, headers);
+        RankItemScores rankItemScores = restTemplate.postForObject(scoreUrl, reqEntity, RankItemScores.class);
         if(rankItemScores.getCode() == 0) {
-            rankItemScores.getData();
+            return rankItemScores.getData();
         }
         return Maps.newHashMap();
     }
