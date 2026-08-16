@@ -21,7 +21,7 @@ public class PushRedisService implements PushService {
 
     private String USER_KEY = "user:{%s}";
     private String ITEM_KEY = "item:{%s}";
-    private String EVENT_KEY = "event:%s:%s:{}";
+    private String EVENT_KEY = "event:{%s}:%s:%s";
 
     private String NEW_KEY = "new:{%s}";
 
@@ -66,7 +66,7 @@ public class PushRedisService implements PushService {
             Map<String,
                 Map<String, Double>> userEvents = events.stream()
                     .collect(Collectors.groupingBy(
-                        event -> String.format(EVENT_KEY, event.getScene(), event.getType(), event.getUserId()),
+                        event -> String.format(EVENT_KEY, event.getUserId(), event.getScene(), event.getType()),
                         Collectors.toMap(event -> event.getItemId(), event -> Double.valueOf(event.getTime()))));
             for (Map.Entry<String, Map<String, Double>> userEventEntry : userEvents.entrySet()) {
                 redisService.addZSets(userEventEntry.getKey(), userEventEntry.getValue());
