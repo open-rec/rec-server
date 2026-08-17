@@ -1,6 +1,8 @@
 package com.openrec.proto.model;
 
 import java.io.Serializable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import lombok.Data;
 
@@ -13,8 +15,8 @@ public class ScoreResult implements Serializable {
     private double score;
 
     /**
-     * Which recall channel produced this item — i2i, embedding, hot or new. Set by CombineNode; an
-     * item surfaced by several channels keeps the first one that produced it.
+     * The channel whose score is carried in {@link #recallScore} — the first one that produced this
+     * item. See {@link #recallScores} for everything that produced it.
      */
     private String recallFrom;
 
@@ -28,6 +30,17 @@ public class ScoreResult implements Serializable {
     /** What the rank engine contributed. null when ranking was skipped or failed. */
     private Double rankScore;
 
+    /**
+     * Every recall channel that surfaced this item, in the order they were merged, with the score
+     * each one gave it.
+     * <p>
+     * An item found by several channels is emitted once, but dropping the losing channels' scores
+     * hides exactly the information needed to tune the strategy — whether i2i and hot agree, or
+     * whether a single channel is carrying the whole result. Insertion-ordered so the merge order
+     * stays readable.
+     */
+    private Map<String, Double> recallScores;
+
     public ScoreResult() {}
 
     public ScoreResult(String id, double score) {
@@ -38,5 +51,16 @@ public class ScoreResult implements Serializable {
     public ScoreResult(String id, double score, String recallFrom) {
         this(id, score);
         this.recallFrom = recallFrom;
+    }
+
+    /** Records one channel's contribution; the first one also becomes {@link #recallFrom}. */
+    public void addRecallScore(String channel, double channelScore) {
+        if (recallScores == null) {
+            recallScores = new LinkedHashMap<>();
+        }
+        recallScores.put(channel, channelScore);
+        if (recallFrom == null) {
+            recallFrom = channel;
+        }
     }
 }

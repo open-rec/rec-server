@@ -22,8 +22,12 @@ import lombok.extern.slf4j.Slf4j;
  * already used as a trigger.
  * <p>
  * Channels are merged in a fixed order and de-duplicated: an item surfaced by more than one channel
- * is kept once, attributed to the first channel that produced it. Without that, the same item takes
- * several slots of the size budget and reaches the client more than once.
+ * is kept once, and ranks by the first channel's score. Without that, the same item takes several
+ * slots of the size budget and reaches the client more than once.
+ * <p>
+ * De-duplicating does not discard the other channels though — each contribution is recorded in
+ * {@link ScoreResult#getRecallScores()}, so downstream can still see that i2i and hot both produced
+ * an item and what each thought of it.
  */
 @Slf4j
 public class CombineNode extends SyncNode<CombineConfig> {
@@ -109,10 +113,15 @@ public class CombineNode extends SyncNode<CombineConfig> {
                 counters[2]++;
                 continue;
             }
-            if (candidates.containsKey(id)) {
+            ScoreResult existing = candidates.get(id);
+            if (existing != null) {
+                // Already surfaced by an earlier channel. The earlier score stays the one that
+                // ranks, but this channel's contribution is recorded too — which channels agreed on
+                // an item, and how strongly, is the point of keeping the breakdown.
+                existing.addRecallScore(channel, item.getScore());
                 continue;
             }
-            item.setRecallFrom(channel);
+            item.addRecallScore(channel, item.getScore());
             candidates.put(id, item);
         }
     }
