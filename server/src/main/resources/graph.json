@@ -89,7 +89,7 @@
       "clazz": "com.openrec.graph.node.CombineNode",
       "configClazz": "com.openrec.graph.config.CombineConfig",
       "open": true,
-      "timeout": 10,
+      "timeout": 50,
       "content": {
         "size": 3000
       }
@@ -128,7 +128,7 @@
       "clazz": "com.openrec.graph.node.CollectorNode",
       "configClazz": null,
       "open": true,
-      "timeout": 10,
+      "timeout": 100,
       "content": null
     }
   ],

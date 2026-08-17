@@ -59,15 +59,24 @@ public class RankNode extends SyncNode<RankConfig> {
             return;
         }
 
+        // Snapshot the recall score before ranking overwrites it, so the two stages stay
+        // distinguishable even when the rank engine is unreachable.
+        for (ScoreResult itemScore : rankItems) {
+            itemScore.setRecallScore(itemScore.getScore());
+        }
+
         String userId = userFeatureMap.get(USER_ID);
         List<String> itemIds = rankItems.stream().map(ScoreResult::getId).collect(Collectors.toList());
         try {
             Map<String, Double> rankResult = rankService.score(userId, itemIds);
             for (ScoreResult itemScore : rankItems) {
                 // TODO: 2024/8/5 provide a simple weight fusion function.
-                itemScore.setScore(itemScore.getScore() + rankResult.getOrDefault(itemScore.getId(), 0d));
+                double rankScore = rankResult.getOrDefault(itemScore.getId(), 0d);
+                itemScore.setRankScore(rankScore);
+                itemScore.setScore(itemScore.getRecallScore() + rankScore);
             }
         } catch (Exception e) {
+            // rankScore stays null on purpose: ranking did not happen, which differs from scoring 0
             log.warn("rank score failed with exception: {}", ExceptionUtils.getStackTrace(e));
         }
         log.info("{} with result size:{}", getName(), rankItems.size());

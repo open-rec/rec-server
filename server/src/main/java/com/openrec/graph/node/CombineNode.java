@@ -1,6 +1,8 @@
 package com.openrec.graph.node;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -15,8 +17,22 @@ import com.openrec.proto.model.ScoreResult;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Merges the recall channels into one candidate list, dropping anything filtered, blacklisted or
+ * already used as a trigger.
+ * <p>
+ * Channels are merged in a fixed order and de-duplicated: an item surfaced by more than one channel
+ * is kept once, attributed to the first channel that produced it. Without that, the same item takes
+ * several slots of the size budget and reaches the client more than once.
+ */
 @Slf4j
 public class CombineNode extends SyncNode<CombineConfig> {
+
+    static final String CHANNEL_I2I = "i2i";
+    static final String CHANNEL_EMBEDDING = "embedding";
+    static final String CHANNEL_HOT = "hot";
+    static final String CHANNEL_NEW = "new";
+
     @Import("i2iItems")
     private List<ScoreResult> i2iItems;
 
@@ -43,39 +59,61 @@ public class CombineNode extends SyncNode<CombineConfig> {
 
     public CombineNode(NodeConfig nodeConfig) {
         super(nodeConfig);
+        this.combineItems = Lists.newArrayList();
     }
 
     @Override
     public void run(GraphContext context) {
 
-        List<ScoreResult> allItems = Lists.newArrayList();
-        allItems.addAll(i2iItems);
-        allItems.addAll(embeddingItems);
-        allItems.addAll(hotItems);
-        allItems.addAll(newItems);
-
         int size = config.getContent().getSize();
-        combineItems = Lists.newArrayList();
-        Set<String> triggerItemSet = triggerItems.stream().map(i -> i.getId()).collect(Collectors.toSet());
+        Set<String> triggerItemSet = triggerItems.stream().map(ScoreResult::getId).collect(Collectors.toSet());
 
-        int triggerCount = 0, filterCount = 0, blackCount = 0;
-        for (int i = 0, count = 0; i < allItems.size() && count < size; i++) {
-            ScoreResult scoreItem = allItems.get(i);
-            if (filterItemSet.contains(scoreItem.getId())) {
-                filterCount++;
-                continue;
+        // insertion-ordered, so the channel order below doubles as the tie-break for duplicates
+        Map<String, ScoreResult> candidates = new LinkedHashMap<>();
+        int[] counters = new int[] {0, 0, 0};   // filtered, blacklisted, trigger
+
+        collect(i2iItems, CHANNEL_I2I, candidates, triggerItemSet, counters);
+        collect(embeddingItems, CHANNEL_EMBEDDING, candidates, triggerItemSet, counters);
+        collect(hotItems, CHANNEL_HOT, candidates, triggerItemSet, counters);
+        collect(newItems, CHANNEL_NEW, candidates, triggerItemSet, counters);
+
+        combineItems = Lists.newArrayList();
+        for (ScoreResult candidate : candidates.values()) {
+            if (combineItems.size() >= size) {
+                break;
             }
-            if (blackItemSet.contains(scoreItem.getId())) {
-                blackCount++;
-                continue;
-            }
-            if (triggerItemSet.contains(scoreItem.getId())) {
-                triggerCount++;
-                continue;
-            }
-            combineItems.add(scoreItem);
+            combineItems.add(candidate);
         }
-        log.info("{} with result size:{}, filter count:{}, black count:{}, trigger count:{}", getName(),
-            combineItems.size(), filterCount, blackCount, triggerCount);
+
+        log.info(
+            "{} with result size:{}, candidates:{}, filter count:{}, black count:{}, trigger count:{}",
+            getName(), combineItems.size(), candidates.size(), counters[0], counters[1], counters[2]);
+    }
+
+    private void collect(List<ScoreResult> items, String channel, Map<String, ScoreResult> candidates,
+        Set<String> triggerItemSet, int[] counters) {
+        if (items == null) {
+            return;
+        }
+        for (ScoreResult item : items) {
+            String id = item.getId();
+            if (filterItemSet.contains(id)) {
+                counters[0]++;
+                continue;
+            }
+            if (blackItemSet.contains(id)) {
+                counters[1]++;
+                continue;
+            }
+            if (triggerItemSet.contains(id)) {
+                counters[2]++;
+                continue;
+            }
+            if (candidates.containsKey(id)) {
+                continue;
+            }
+            item.setRecallFrom(channel);
+            candidates.put(id, item);
+        }
     }
 }
