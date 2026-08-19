@@ -102,7 +102,7 @@
       "open": true,
       "timeout": 200,
       "content": {
-        "size": 100,
+        "size": 1000,
         "endpoint": ""
       }
     },
@@ -121,7 +121,17 @@
       "open": true,
       "timeout": 20,
       "content": {
-        "operationName": "DefaultOperationRule"
+        "operationName": "WeightedChannelOperationRule",
+        "channelRatios": {
+          "i2i": 0.3,
+          "embedding": 0.3,
+          "hot": 0.2,
+          "new": 0.2
+        },
+        "randomInsertRatios": {
+          "hot": 0.1,
+          "new": 0.1
+        }
       }
     },
     {

@@ -48,9 +48,9 @@ public class RankNode extends SyncNode<RankConfig> {
         int timeout = config.getTimeout();
         boolean open = config.isOpen();
 
-        if (!open) {
+        if (!open || !rankService.isOpen()) {
             rankItems = combineItems;
-            log.info("{} not open, just return", getName());
+            log.info("{} or rank service not open, just return", getName());
             return;
         }
 

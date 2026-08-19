@@ -15,8 +15,8 @@ import com.openrec.contrib.operation.OperationRule;
 @Slf4j
 public class OperationRuleManager {
 
-    private static final String JAR_FILE =
-        System.getProperty("user.dir") + File.separator + "plugins/rec-contrib-1.0-SNAPSHOT.jar";
+    private static final String JAR_FILE = System.getProperty("openrec.operation.plugin",
+        System.getProperty("user.dir") + File.separator + "plugins/rec-contrib-1.0-SNAPSHOT.jar");
     private static final String PLUGIN_ID = "contrib-plugins";
 
     private static PluginManager pluginManager;

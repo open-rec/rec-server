@@ -1,6 +1,7 @@
 package com.openrec.service.push;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.openrec.proto.biz.push.EventReq;
@@ -12,6 +13,7 @@ import com.openrec.proto.model.User;
 import com.openrec.service.kafka.KafkaService;
 
 @Service
+@Profile("cluster")
 public class PushKafkaService implements PushService {
 
     @Autowired

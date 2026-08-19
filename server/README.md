@@ -24,7 +24,7 @@ Entry point: `com.openrec.RecServer`. Port 13579.
 From this directory, after `mvn clean package -DskipTests` at the repo root:
 
 ```shell
-java -jar target/rec-server-1.0-SNAPSHOT.jar --spring.profiles.active=dev
+java -jar target/rec-server-1.0-SNAPSHOT.jar --spring.profiles.active=standalone
 ```
 
 Launch from here (not the repo root) if you use the operation-rule plugin — it is resolved as
@@ -70,5 +70,5 @@ mvn -pl server test -Dtest=FilterNodeTest#run
 
 These are `@SpringBootTest` and talk to **live** Redis / Elasticsearch / Kafka — start those first, or
 build with `-DskipTests`. `EsServiceTest` and `RedisServiceTest` in particular write real keys and
-indexes, and the credentials come from `application-dev.properties`, so update `es.password` before
+indexes, and the credentials come from `application-standalone.properties`, so update `es.password` before
 running them.

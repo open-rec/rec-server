@@ -20,7 +20,19 @@ reorder, drop, or inject items — pinning editorial picks to the top, enforcing
 suppressing a campaign, and so on. The `GraphContext` gives access to the request params (`scene`,
 `userId`, …) and to any data earlier nodes exported.
 
-The shipped implementation is a no-op reference:
+The shipped rules are:
+
+- `DefaultOperationRule`: no-op reference.
+- `WeightedChannelOperationRule`: allocates the requested size by channel ratio, selects the
+  highest-scoring items inside each quota, fills shortages with the highest remaining candidates,
+  and sorts the selected result by score.
+- `RandomInsertOperationRule`: reserves the highest-scoring candidates from configured channels and
+  inserts them at random final positions.
+
+Channel assignment uses `ScoreResult.recallFrom`, the first channel that recalled a de-duplicated
+item. Secondary hits in `recallScores` remain visible but do not consume several channel quotas.
+
+The no-op reference is:
 
 ```java
 @Extension
@@ -31,6 +43,44 @@ public class DefaultOperationRule implements OperationRule {
     }
 }
 ```
+
+## configuring the bundled rules
+
+Weighted allocation:
+
+```json
+"content": {
+  "operationName": "WeightedChannelOperationRule",
+  "channelRatios": {
+    "i2i": 0.3,
+    "embedding": 0.3,
+    "hot": 0.2,
+    "new": 0.2
+  }
+}
+```
+
+Ratios are normalized if they do not sum to 1. Largest-remainder rounding makes quotas add up to
+the requested size. If one channel has too few candidates, the highest-scoring unused candidates
+from other channels fill the shortage.
+
+Random guaranteed insertion:
+
+```json
+"content": {
+  "operationName": "RandomInsertOperationRule",
+  "randomInsertRatios": {
+    "hot": 0.1,
+    "new": 0.1
+  }
+}
+```
+
+Each configured channel reserves `ceil(size × ratio)` positions when enough candidates exist.
+Candidate selection within the channel remains score-first; only final positions are random. Other
+channels fill all ordinary positions, keeping the configured share exact when supply permits. If
+either side is short, the rule fills the result from any remaining channel rather than inventing
+candidates.
 
 ## writing a rule
 
@@ -57,8 +107,8 @@ the rule's effect silently dropped.
 
 ## deployment
 
-The jar is **not** loaded from the classpath. `OperationRuleManager` looks for a fixed path relative
-to the server's working directory:
+The jar is **not** loaded from the classpath. By default, `OperationRuleManager` looks relative to
+the server's working directory:
 
 ```
 <working-dir>/plugins/rec-contrib-1.0-SNAPSHOT.jar
@@ -70,7 +120,7 @@ So after building, copy it next to wherever you launch the server jar:
 mvn -pl contrib package
 mkdir -p server/plugins
 cp contrib/target/rec-contrib-1.0-SNAPSHOT.jar server/plugins/
-cd server && java -jar target/rec-server-1.0-SNAPSHOT.jar --spring.profiles.active=dev
+cd server && java -jar target/rec-server-1.0-SNAPSHOT.jar --spring.profiles.active=standalone
 ```
 
 pf4j identifies the plugin through manifest entries injected by `maven-jar-plugin`:
@@ -82,6 +132,13 @@ pf4j identifies the plugin through manifest entries injected by `maven-jar-plugi
 
 Renaming the artifact or bumping its version changes the path `OperationRuleManager` expects, so keep
 them in sync.
+
+Override the path when the plugin is built elsewhere. The standalone launcher uses this option for
+its isolated build directory:
+
+```shell
+java -Dopenrec.operation.plugin=/absolute/path/rec-contrib-1.0-SNAPSHOT.jar -jar ...
+```
 
 ## when the plugin is missing
 

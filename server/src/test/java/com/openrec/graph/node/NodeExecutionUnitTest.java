@@ -52,6 +52,7 @@ public class NodeExecutionUnitTest {
     @Test public void rankFusesScoresAndHandlesFailureAndClosedMode() {
         RankConfig content = new RankConfig(); content.setSize(2);
         RankService rank = mock(RankService.class);
+        when(rank.isOpen()).thenReturn(true);
         RankNode node = new RankNode(config("rank", content, true));
         ReflectionTestUtils.setField(node, "rankService", rank);
         List<ScoreResult> recalled = Arrays.asList(new ScoreResult("a", 2), new ScoreResult("b", 3), new ScoreResult("c", 4));
@@ -69,6 +70,16 @@ public class NodeExecutionUnitTest {
         ReflectionTestUtils.setField(failing, "userFeatureMap", Collections.singletonMap("userId", "u"));
         when(rank.score(eq("u"), eq(Collections.singletonList("x")))).thenThrow(new RuntimeException("down"));
         failing.run(context);
+
+        RankNode serviceClosed = new RankNode(config("rank", content, true));
+        RankService closedRank = mock(RankService.class);
+        when(closedRank.isOpen()).thenReturn(false);
+        ReflectionTestUtils.setField(serviceClosed, "rankService", closedRank);
+        ReflectionTestUtils.setField(serviceClosed, "combineItems", recalled);
+        serviceClosed.run(context);
+        context.exportNodeData(serviceClosed);
+        assertSame(recalled, context.getData("rankItems"));
+        verify(closedRank, never()).score(anyString(), anyList());
 
         RankNode closed = new RankNode(config("rank", content, false));
         ReflectionTestUtils.setField(closed, "combineItems", recalled); closed.run(context);

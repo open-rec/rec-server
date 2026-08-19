@@ -3,6 +3,7 @@ package com.openrec.service.kafka;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.openrec.proto.model.Event;
@@ -11,6 +12,7 @@ import com.openrec.proto.model.User;
 import com.openrec.util.JsonUtil;
 
 @Service
+@Profile("cluster")
 public class KafkaService {
 
     @Value("${spring.kafka.topic.item}")

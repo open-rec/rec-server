@@ -40,17 +40,17 @@ full walkthrough including sample data.
 
 ```shell
 cd server
-java -jar target/rec-server-1.0-SNAPSHOT.jar --spring.profiles.active=dev
+java -jar target/rec-server-1.0-SNAPSHOT.jar --spring.profiles.active=standalone
 ```
 
 Any property can be overridden on the command line, which is handy for secrets you do not want in
 the properties file:
 
 ```shell
-java -jar target/rec-server-1.0-SNAPSHOT.jar --spring.profiles.active=dev '--es.password=<your-password>'
+java -jar target/rec-server-1.0-SNAPSHOT.jar --spring.profiles.active=standalone '--es.password=<your-password>'
 ```
 
-Optionally install the operation-rule plugin first — `OperationRuleManager` loads it from
+Install the operation-rule plugin used by the default graph — `OperationRuleManager` loads it from
 `<working-dir>/plugins/`, so it must sit next to wherever you launch the jar:
 
 ```shell
@@ -58,7 +58,9 @@ mkdir -p server/plugins
 cp contrib/target/rec-contrib-1.0-SNAPSHOT.jar server/plugins/
 ```
 
-Skipping that is fine: the `operation` node logs a warning and passes candidates straight through.
+Without it, the service remains available but the operation node logs a warning and passes candidates
+straight through, so the configured channel allocation is not applied. Override the location with
+`-Dopenrec.operation.plugin=/absolute/path/rec-contrib-1.0-SNAPSHOT.jar` when needed.
 
 ### verify
 
@@ -83,8 +85,8 @@ Swagger UI: http://localhost:13579/swagger-ui/index.html
 | File | Purpose |
 |---|---|
 | `application.properties` | selects the active profile |
-| `application-dev.properties` | local: pushes data straight to Redis (`pushRedisService`) |
-| `application-prod.properties` | pushes data to Kafka (`pushKafkaService`) |
+| `application-standalone.properties` | local: pushes data straight to Redis and disables the rank service |
+| `application-cluster.properties` | pushes data to Kafka and uses the rank service |
 | `graph.json` | the DAG — nodes, their config and the edges between them |
 | `logback.xml` | logging |
 

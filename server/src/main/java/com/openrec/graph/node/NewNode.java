@@ -50,6 +50,10 @@ public class NewNode extends SyncNode<NewConfig> {
         long nowSecs = TimeUtil.nowSecs();
 
         newItems = redisService.getZSet(key, nowSecs - duration, nowSecs, size);
+        // Redis stores new-item scores in the Unix-time domain so range queries can apply the
+        // freshness window. Convert them back to their normalized business score before combine
+        // and downstream clients see them.
+        newItems.forEach(item -> item.setScore(item.getScore() / nowSecs));
         log.info("{} with new item size:{}", getName(), newItems.size());
     }
 }

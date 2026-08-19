@@ -22,6 +22,7 @@ import com.openrec.service.rec.RecService;
 import com.openrec.service.redis.RedisService;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
@@ -125,5 +126,20 @@ public class ControllerAndServiceUnitTest {
         assertEquals("u", dto.getUserId()); assertEquals("i", dto.getItemIds().get(0));
         failure.setStatus("error"); failure.setMessage("bad"); failure.setData(Collections.emptyMap());
         assertEquals("error", failure.getStatus()); assertEquals("bad", failure.getMessage());
+    }
+
+    @Test
+    public void rankServiceIsAlwaysClosedInStandaloneProfile() {
+        RankService service = new RankService();
+        ReflectionTestUtils.setField(service, "open", true);
+        MockEnvironment cluster = new MockEnvironment();
+        cluster.setActiveProfiles("cluster");
+        ReflectionTestUtils.setField(service, "environment", cluster);
+        assertTrue(service.isOpen());
+
+        MockEnvironment standalone = new MockEnvironment();
+        standalone.setActiveProfiles("standalone");
+        ReflectionTestUtils.setField(service, "environment", standalone);
+        assertFalse(service.isOpen());
     }
 }

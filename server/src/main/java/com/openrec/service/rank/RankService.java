@@ -6,6 +6,7 @@ import lombok.Data;
 import org.assertj.core.util.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -18,16 +19,26 @@ import java.util.Map;
 @Service
 public class RankService {
 
-    @Value("${rank.host}")
+    @Value("${rank.open:true}")
+    private boolean open;
+
+    @Value("${rank.host:127.0.0.1}")
     private String rankHost;
 
-    @Value("${rank.port}")
+    @Value("${rank.port:8000}")
     private String rankPort;
 
     private static final String SCORE_PATH = "/model/score";
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private Environment environment;
+
+    public boolean isOpen() {
+        return open && !environment.acceptsProfiles("standalone");
+    }
 
     @Data
     public static class RankUserItems {
