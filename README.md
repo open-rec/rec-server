@@ -97,7 +97,7 @@ Swagger UI: http://localhost:13579/swagger-ui/index.html
 | `redis.hostName` / `redis.port` | 127.0.0.1 / 6379 | |
 | `es.host` / `es.port` | 127.0.0.1 / 9200 | Elasticsearch 8 requires `https`; self-signed certs are trusted |
 | `es.user` / `es.password` | elastic / — | set your own; ES 8 does not auto-generate one when started with `-d` |
-| `rank.host` / `rank.port` | 127.0.0.1 / 8000 | [rank-engine](https://github.com/open-rec/rank-engine), optional |
+| `rank.host` / `rank.port` | 127.0.0.1 / 8123 | [rank-engine](https://github.com/open-rec/rank-engine), optional |
 | `spring.kafka.bootstrap-servers` | localhost:9092 | only used by the `prod` profile |
 
 Standalone setups need neither Kafka nor the rank engine.

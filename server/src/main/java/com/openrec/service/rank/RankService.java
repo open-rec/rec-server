@@ -25,7 +25,7 @@ public class RankService {
     @Value("${rank.host:127.0.0.1}")
     private String rankHost;
 
-    @Value("${rank.port:8000}")
+    @Value("${rank.port:8123}")
     private String rankPort;
 
     private static final String SCORE_PATH = "/model/score";
