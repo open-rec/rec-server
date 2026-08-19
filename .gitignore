@@ -25,6 +25,7 @@ hs_err_pid*
 # project files
 .idea
 target
+.m2-repository/
 
 # plugins
 plugins

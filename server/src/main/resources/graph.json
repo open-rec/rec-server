@@ -91,7 +91,8 @@
       "open": true,
       "timeout": 50,
       "content": {
-        "size": 3000
+        "size": 3000,
+        "checkExpireTime": false
       }
     },
     {

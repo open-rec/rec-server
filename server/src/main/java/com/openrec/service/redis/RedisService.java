@@ -77,7 +77,7 @@ public class RedisService {
     }
 
     public void addKvs(Map<String, Object> kvs) {
-        redisTemplate.opsForValue().multiSet(kvs);
+        redisJsonTemplate.opsForValue().multiSet(kvs);
     }
 
     public <T> T getV(String key) {
@@ -95,7 +95,14 @@ public class RedisService {
         redisTemplate.delete(keys);
     }
 
+    public void removeZSetValues(String key, Collection<String> values) {
+        if (values == null || values.isEmpty()) {
+            return;
+        }
+        redisTemplate.opsForZSet().remove(key, values.toArray());
+    }
+
     public <T> List<T> getVs(List<String> keys) {
-        return redisTemplate.opsForValue().multiGet(keys);
+        return redisJsonTemplate.opsForValue().multiGet(keys);
     }
 }

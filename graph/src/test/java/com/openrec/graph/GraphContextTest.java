@@ -30,6 +30,15 @@ public class GraphContextTest {
         graphContext.importNodeData(importNode);
         importNode.run(null);
         Assert.assertEquals(importNode.getStr(), TEST_STRING);
+
+        graphContext.addParam("size", 3);
+        Assert.assertEquals(3, graphContext.getParams().getValueToInt("size"));
+        graphContext.addConfig("node", new com.openrec.graph.config.NodeConfig());
+        Assert.assertNotNull(graphContext.getConfig("node"));
+        graphContext.setResult("result");
+        Assert.assertEquals("result", graphContext.getResult());
+        graphContext.clean();
+        Assert.assertEquals(0, graphContext.getParams().size());
     }
 
     static class ExportNode extends SyncNode {

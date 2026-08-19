@@ -15,6 +15,7 @@ public class EmptyNodeTest {
             node.start();
             Assert.assertEquals(NodeStatus.RUNNING, node.getStatus());
             node.run(null);
+            node.stop();
             node.destroy();
             Assert.assertTrue(node.finished());
         }

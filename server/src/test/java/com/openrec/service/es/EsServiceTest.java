@@ -7,6 +7,7 @@ import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.assertj.core.util.Lists;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +18,7 @@ import com.openrec.proto.model.VectorResult;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = RecServer.class)
+@Ignore("requires a live Elasticsearch cluster; covered by unit tests with mocks")
 public class EsServiceTest {
 
     private static final String TEST_INDEX_NAME = "test_vector_index";

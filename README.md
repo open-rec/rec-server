@@ -141,7 +141,8 @@ userTrigger ──> i2i ─────┐
 | `hot` / `new` | popularity and freshness recall |
 | `filter` | drops items exposed to this user recently |
 | `black` | drops blacklisted items (off by default) |
-| `combine` | concatenates candidates, removes filtered / blacklisted / already-triggered ids |
+| `combine` | merges and de-duplicates candidates, then removes exposed, blacklisted, triggered, missing, disabled and cross-scene items |
+| `itemFeature` | independent item-feature preparation hook reserved for ranking |
 | `rank` | scores via [rank-engine](https://github.com/open-rec/rank-engine); failures degrade to recall order |
 | `operation` | applies a pf4j `OperationRule` plugin |
 | `collector` | truncates to the requested `size`, writes a synthetic expose record |

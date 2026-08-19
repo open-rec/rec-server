@@ -3,19 +3,13 @@ package com.openrec.graph.node;
 import java.util.Map;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import com.google.common.collect.Maps;
-import com.openrec.RecServer;
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.RecEventType;
 import com.openrec.graph.config.FilterConfig;
 import com.openrec.graph.config.NodeConfig;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = RecServer.class)
 public class FilterNodeTest {
 
     @Test
@@ -31,7 +25,7 @@ public class FilterNodeTest {
 
         NodeConfig<FilterConfig> nodeConfig = new NodeConfig<>();
         nodeConfig.setContent(filterConfig);
-        nodeConfig.setOpen(true);
+        nodeConfig.setOpen(false);
         context.addConfig("filter", nodeConfig);
 
         FilterNode filterNode = new FilterNode(nodeConfig);

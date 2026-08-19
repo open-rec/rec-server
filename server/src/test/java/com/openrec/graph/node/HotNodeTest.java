@@ -1,17 +1,11 @@
 package com.openrec.graph.node;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
-import com.openrec.RecServer;
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.HotConfig;
 import com.openrec.graph.config.NodeConfig;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = RecServer.class)
 public class HotNodeTest {
 
     @Test
@@ -23,7 +17,7 @@ public class HotNodeTest {
 
         NodeConfig<HotConfig> nodeConfig = new NodeConfig<>();
         nodeConfig.setContent(hotConfig);
-        nodeConfig.setOpen(true);
+        nodeConfig.setOpen(false);
         context.addConfig("hot", nodeConfig);
 
         HotNode hotNode = new HotNode(nodeConfig);

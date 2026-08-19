@@ -2,10 +2,13 @@ package com.openrec.service.push;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.openrec.proto.biz.push.EventReq;
 import com.openrec.proto.biz.push.ItemReq;
@@ -28,10 +31,35 @@ public class PushRedisService implements PushService {
     @Autowired
     private RedisService redisService;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private List<String> itemKeys(List<Item> items) {
+        return items.stream().map(item -> String.format(ITEM_KEY, item.getId())).collect(Collectors.toList());
+    }
+
+    private List<Item> loadStoredItems(List<Item> items) {
+        return redisService.getVs(itemKeys(items)).stream().filter(Objects::nonNull)
+            .map(value -> objectMapper.convertValue(value, Item.class)).collect(Collectors.toList());
+    }
+
+    private void removeFromNewIndexes(List<Item> items) {
+        Map<String, List<String>> itemsByScene = items.stream()
+            .filter(item -> item != null && item.getScene() != null && item.getId() != null)
+            .collect(Collectors.groupingBy(Item::getScene, Collectors.mapping(Item::getId, Collectors.toList())));
+        for (Map.Entry<String, List<String>> entry : itemsByScene.entrySet()) {
+            redisService.removeZSetValues(String.format(NEW_KEY, entry.getKey()), entry.getValue());
+        }
+    }
+
     @Override
     public void pushItem(ItemReq itemReq) {
         List<Item> items = itemReq.getData();
+        List<Item> storedItems = loadStoredItems(items);
         if (itemReq.getCmd() == PushCmd.INSERT || itemReq.getCmd() == PushCmd.UPDATE) {
+            // Remove the previous membership first. This also handles an item moving to another
+            // scene or changing its publication time without leaving a stale entry behind.
+            removeFromNewIndexes(storedItems);
             redisService.addKvs(
                 items.stream().collect(Collectors.toMap(item -> String.format(ITEM_KEY, item.getId()), item -> item)));
 
@@ -42,8 +70,10 @@ public class PushRedisService implements PushService {
                 redisService.addZSets(itemEventEntry.getKey(), itemEventEntry.getValue());
             }
         } else {
-            redisService.removeKs(
-                items.stream().map(item -> String.format(ITEM_KEY, item.getId())).collect(Collectors.toList()));
+            removeFromNewIndexes(storedItems);
+            // Fall back to the scene carried by the delete request when the entity is already gone.
+            removeFromNewIndexes(items);
+            redisService.removeKs(itemKeys(items));
         }
     }
 
@@ -70,6 +100,13 @@ public class PushRedisService implements PushService {
                         Collectors.toMap(event -> event.getItemId(), event -> Double.valueOf(event.getTime()))));
             for (Map.Entry<String, Map<String, Double>> userEventEntry : userEvents.entrySet()) {
                 redisService.addZSets(userEventEntry.getKey(), userEventEntry.getValue());
+            }
+        } else {
+            Map<String, List<String>> eventItems = events.stream().collect(Collectors.groupingBy(
+                event -> String.format(EVENT_KEY, event.getUserId(), event.getScene(), event.getType()),
+                Collectors.mapping(Event::getItemId, Collectors.toList())));
+            for (Map.Entry<String, List<String>> entry : eventItems.entrySet()) {
+                redisService.removeZSetValues(entry.getKey(), entry.getValue());
             }
         }
     }

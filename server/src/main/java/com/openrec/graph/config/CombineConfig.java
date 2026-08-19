@@ -6,4 +6,5 @@ import lombok.Data;
 public class CombineConfig {
 
     private int size;
+    private boolean checkExpireTime;
 }
