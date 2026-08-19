@@ -56,6 +56,17 @@ public class ChannelOperationRuleTest {
     }
 
     @Test
+    public void weightedRuleRoundsStandaloneSizeToExpectedQuotas() {
+        Map<String, Integer> quotas = ChannelMixSupport.proportionalQuotas(
+            ratios("i2i", 0.3, "embedding", 0.3, "hot", 0.2, "new", 0.2), 12);
+
+        assertEquals(Integer.valueOf(4), quotas.get("i2i"));
+        assertEquals(Integer.valueOf(4), quotas.get("embedding"));
+        assertEquals(Integer.valueOf(2), quotas.get("hot"));
+        assertEquals(Integer.valueOf(2), quotas.get("new"));
+    }
+
+    @Test
     public void randomRuleGuaranteesConfiguredCandidatesAtRandomPositions() {
         GraphContext context = context(10, null, ratios("hot", 0.1, "new", 0.1));
         List<ScoreResult> input = new ArrayList<>();

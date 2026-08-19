@@ -111,6 +111,27 @@ final class ChannelMixSupport {
         return selected;
     }
 
+    static Map<String, Integer> channelCounts(List<ScoreResult> items) {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (ScoreResult item : items) {
+            String channel = item.getRecallFrom() == null ? "unknown" : item.getRecallFrom();
+            counts.put(channel, counts.getOrDefault(channel, 0) + 1);
+        }
+        return counts;
+    }
+
+    static Map<String, Integer> quotaShortages(Map<String, Integer> quotas,
+        Map<String, List<ScoreResult>> buckets) {
+        Map<String, Integer> shortages = new LinkedHashMap<>();
+        quotas.forEach((channel, quota) -> {
+            int available = buckets.getOrDefault(channel, Collections.emptyList()).size();
+            if (available < quota) {
+                shortages.put(channel, quota - available);
+            }
+        });
+        return shortages;
+    }
+
     private static Map<String, Double> validRatios(Map<String, Double> ratios) {
         if (ratios == null) {
             return Collections.emptyMap();
