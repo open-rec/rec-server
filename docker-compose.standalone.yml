@@ -1,0 +1,25 @@
+services:
+  rec-server:
+    build:
+      context: .
+    image: openrec/rec-server:latest
+    container_name: rec-server
+    hostname: rec-server
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: standalone
+      REDIS_HOSTNAME: redis
+      REDIS_PORT: 6379
+      ES_HOST: elasticsearch
+      ES_PORT: 9200
+      ES_USER: elastic
+      ES_PASSWORD: ${ELASTIC_PASSWORD:-openrec-es-password}
+    ports:
+      - "13579:13579"
+    networks:
+      - openrec-bigdata
+
+networks:
+  openrec-bigdata:
+    external: true
+    name: openrec-bigdata

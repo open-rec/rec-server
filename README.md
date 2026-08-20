@@ -62,6 +62,24 @@ Without it, the service remains available but the operation node logs a warning 
 straight through, so the configured channel allocation is not applied. Override the location with
 `-Dopenrec.operation.plugin=/absolute/path/rec-contrib-1.0-SNAPSHOT.jar` when needed.
 
+### containers
+
+The repository also owns self-contained standalone and cluster deployments. Its multi-stage build
+packages the server and operation plugin; no host Maven build or JDK is required. Start the matching
+`bigdata-platform` infrastructure preset first so the external `openrec-bigdata` network and
+dependency services exist, then run one of:
+
+```shell
+docker compose -f docker-compose.standalone.yml up -d --build --wait
+docker compose -f docker-compose.cluster.yml up -d --build --wait
+```
+
+Standalone connects only to Redis and Elasticsearch, writes pushes directly to Redis, and bypasses
+ranking. Cluster additionally connects to `rank-engine` and the Kafka brokers. Both use Compose
+network names rather than host-published ports. Override `ELASTIC_PASSWORD` when the platform
+password differs from the local example default. These files can run independently or be included
+by a composing example.
+
 ### verify
 
 ```shell
