@@ -4,6 +4,7 @@ import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.*;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.rank.RankService;
+import com.openrec.service.recall.RecallStore;
 import com.openrec.service.redis.RedisService;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -36,17 +37,17 @@ public class NodeExecutionUnitTest {
     }
 
     @Test public void i2iUsesOneKeyPerTrigger() {
-        RedisService redis = mock(RedisService.class);
+        RecallStore recallStore = mock(RecallStore.class);
         I2iConfig content = new I2iConfig(); content.setSize(4);
         I2iNode node = new I2iNode(config("i2i", content, true));
-        ReflectionTestUtils.setField(node, "redisService", redis);
+        ReflectionTestUtils.setField(node, "recallStore", recallStore);
         ReflectionTestUtils.setField(node, "triggerItems", Arrays.asList(new ScoreResult("a", 1), new ScoreResult("b", 2)));
-        when(redis.getZSet(anyList(), eq(0d), eq(Double.MAX_VALUE), eq(4)))
+        when(recallStore.i2i("s", Arrays.asList("a", "b"), 4))
             .thenReturn(Collections.singletonList(new ScoreResult("result", 3)));
         GraphContext context = new GraphContext(); context.addParam("scene", "s");
         node.run(context); context.exportNodeData(node);
         assertEquals("result", ((List<ScoreResult>) context.getData("i2iItems")).get(0).getId());
-        verify(redis).getZSet(Arrays.asList("i2i:{a}:s", "i2i:{b}:s"), 0, Double.MAX_VALUE, 4);
+        verify(recallStore).i2i("s", Arrays.asList("a", "b"), 4);
     }
 
     @Test public void rankFusesScoresAndHandlesFailureAndClosedMode() {

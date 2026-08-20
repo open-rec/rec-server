@@ -11,7 +11,7 @@ import com.openrec.graph.config.NewConfig;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.proto.model.ScoreResult;
-import com.openrec.service.redis.RedisService;
+import com.openrec.service.recall.RecallStore;
 import com.openrec.util.BeanUtil;
 import com.openrec.util.TimeUtil;
 
@@ -20,9 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NewNode extends SyncNode<NewConfig> {
 
-    private RedisService redisService = BeanUtil.getBean(RedisService.class);
-    private String bizType = "new";
-    private String FILTER_KEY_FORMAT = "%s:{%s}";
+    private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
     @Export("newItems")
     private List<ScoreResult> newItems;
 
@@ -35,9 +33,6 @@ public class NewNode extends SyncNode<NewConfig> {
     public void run(GraphContext context) {
 
         String scene = context.getParams().getValueToString(SCENE);
-        String key = String.format(FILTER_KEY_FORMAT, bizType, scene);
-
-        int timeout = config.getTimeout();
         boolean open = config.isOpen();
 
         if (!open) {
@@ -49,11 +44,7 @@ public class NewNode extends SyncNode<NewConfig> {
         int size = config.getContent().getSize();
         long nowSecs = TimeUtil.nowSecs();
 
-        newItems = redisService.getZSet(key, nowSecs - duration, nowSecs, size);
-        // Redis stores new-item scores in the Unix-time domain so range queries can apply the
-        // freshness window. Convert them back to their normalized business score before combine
-        // and downstream clients see them.
-        newItems.forEach(item -> item.setScore(item.getScore() / nowSecs));
+        newItems = recallStore.newest(scene, nowSecs - duration, nowSecs, size);
         log.info("{} with new item size:{}", getName(), newItems.size());
     }
 }

@@ -118,6 +118,26 @@ Swagger UI: http://localhost:13579/swagger-ui/index.html
 | `rank.host` / `rank.port` | 127.0.0.1 / 8123 | [rank-engine](https://github.com/open-rec/rank-engine), optional |
 | `spring.kafka.bootstrap-servers` | localhost:9092 | only used by the `prod` profile |
 
+### recall store
+
+The graph nodes depend on the storage-neutral `RecallStore` service. Both standalone and cluster
+use `ElasticsearchRecallStore` by default. Hot, new, and i2i read stable aliases:
+
+```text
+openrec-recall-hot-active
+openrec-recall-new-active
+openrec-recall-i2i-active
+```
+
+Physical indexes carry the offline table version but not the scene, for example
+`openrec-recall-i2i-20260819-r001`; every query filters on the `scene` field. Select the
+implementation with `recall.store=elasticsearch|redis`, or `RECALL_STORE` in either Compose
+deployment. `RedisRecallStore` is documented as development-only because its mutable sorted sets do
+not support version switching; it remains available for local debugging and parity tests. Redis still
+owns online entities, events, exposure filters, and blacklists. Embedding recall
+continues to use its existing per-scene Elasticsearch index (`{scene}-item-vector-index`). A custom
+implementation only needs to provide another `RecallStore` bean and select its own property value.
+
 Standalone setups need neither Kafka nor the rank engine.
 
 ## api

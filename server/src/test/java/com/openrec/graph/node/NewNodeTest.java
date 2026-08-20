@@ -1,7 +1,7 @@
 package com.openrec.graph.node;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -16,7 +16,7 @@ import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.NewConfig;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.proto.model.ScoreResult;
-import com.openrec.service.redis.RedisService;
+import com.openrec.service.recall.RecallStore;
 
 public class NewNodeTest {
 
@@ -46,15 +46,14 @@ public class NewNodeTest {
         config.setContent(content);
         config.setOpen(true);
 
-        RedisService redis = mock(RedisService.class);
-        when(redis.getZSet(eq("new:{scene-1}"), anyDouble(), anyDouble(), eq(10)))
+        RecallStore recallStore = mock(RecallStore.class);
+        when(recallStore.newest(eq("scene-1"), anyLong(), anyLong(), eq(10)))
             .thenAnswer(invocation -> {
-                double queryTimestamp = invocation.getArgument(2);
-                return Collections.singletonList(new ScoreResult("item-1", queryTimestamp * 0.75));
+                return Collections.singletonList(new ScoreResult("item-1", 0.75));
             });
 
         NewNode node = new NewNode(config);
-        ReflectionTestUtils.setField(node, "redisService", redis);
+        ReflectionTestUtils.setField(node, "recallStore", recallStore);
         GraphContext context = new GraphContext();
         context.addParam("scene", "scene-1");
 

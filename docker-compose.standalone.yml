@@ -14,6 +14,7 @@ services:
       ES_PORT: 9200
       ES_USER: elastic
       ES_PASSWORD: ${ELASTIC_PASSWORD:-openrec-es-password}
+      RECALL_STORE: ${RECALL_STORE:-elasticsearch}
     ports:
       - "13579:13579"
     networks:

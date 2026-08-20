@@ -16,6 +16,7 @@ services:
       ES_PASSWORD: ${ELASTIC_PASSWORD:-openrec-es-password}
       RANK_HOST: rank-engine
       RANK_PORT: 8123
+      RECALL_STORE: ${RECALL_STORE:-elasticsearch}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
     ports:
       - "13579:13579"

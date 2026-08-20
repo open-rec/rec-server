@@ -11,16 +11,14 @@ import com.openrec.graph.config.HotConfig;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.proto.model.ScoreResult;
-import com.openrec.service.redis.RedisService;
+import com.openrec.service.recall.RecallStore;
 import com.openrec.util.BeanUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class HotNode extends SyncNode<HotConfig> {
-    private RedisService redisService = BeanUtil.getBean(RedisService.class);
-    private String bizType = "hot";
-    private String FILTER_KEY_FORMAT = "%s:{%s}";
+    private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
     @Export("hotItems")
     private List<ScoreResult> hotItems;
 
@@ -33,9 +31,6 @@ public class HotNode extends SyncNode<HotConfig> {
     public void run(GraphContext context) {
 
         String scene = context.getParams().getValueToString(SCENE);
-        String key = String.format(FILTER_KEY_FORMAT, bizType, scene);
-
-        int timeout = config.getTimeout();
         boolean open = config.isOpen();
 
         if (!open) {
@@ -45,7 +40,7 @@ public class HotNode extends SyncNode<HotConfig> {
 
         int size = config.getContent().getSize();
 
-        hotItems = redisService.getZSet(key, 0, Double.MAX_VALUE, size);
+        hotItems = recallStore.hot(scene, size);
         log.info("{} with hot item size:{}", getName(), hotItems.size());
     }
 }
