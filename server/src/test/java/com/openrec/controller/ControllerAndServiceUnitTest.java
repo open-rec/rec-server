@@ -1,7 +1,7 @@
 package com.openrec.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.openrec.controller.api.OperateController;
+import com.openrec.controller.sys.OperateController;
 import com.openrec.controller.api.PushController;
 import com.openrec.controller.api.QueryController;
 import com.openrec.controller.api.RecommendController;
@@ -15,6 +15,7 @@ import com.openrec.proto.model.Item;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.proto.model.User;
 import com.openrec.service.operate.OperateService;
+import com.openrec.service.metrics.ApiMetricsService;
 import com.openrec.service.push.PushService;
 import com.openrec.service.query.QueryService;
 import com.openrec.service.rank.RankService;
@@ -24,6 +25,7 @@ import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.web.client.RestTemplate;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,6 +49,7 @@ public class ControllerAndServiceUnitTest {
         PushService push = mock(PushService.class);
         PushController controller = new PushController();
         ReflectionTestUtils.setField(controller, "pushService", push);
+        ReflectionTestUtils.setField(controller, "apiMetricsService", new ApiMetricsService(new SimpleMeterRegistry()));
         UserReq users = new UserReq(); ItemReq items = new ItemReq(); EventReq events = new EventReq();
         assertTrue(controller.pushUser(new JsonReq<>(users)).block().isStatus());
         assertTrue(controller.pushItem(new JsonReq<>(items)).block().isStatus());
@@ -77,6 +80,7 @@ public class ControllerAndServiceUnitTest {
         RecService rec = mock(RecService.class);
         RecommendController recommendController = new RecommendController();
         ReflectionTestUtils.setField(recommendController, "recService", rec);
+        ReflectionTestUtils.setField(recommendController, "apiMetricsService", new ApiMetricsService(new SimpleMeterRegistry()));
         RecommendReq req = new RecommendReq(); RecommendRes<Item> res = new RecommendRes<>();
         when(rec.execute(req)).thenReturn(res);
         assertSame(res, recommendController.recommend(new JsonReq<>(req)).block().getData());

@@ -9,6 +9,7 @@ import com.openrec.proto.biz.recommend.RecommendReq;
 import com.openrec.proto.biz.recommend.RecommendRes;
 import com.openrec.proto.model.Item;
 import com.openrec.service.rec.RecService;
+import com.openrec.service.metrics.ApiMetricsService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -21,10 +22,14 @@ public class RecommendController {
     @Autowired
     private RecService recService;
 
+    @Autowired
+    private ApiMetricsService apiMetricsService;
+
     @ApiOperation("推荐接口")
     @RequestMapping(value = {"/api/recommend"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<RecommendRes<Item>>> recommend(@RequestBody JsonReq<RecommendReq> recommendReq) {
-        return Mono.just(new JsonRes<>(recService.execute(recommendReq.getBody())));
+        return Mono.just(new JsonRes<>(apiMetricsService.recordRecommend(
+            () -> recService.execute(recommendReq.getBody()))));
     }
 }

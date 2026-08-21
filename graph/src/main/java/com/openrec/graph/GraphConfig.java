@@ -13,7 +13,7 @@ public class GraphConfig {
     private List<NodeEdge> edges;
 
     @Data
-    static class NodeEdge {
+    public static class NodeEdge {
         private String from;
         private String to;
     }

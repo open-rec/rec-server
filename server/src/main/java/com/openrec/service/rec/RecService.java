@@ -1,6 +1,7 @@
 package com.openrec.service.rec;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,13 +19,13 @@ import com.openrec.service.redis.RedisService;
 @Service
 public class RecService {
 
-    private GraphConfig graphConfig;
+    private final AtomicReference<GraphConfig> graphConfig;
 
     @Autowired
     private RedisService redisService;
 
     public RecService() {
-        this.graphConfig = RecTemplate.toGraphConfig();
+        this.graphConfig = new AtomicReference<>(RecTemplate.toGraphConfig());
     }
 
     @TimeCost
@@ -32,7 +33,7 @@ public class RecService {
         RecommendRes recommendRes = new RecommendRes();
         GraphEngine graphEngine = GraphEngine.getSessionGraphEngine();
         graphEngine.prepare(recommendReq);
-        graphEngine.buildGraph(graphConfig);
+        graphEngine.buildGraph(graphConfig.get());
         graphEngine.execGraph();
         List<ScoreResult> results = graphEngine.getResult();
         recommendRes.setResults(results);
@@ -41,5 +42,13 @@ public class RecService {
                 .getVs(results.stream().map(i -> String.format("item:{%s}", i.getId())).collect(Collectors.toList())));
         }
         return recommendRes;
+    }
+
+    public void replaceGraphConfig(GraphConfig newGraphConfig) {
+        graphConfig.set(newGraphConfig);
+    }
+
+    public GraphConfig getGraphConfig() {
+        return graphConfig.get();
     }
 }

@@ -192,8 +192,16 @@ channel silently contributes nothing — a request still succeeds. If a recall c
 compare its logged latency against its `timeout` before suspecting the data: `embedding`'s default of
 100ms is shorter than a cold TLS handshake to Elasticsearch.
 
-To edit the graph, change `graph.json` and repackage — it is read from the classpath. Regenerate the
-diagram with `bash server/bin/update_graph.sh` (needs `networkx`, `matplotlib`, graphviz).
+`server/src/main/resources/graph.json` remains the startup default. In cluster mode, rec-console can
+publish a complete replacement to `POST /internal/serving-graph`; rec-server parses node content,
+validates node classes, constructors, edges and acyclicity, then atomically swaps the graph used by
+new requests. In-flight requests retain their original snapshot. `GET /internal/serving-graph`
+returns the active version, checksum and full graph. Both calls require `X-OpenRec-Token`, configured
+through `SERVING_GRAPH_TOKEN`. Node-level editing and version rollback belong to rec-console; this
+service deliberately accepts only full graph snapshots.
+
+To change the packaged fallback, edit `graph.json` and repackage. Regenerate its diagram with
+`bash server/bin/update_graph.sh` (needs `networkx`, `matplotlib`, graphviz).
 
 Details on writing a node: [graph](graph). Details on custom operation rules: [contrib](contrib).
 

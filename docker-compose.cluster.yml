@@ -18,6 +18,7 @@ services:
       RANK_PORT: 8123
       RECALL_STORE: ${RECALL_STORE:-elasticsearch}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      SERVING_GRAPH_TOKEN: ${SERVING_GRAPH_TOKEN:-openrec-serving-graph-token-change-me}
     ports:
       - "13579:13579"
     networks:
