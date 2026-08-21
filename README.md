@@ -98,6 +98,12 @@ Swagger UI: http://localhost:13579/swagger-ui/index.html
 
 ## configuration
 
+Collector synthetic exposure is controlled by `collector.fake-expose.enabled`. It remains enabled
+in `application-standalone.properties`, where returning a recommendation is treated as exposure
+without a separate client event. It is disabled in `application-cluster.properties`; cluster clients
+send real `expose` events through the Push API only after items are actually displayed. Collector
+still merges, truncates, and returns recommendation results in both modes.
+
 `server/src/main/resources/`:
 
 | File | Purpose |

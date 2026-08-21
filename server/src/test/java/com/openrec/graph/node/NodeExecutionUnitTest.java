@@ -8,6 +8,7 @@ import com.openrec.service.recall.RecallStore;
 import com.openrec.service.redis.RedisService;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.*;
 
@@ -99,6 +100,20 @@ public class NodeExecutionUnitTest {
         CollectorNode empty = new CollectorNode(config("collector", null, true));
         ReflectionTestUtils.setField(empty, "redisService", redis); ReflectionTestUtils.setField(empty, "finalItems", Collections.emptyList());
         empty.run(context); verifyNoMoreInteractions(redis);
+    }
+
+    @Test public void collectorDoesNotWriteSyntheticExposureInCluster() {
+        RedisService redis = mock(RedisService.class);
+        MockEnvironment cluster = new MockEnvironment();
+        cluster.setProperty("collector.fake-expose.enabled", "false");
+        CollectorNode node = new CollectorNode(config("collector", null, true));
+        ReflectionTestUtils.setField(node, "redisService", redis);
+        ReflectionTestUtils.setField(node, "environment", cluster);
+        ReflectionTestUtils.setField(node, "finalItems", Collections.singletonList(new ScoreResult("a", 1)));
+        GraphContext context = new GraphContext(); context.addParam("size", 1);
+        node.run(context);
+        assertEquals(1, ((List<?>) context.getResult()).size());
+        verifyNoInteractions(redis);
     }
 
     @Test public void simpleFeatureBlackSearchAndOperationNodesWork() {

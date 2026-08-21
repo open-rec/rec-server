@@ -5,6 +5,7 @@ import static com.openrec.graph.RecParams.*;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.core.env.Environment;
 import org.springframework.util.CollectionUtils;
 
 import com.google.common.collect.Maps;
@@ -24,6 +25,8 @@ public class CollectorNode extends SyncNode<Void> {
     private List<ScoreResult> finalItems;
 
     private RedisService redisService = BeanUtil.getBean(RedisService.class);
+
+    private Environment environment = BeanUtil.getBean(Environment.class);
 
     public CollectorNode(NodeConfig nodeConfig) {
         super(nodeConfig);
@@ -48,7 +51,12 @@ public class CollectorNode extends SyncNode<Void> {
         finalItems = finalItems.subList(0, Math.min(finalItems.size(), context.getParams().getValueToInt(SIZE)));
         context.setResult(finalItems);
 
-        writeFakeExpose(context, finalItems);
+        // Keep this capability deploy-time configurable: standalone enables it, while cluster
+        // clients report impressions that were actually rendered through the Push API.
+        if (environment == null
+            || environment.getProperty("collector.fake-expose.enabled", Boolean.class, true)) {
+            writeFakeExpose(context, finalItems);
+        }
         log.info("{} return with final item size:{}", getName(), finalItems.size());
     }
 }
