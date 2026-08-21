@@ -128,7 +128,10 @@
       "open": true,
       "timeout": 20,
       "content": {
-        "operationName": "WeightedChannelOperationRule",
+        "operationName": "SlidingWindowDiversityOperationRule",
+        "windowSize": 5,
+        "repeatK": 2,
+        "diversityDimensions": ["category", "tags"],
         "channelRatios": {
           "i2i": 0.3,
           "embedding": 0.3,

@@ -28,6 +28,9 @@ The shipped rules are:
   and sorts the selected result by score.
 - `RandomInsertOperationRule`: reserves the highest-scoring candidates from configured channels and
   inserts them at random final positions.
+- `SlidingWindowDiversityOperationRule`: keeps weighted channel selection as its preferred order,
+  then reorders/fills candidates so configured item attributes repeat at most `repeatK` times in
+  every `windowSize` results.
 
 Channel assignment uses `ScoreResult.recallFrom`, the first channel that recalled a de-duplicated
 item. Secondary hits in `recallScores` remain visible but do not consume several channel quotas.
@@ -81,6 +84,33 @@ Candidate selection within the channel remains score-first; only final positions
 channels fill all ordinary positions, keeping the configured share exact when supply permits. If
 either side is short, the rule fills the result from any remaining channel rather than inventing
 candidates.
+
+Sliding-window diversity (the default graph rule):
+
+```json
+"content": {
+  "operationName": "SlidingWindowDiversityOperationRule",
+  "windowSize": 5,
+  "repeatK": 2,
+  "diversityDimensions": ["category", "tags"],
+  "channelRatios": {
+    "i2i": 0.3,
+    "embedding": 0.3,
+    "hot": 0.2,
+    "new": 0.2
+  }
+}
+```
+
+`category` constrains equal categories. `tags` treats every tag on an item as a key, so none of its
+tags may exceed the limit. Multiple entries such as `["category", "tags"]` enforce both dimensions
+independently. Use `["category+tags"]` to constrain category/tag pairs instead; an item with three
+tags contributes three pair keys. Expressions can also be mixed.
+
+The rule selects the first eligible candidate from the preferred channel-balanced order, then
+considers unused candidates by score. The limit is strict: if the pool cannot produce the requested
+number without breaking the constraint, it returns fewer items. An empty dimension list or a
+non-positive window/repeat value disables diversity.
 
 ## writing a rule
 

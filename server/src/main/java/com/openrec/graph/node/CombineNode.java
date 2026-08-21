@@ -78,9 +78,14 @@ public class CombineNode extends SyncNode<CombineConfig> {
     @Export("combineItems")
     private List<ScoreResult> combineItems;
 
+    /** Item attributes used by contrib operation rules after ranking. */
+    @Export("operationItemMap")
+    private Map<String, Item> operationItemMap;
+
     public CombineNode(NodeConfig nodeConfig) {
         super(nodeConfig);
         this.combineItems = Lists.newArrayList();
+        this.operationItemMap = new LinkedHashMap<>();
     }
 
     @Override
@@ -112,6 +117,7 @@ public class CombineNode extends SyncNode<CombineConfig> {
         boolean checkExpireTime = config.getContent().isCheckExpireTime();
 
         combineItems = Lists.newArrayList();
+        operationItemMap = new LinkedHashMap<>();
         for (int i = 0; i < candidateList.size(); i++) {
             if (combineItems.size() >= size) {
                 break;
@@ -127,6 +133,7 @@ public class CombineNode extends SyncNode<CombineConfig> {
                 continue;
             }
             combineItems.add(candidateList.get(i));
+            operationItemMap.put(item.getId(), item);
         }
 
         log.info(
