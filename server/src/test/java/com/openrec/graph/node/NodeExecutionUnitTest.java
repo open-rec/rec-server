@@ -133,4 +133,35 @@ public class NodeExecutionUnitTest {
         ReflectionTestUtils.setField(operation, "rankItems", input); operation.run(context); context.exportNodeData(operation);
         assertSame(input, context.getData("operationItems"));
     }
+
+    @Test public void blackNodeExportsStructuredDislikeRules() {
+        RedisService redis = mock(RedisService.class);
+        when(redis.getSet("black")).thenReturn(Collections.singleton("global-id"));
+        when(redis.getZSet(eq("event:{u}:s:dislike"), anyDouble(), anyDouble(), eq(1000)))
+            .thenReturn(Arrays.asList(new ScoreResult("id:item-1", 1),
+                new ScoreResult("category:sports", 1), new ScoreResult("tag:nba", 1)));
+        FilterConfig.TypeFilterConfig dislike = new FilterConfig.TypeFilterConfig();
+        dislike.setDuration(2592000); dislike.setSize(1000);
+        FilterConfig content = new FilterConfig();
+        content.setFilterMap(Collections.singletonMap("dislike", dislike));
+        BlackNode node = new BlackNode(config("black", content, true));
+        ReflectionTestUtils.setField(node, "redisService", redis);
+        GraphContext context = new GraphContext();
+        context.addParam("userId", "u"); context.addParam("scene", "s");
+        node.run(context); context.exportNodeData(node);
+        assertEquals(new HashSet<>(Arrays.asList("global-id", "item-1")), context.getData("blackItemSet"));
+        assertEquals(Collections.singleton("sports"), context.getData("blackCategorySet"));
+        assertEquals(Collections.singleton("nba"), context.getData("blackTagSet"));
+    }
+
+    @Test public void combineMatchesNegativeCategoryAndTags() {
+        com.openrec.proto.model.Item item = new com.openrec.proto.model.Item();
+        item.setCategory("sports"); item.setTags("football,nba");
+        assertTrue(CombineNode.isNegativeFeedbackMatch(item, Collections.singleton("sports"),
+            Collections.emptySet()));
+        assertTrue(CombineNode.isNegativeFeedbackMatch(item, Collections.emptySet(),
+            Collections.singleton("nba")));
+        assertFalse(CombineNode.isNegativeFeedbackMatch(item, Collections.singleton("news"),
+            Collections.singleton("music")));
+    }
 }

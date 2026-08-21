@@ -93,8 +93,18 @@ public class PushRedisService implements PushService {
     public void pushEvent(EventReq eventReq) {
         List<Event> events = eventReq.getData();
         if (eventReq.getCmd() == PushCmd.INSERT || eventReq.getCmd() == PushCmd.UPDATE) {
+            for (Event event : events) {
+                if ("dislike".equalsIgnoreCase(event.getType())) {
+                    String key = String.format(EVENT_KEY, event.getUserId(), event.getScene(), event.getType());
+                    double time = Double.valueOf(event.getTime());
+                    for (String rule : DislikeRules.parse(event.getValue())) {
+                        redisService.addZSet(key, rule, time);
+                    }
+                }
+            }
             Map<String,
                 Map<String, Double>> userEvents = events.stream()
+                    .filter(event -> !"dislike".equalsIgnoreCase(event.getType()))
                     .collect(Collectors.groupingBy(
                         event -> String.format(EVENT_KEY, event.getUserId(), event.getScene(), event.getType()),
                         Collectors.toMap(event -> event.getItemId(), event -> Double.valueOf(event.getTime()))));

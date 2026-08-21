@@ -41,6 +41,9 @@ public class PushKafkaService implements PushService {
             throw new IllegalArgumentException("event DELETE is not supported");
         }
         for (Event event : eventReq.getData()) {
+            if ("dislike".equalsIgnoreCase(event.getType())) {
+                DislikeRules.parse(event.getValue());
+            }
             kafkaService.writeEvent(eventReq.getCmd(), event);
         }
     }

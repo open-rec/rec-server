@@ -159,6 +159,19 @@ Cluster pushes use a versioned Kafka mutation envelope. `INSERT` and `UPDATE` re
 entity body; `DELETE` for item/user requires only `id` (an item may optionally include `scene`).
 Event deletion is intentionally unsupported.
 
+`dislike` uses a structured `Event.value`; `id` and `category` are single values and `tags` is a
+list. At least one field is required:
+
+```json
+{"userId":"user_1","itemId":"item_10","scene":"scene_0","type":"dislike",
+ "time":"1787292000","value":"{\"id\":\"item_10\",\"category\":\"sports\",\"tags\":[\"nba\",\"cba\"]}"}
+```
+
+The online projection expands this into `id:item_10`, `category:sports`, `tag:nba`, and `tag:cba`
+members of `event:{user_1}:scene_0:dislike`. The default BlackNode reads 30 days/1000 rules. A field
+should only be sent when the user selected that scope; disliking one item must not implicitly block
+all of its category or tags.
+
 ```json
 {"schemaVersion":1,"entityType":"item","operation":"DELETE",
  "occurredAt":1787292000000,"data":{"id":"item_123"}}
@@ -200,8 +213,8 @@ userTrigger ──> i2i ─────┐
 | `embedding` | averages trigger vectors, kNN search in Elasticsearch |
 | `hot` / `new` | popularity and freshness recall |
 | `filter` | drops items exposed to this user recently |
-| `black` | drops blacklisted items (off by default) |
-| `combine` | merges and de-duplicates candidates, then removes exposed, blacklisted, triggered, missing, disabled and cross-scene items |
+| `black` | reads the global item blacklist and current user's dislike ID/category/tag rules (on by default) |
+| `combine` | merges candidates, then removes exposed, globally blacklisted, disliked, triggered, missing, disabled and cross-scene items |
 | `itemFeature` | independent item-feature preparation hook reserved for ranking |
 | `rank` | scores via [rank-engine](https://github.com/open-rec/rank-engine); failures degrade to recall order |
 | `operation` | applies a pf4j `OperationRule` plugin |

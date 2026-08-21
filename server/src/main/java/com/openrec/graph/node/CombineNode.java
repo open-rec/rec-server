@@ -66,6 +66,12 @@ public class CombineNode extends SyncNode<CombineConfig> {
     @Import("blackItemSet")
     private Set<String> blackItemSet;
 
+    @Import("blackCategorySet")
+    private Set<String> blackCategorySet;
+
+    @Import("blackTagSet")
+    private Set<String> blackTagSet;
+
     @Import("triggerItems")
     private List<ScoreResult> triggerItems;
 
@@ -116,12 +122,26 @@ public class CombineNode extends SyncNode<CombineConfig> {
                 counters[3]++;
                 continue;
             }
+            if (isNegativeFeedbackMatch(item, blackCategorySet, blackTagSet)) {
+                counters[1]++;
+                continue;
+            }
             combineItems.add(candidateList.get(i));
         }
 
         log.info(
             "{} with result size:{}, candidates:{}, filter count:{}, black count:{}, trigger count:{}, unavailable count:{}",
             getName(), combineItems.size(), candidates.size(), counters[0], counters[1], counters[2], counters[3]);
+    }
+
+    static boolean isNegativeFeedbackMatch(Item item, Set<String> categories, Set<String> tags) {
+        if (item == null) { return false; }
+        if (categories != null && categories.contains(item.getCategory())) { return true; }
+        if (tags == null || tags.isEmpty() || item.getTags() == null) { return false; }
+        for (String tag : item.getTags().split("[,|]")) {
+            if (tags.contains(tag.trim())) { return true; }
+        }
+        return false;
     }
 
     private void collect(List<ScoreResult> items, String channel, Map<String, ScoreResult> candidates,
@@ -135,7 +155,7 @@ public class CombineNode extends SyncNode<CombineConfig> {
                 counters[0]++;
                 continue;
             }
-            if (blackItemSet.contains(id)) {
+            if (blackItemSet != null && blackItemSet.contains(id)) {
                 counters[1]++;
                 continue;
             }
