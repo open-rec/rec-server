@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import com.openrec.proto.model.Event;
 import com.openrec.proto.model.Item;
 import com.openrec.proto.model.User;
+import com.openrec.proto.biz.push.EntityMutation;
+import com.openrec.proto.biz.push.PushCmd;
 import com.openrec.util.JsonUtil;
 
 @Service
@@ -27,15 +29,18 @@ public class KafkaService {
     @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
 
-    public void writeItem(Item item) {
-        kafkaTemplate.send(itemTopic, JsonUtil.objToJson(item));
+    public void writeItem(PushCmd operation, Item item) {
+        kafkaTemplate.send(itemTopic, item.getId(),
+            JsonUtil.objToJson(EntityMutation.of("item", operation, item)));
     }
 
-    public void writeUser(User user) {
-        kafkaTemplate.send(userTopic, JsonUtil.objToJson(user));
+    public void writeUser(PushCmd operation, User user) {
+        kafkaTemplate.send(userTopic, user.getId(),
+            JsonUtil.objToJson(EntityMutation.of("user", operation, user)));
     }
 
-    public void writeEvent(Event event) {
-        kafkaTemplate.send(eventTopic, JsonUtil.objToJson(event));
+    public void writeEvent(PushCmd operation, Event event) {
+        kafkaTemplate.send(eventTopic, event.getUserId(),
+            JsonUtil.objToJson(EntityMutation.of("event", operation, event)));
     }
 }

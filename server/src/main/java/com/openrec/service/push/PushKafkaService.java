@@ -22,21 +22,32 @@ public class PushKafkaService implements PushService {
     @Override
     public void pushItem(ItemReq itemReq) {
         for (Item item : itemReq.getData()) {
-            kafkaService.writeItem(item);
+            requireId("item", item == null ? null : item.getId());
+            kafkaService.writeItem(itemReq.getCmd(), item);
         }
     }
 
     @Override
     public void pushUser(UserReq userReq) {
         for (User user : userReq.getData()) {
-            kafkaService.writeUser(user);
+            requireId("user", user == null ? null : user.getId());
+            kafkaService.writeUser(userReq.getCmd(), user);
         }
     }
 
     @Override
     public void pushEvent(EventReq eventReq) {
+        if (eventReq.getCmd() == com.openrec.proto.biz.push.PushCmd.DELETE) {
+            throw new IllegalArgumentException("event DELETE is not supported");
+        }
         for (Event event : eventReq.getData()) {
-            kafkaService.writeEvent(event);
+            kafkaService.writeEvent(eventReq.getCmd(), event);
+        }
+    }
+
+    private static void requireId(String type, String id) {
+        if (id == null || id.trim().isEmpty()) {
+            throw new IllegalArgumentException(type + " id is required");
         }
     }
 }

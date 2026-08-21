@@ -148,6 +148,20 @@ Standalone setups need neither Kafka nor the rank engine.
 | POST | `/api/push/{user,item,event}` | ingest data |
 | GET | `/api/query/user/{userId}` | read back a user |
 | GET | `/api/query/item/{itemId}` | read back an item |
+
+Cluster pushes use a versioned Kafka mutation envelope. `INSERT` and `UPDATE` require the normal
+entity body; `DELETE` for item/user requires only `id` (an item may optionally include `scene`).
+Event deletion is intentionally unsupported.
+
+```json
+{"schemaVersion":1,"entityType":"item","operation":"DELETE",
+ "occurredAt":1787292000000,"data":{"id":"item_123"}}
+```
+
+Kafka records are keyed by item/user ID, preserving mutation order per entity. Consumers remain
+compatible with legacy bare-entity JSON. Redis and HBase apply deletes immediately, while HDFS keeps
+the envelope as an immutable tombstone; cumulative offline reads select the latest mutation and
+exclude deleted entities so older partitions cannot resurrect them.
 | GET | `/api/query/event/{userId}/{scene}/{type}` | read back a user's events |
 | POST | `/api/operate/blacklist` | set the item blacklist |
 | GET | `/health` | liveness |
