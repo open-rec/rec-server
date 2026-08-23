@@ -132,7 +132,7 @@ public class GraphEngine {
                                 System.currentTimeMillis() - start);
                         }
                     });
-                    timeoutThreadPool.submit(new TimeoutTask(node.getName(), future, node.getTimeout()));
+                    timeoutThreadPool.submit(new TimeoutTask(node, future, latch));
                 }
                 try {
                     latch.await();
@@ -175,7 +175,7 @@ public class GraphEngine {
                         log.info("node:{} exec cost time: {}ms", node.getName(), System.currentTimeMillis() - start);
                     }
                 });
-                timeoutThreadPool.submit(new TimeoutTask(node.getName(), future, node.getTimeout()));
+                timeoutThreadPool.submit(new TimeoutTask(node, future, latch));
             }
             try {
                 latch.await();
@@ -211,26 +211,37 @@ public class GraphEngine {
     }
 
     class TimeoutTask implements Callable<Void> {
-        private String name;
+        private Node node;
         private Future future;
-        private int timeout;
+        private CountDownLatch latch;
 
-        public TimeoutTask(String name, Future future, int timeout) {
-            this.name = name;
+        public TimeoutTask(Node node, Future future, CountDownLatch latch) {
+            this.node = node;
             this.future = future;
-            this.timeout = timeout;
+            this.latch = latch;
         }
 
         @Override
         public Void call() throws Exception {
             if (future != null) {
                 try {
-                    future.get(timeout, TimeUnit.MILLISECONDS);
-                } catch (Exception e) {
-                    if (!future.isCancelled()) {
-                        future.cancel(true);
+                    future.get(node.getTimeout(), TimeUnit.MILLISECONDS);
+                } catch (TimeoutException e) {
+                    if (future.cancel(true)) {
+                        // A Future cancelled before its worker starts never enters the
+                        // worker's finally block. Complete the lifecycle here so the
+                        // graph cannot wait on the latch forever.
+                        node.stop();
+                        latch.countDown();
                     }
-                    log.error("graph node:{} exec timeout, canceled by engine", name);
+                    log.error("graph node:{} exec timeout, canceled by engine", node.getName());
+                } catch (CancellationException e) {
+                    node.stop();
+                    latch.countDown();
+                } catch (ExecutionException e) {
+                    log.error("graph node:{} exec failed: {}", node.getName(), ExceptionUtils.getStackTrace(e));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
             }
             return null;
