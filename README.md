@@ -34,9 +34,8 @@ the artifactId).
 ## run
 
 Requires Redis and Elasticsearch. See
-[recall-engine](https://github.com/open-rec/recall-engine) for install scripts and the index layout,
-and [example_standalone](https://github.com/open-rec/example/tree/master/example_standalone) for a
-full walkthrough including sample data.
+[example_standalone](https://github.com/open-rec/example/tree/master/example_standalone) for the
+supported infrastructure setup, index initialization, and a full walkthrough including sample data.
 
 ```shell
 cd server
