@@ -48,10 +48,22 @@ public class ApiMetricsServiceTest {
         }
 
         Assert.assertEquals(2.0, registry.get("openrec_recommend_result_items").tag("ab", "test1").summary().totalAmount(), 0);
+        Assert.assertEquals(1L, registry.get("openrec_recommend_result_items").tag("ab", "test1")
+            .summary().count());
         Assert.assertEquals(1.0, registry.get("openrec_api_errors").tag("type", "recommend").counter().count(), 0);
         Assert.assertEquals(1L, registry.get("openrec_api_latency").tag("type", "recommend")
             .tag("ab", "test1").timer().count());
         Assert.assertEquals(1L, registry.get("openrec_api_latency").tag("type", "recommend")
             .tag("ab", "default").timer().count());
+    }
+
+    @Test
+    public void recordsEmptyRecommendAndNormalizesMissingExperiment() {
+        metrics.recordRecommend(" ", () -> new RecommendRes<>(Arrays.asList()));
+
+        Assert.assertEquals(0.0, registry.get("openrec_recommend_result_items").tag("ab", "default")
+            .summary().totalAmount(), 0);
+        Assert.assertEquals(1L, registry.get("openrec_recommend_result_items").tag("ab", "default")
+            .summary().count());
     }
 }
