@@ -8,8 +8,8 @@ import com.openrec.proto.JsonRes;
 import com.openrec.proto.biz.recommend.RecommendReq;
 import com.openrec.proto.biz.recommend.RecommendRes;
 import com.openrec.proto.model.Item;
-import com.openrec.service.rec.RecService;
 import com.openrec.service.metrics.ApiMetricsService;
+import com.openrec.ab.AbExperimentService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
 public class RecommendController {
 
     @Autowired
-    private RecService recService;
+    private AbExperimentService abExperimentService;
 
     @Autowired
     private ApiMetricsService apiMetricsService;
@@ -29,7 +29,8 @@ public class RecommendController {
     @RequestMapping(value = {"/api/recommend"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<RecommendRes<Item>>> recommend(@RequestBody JsonReq<RecommendReq> recommendReq) {
-        return Mono.just(new JsonRes<>(apiMetricsService.recordRecommend(
-            () -> recService.execute(recommendReq.getBody()))));
+        String experiment = abExperimentService.resolve(recommendReq.getBody());
+        return Mono.just(new JsonRes<>(apiMetricsService.recordRecommend(experiment,
+            () -> abExperimentService.execute(recommendReq.getBody()))));
     }
 }

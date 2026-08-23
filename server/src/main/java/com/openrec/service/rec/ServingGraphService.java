@@ -2,9 +2,7 @@ package com.openrec.service.rec;
 
 import java.lang.reflect.Constructor;
 import java.security.MessageDigest;
-import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,28 +12,27 @@ import com.openrec.graph.GraphConfig;
 import com.openrec.graph.RecTemplate;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.node.Node;
+import com.openrec.ab.AbExperimentService;
 import com.openrec.util.JsonUtil;
 
 @Service
 public class ServingGraphService {
 
     @Autowired
-    private RecService recService;
-
-    private final AtomicReference<String> version = new AtomicReference<>("classpath-default");
-    private final AtomicReference<String> checksum = new AtomicReference<>();
-    private final AtomicReference<String> loadedAt = new AtomicReference<>(Instant.now().toString());
+    private AbExperimentService abExperimentService;
 
     public Map<String, Object> activate(String graphJson, String requestedVersion) {
+        return activate(AbExperimentService.DEFAULT_EXPERIMENT, graphJson, requestedVersion);
+    }
+
+    public Map<String, Object> activate(String experiment, String graphJson, String requestedVersion) {
         GraphConfig parsed = RecTemplate.parse(graphJson);
-        GraphConfig merged = mergeNodeConfigs(recService.getGraphConfig(), parsed);
+        GraphConfig merged = mergeNodeConfigs(abExperimentService.graph(experiment), parsed);
         validate(merged);
         String canonical = JsonUtil.objToJson(merged);
-        recService.replaceGraphConfig(merged);
-        version.set(StringUtils.defaultIfBlank(requestedVersion, "graph-" + System.currentTimeMillis()));
-        checksum.set(sha256(canonical));
-        loadedAt.set(Instant.now().toString());
-        return status();
+        abExperimentService.activate(experiment, merged,
+            StringUtils.defaultIfBlank(requestedVersion, "graph-" + System.currentTimeMillis()), sha256(canonical));
+        return status(experiment);
     }
 
     private GraphConfig mergeNodeConfigs(GraphConfig current, GraphConfig received) {
@@ -64,15 +61,22 @@ public class ServingGraphService {
     }
 
     public Map<String, Object> status() {
-        if (checksum.get() == null) {
-            checksum.compareAndSet(null, sha256(JsonUtil.objToJson(recService.getGraphConfig())));
+        ensureDefaultChecksum();
+        return abExperimentService.status();
+    }
+
+    public Map<String, Object> status(String experiment) {
+        ensureDefaultChecksum();
+        return abExperimentService.status(experiment);
+    }
+
+    private void ensureDefaultChecksum() {
+        Map<String, Object> current = abExperimentService.status(AbExperimentService.DEFAULT_EXPERIMENT);
+        if (current.get("checksum") == null) {
+            GraphConfig graph = (GraphConfig) current.get("graph");
+            abExperimentService.activate(AbExperimentService.DEFAULT_EXPERIMENT, graph,
+                String.valueOf(current.get("version")), sha256(JsonUtil.objToJson(graph)));
         }
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("version", version.get());
-        result.put("checksum", checksum.get());
-        result.put("loadedAt", loadedAt.get());
-        result.put("graph", recService.getGraphConfig());
-        return result;
     }
 
     private void validate(GraphConfig graph) {

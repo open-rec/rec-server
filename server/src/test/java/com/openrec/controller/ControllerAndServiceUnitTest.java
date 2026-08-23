@@ -35,6 +35,7 @@ import java.util.Map;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import com.openrec.ab.AbExperimentService;
 
 public class ControllerAndServiceUnitTest {
     @Test
@@ -77,12 +78,13 @@ public class ControllerAndServiceUnitTest {
         assertSame(item, controller.getItem("i").block().getData());
         assertEquals(1, controller.getEvents("u", "s", "t").block().getData().size());
 
-        RecService rec = mock(RecService.class);
+        AbExperimentService experiments = mock(AbExperimentService.class);
         RecommendController recommendController = new RecommendController();
-        ReflectionTestUtils.setField(recommendController, "recService", rec);
+        ReflectionTestUtils.setField(recommendController, "abExperimentService", experiments);
         ReflectionTestUtils.setField(recommendController, "apiMetricsService", new ApiMetricsService(new SimpleMeterRegistry()));
         RecommendReq req = new RecommendReq(); RecommendRes<Item> res = new RecommendRes<>();
-        when(rec.execute(req)).thenReturn(res);
+        when(experiments.resolve(req)).thenReturn("default");
+        doReturn(res).when(experiments).execute(req);
         assertSame(res, recommendController.recommend(new JsonReq<>(req)).block().getData());
     }
 

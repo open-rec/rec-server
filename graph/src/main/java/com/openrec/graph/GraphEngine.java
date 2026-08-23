@@ -4,11 +4,9 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.*;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.openrec.graph.config.NodeConfig;
@@ -55,33 +53,35 @@ public class GraphEngine {
         }
     }
 
+    public void addParam(String key, Object value) {
+        context.addParam(key, value);
+    }
+
     public void buildGraph(GraphConfig graphConfig) {
+        try {
+            buildGraph(GraphPlan.compile(graphConfig));
+        } catch (IllegalArgumentException error) {
+            log.error("compile graph failed: {}", ExceptionUtils.getStackTrace(error));
+            queue.add(new RootNode());
+        }
+    }
+
+    public void buildGraph(GraphPlan plan) {
         RootNode rootNode = new RootNode();
-        Map<String, Node> nodeMap = Maps.newHashMap();
-        for (NodeConfig nodeConfig : graphConfig.getNodes()) {
+        Node[] nodes = new Node[plan.size()];
+        for (int index = 0; index < nodes.length; index++) {
+            NodeConfig nodeConfig = plan.getNodeConfig(index);
             context.addConfig(nodeConfig.getName(), nodeConfig);
-            if (StringUtils.isNotEmpty(nodeConfig.getClazz())) {
-                try {
-                    Node node = (Node)Class.forName(nodeConfig.getClazz()).getDeclaredConstructor(NodeConfig.class)
-                        .newInstance(nodeConfig);
-                    node.setConfig(nodeConfig);
-                    nodeMap.put(node.getName(), node);
-                } catch (Exception e) {
-                    log.error("node:{} reflect failed: {}", nodeConfig.getClazz(), ExceptionUtils.getStackTrace(e));
-                }
-            }
+            nodes[index] = plan.newNode(index);
         }
 
-        for (GraphConfig.NodeEdge edge : graphConfig.getEdges()) {
-            Node from = nodeMap.get(edge.getFrom());
-            Node to = nodeMap.get(edge.getTo());
+        for (int[] edge : plan.getEdges()) {
+            Node from = nodes[edge[0]];
+            Node to = nodes[edge[1]];
             from.addChild(to);
             to.addParent(from);
-
-            if (from.isReady()) {
-                rootNode.addChild(from);
-            }
         }
+        for (int root : plan.getRoots()) rootNode.addChild(nodes[root]);
 
         queue.add(rootNode);
         log.info("build graph finished");
@@ -142,6 +142,57 @@ public class GraphEngine {
             }
         }
         log.info("graph execute finished, total node count:{}", nodeSet.size());
+    }
+
+    /** Executes a precompiled plan without rebuilding Node parent/child relationships. */
+    public void execGraph(GraphPlan plan) {
+        Node[] nodes = new Node[plan.size()];
+        for (int index = 0; index < nodes.length; index++) {
+            NodeConfig config = plan.getNodeConfig(index);
+            context.addConfig(config.getName(), config);
+            nodes[index] = plan.newNode(index);
+        }
+        int[] dependencies = plan.newDependencyCounts();
+        List<Integer> ready = new ArrayList<>();
+        for (int root : plan.getRoots()) ready.add(root);
+        int executed = 0;
+        while (!ready.isEmpty()) {
+            CountDownLatch latch = new CountDownLatch(ready.size());
+            for (int index : ready) {
+                Node node = nodes[index];
+                node.start();
+                Future future = threadPool.submit(() -> {
+                    long start = System.currentTimeMillis();
+                    try {
+                        context.importNodeData(node);
+                        node.run(context);
+                        context.exportNodeData(node);
+                    } catch (Exception error) {
+                        log.error("node:{} exec with exception:{}", node.getName(), ExceptionUtils.getStackTrace(error));
+                    } finally {
+                        node.stop();
+                        latch.countDown();
+                        log.info("node:{} exec cost time: {}ms", node.getName(), System.currentTimeMillis() - start);
+                    }
+                });
+                timeoutThreadPool.submit(new TimeoutTask(node.getName(), future, node.getTimeout()));
+            }
+            try {
+                latch.await();
+            } catch (InterruptedException error) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(error);
+            }
+            List<Integer> next = new ArrayList<>();
+            for (int index : ready) {
+                executed++;
+                for (int child : plan.getChildren(index)) {
+                    if (--dependencies[child] == 0) next.add(child);
+                }
+            }
+            ready = next;
+        }
+        if (executed != nodes.length) throw new IllegalStateException("compiled graph contains unreachable nodes");
     }
 
     public <T> T getResult() {

@@ -134,7 +134,8 @@ public class ProtoModelsTest {
             if (!setter.getName().startsWith("set") || setter.getParameterTypes().length != 1) continue;
             Class<?> type = setter.getParameterTypes()[0];
             Object value = type == String.class ? "value" : type == int.class ? 7 :
-                type == boolean.class ? true : type == java.util.List.class ? Collections.singletonList("value") : new Object();
+                type == boolean.class ? true : type == java.util.List.class ? Collections.singletonList("value") :
+                type == java.util.Map.class ? Collections.singletonMap("key", "value") : new Object();
             setter.invoke(bean, value);
             Method getter;
             try {

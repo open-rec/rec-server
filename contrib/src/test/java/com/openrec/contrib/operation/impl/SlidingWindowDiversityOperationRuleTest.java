@@ -59,6 +59,21 @@ public class SlidingWindowDiversityOperationRuleTest {
         assertEquals(1, new SlidingWindowDiversityOperationRule().handle(context, input).size());
     }
 
+    @Test
+    public void doesNotApplyChannelRatios() {
+        GraphContext context = context(4, 4, 4, "category");
+        OperationConfig operation = (OperationConfig)context.getConfig("operation").getContent();
+        operation.setChannelRatios(Collections.singletonMap("hot", 1.0));
+        List<ScoreResult> input = scores("i2i-1", "i2i-2", "hot-1", "hot-2");
+        input.get(0).setRecallFrom("i2i"); input.get(1).setRecallFrom("i2i");
+        input.get(2).setRecallFrom("hot"); input.get(3).setRecallFrom("hot");
+        context.addData("operationItemMap", items(item("i2i-1", "a", "x"),
+            item("i2i-2", "b", "y"), item("hot-1", "c", "z"), item("hot-2", "d", "w")));
+
+        assertEquals(Arrays.asList("i2i-1", "i2i-2", "hot-1", "hot-2"),
+            ids(new SlidingWindowDiversityOperationRule().handle(context, input)));
+    }
+
     private static GraphContext context(int size, int window, int repeat, String... dimensions) {
         OperationConfig operation = new OperationConfig();
         operation.setWindowSize(window); operation.setRepeatK(repeat);

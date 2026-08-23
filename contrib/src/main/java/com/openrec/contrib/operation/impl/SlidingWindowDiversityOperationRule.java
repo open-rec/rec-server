@@ -24,7 +24,6 @@ import com.openrec.proto.model.ScoreResult;
 @Extension
 public class SlidingWindowDiversityOperationRule implements OperationRule {
     private static final Logger LOG = LoggerFactory.getLogger(SlidingWindowDiversityOperationRule.class);
-    private final WeightedChannelOperationRule channelRule = new WeightedChannelOperationRule();
 
     @Override
     public List<ScoreResult> handle(GraphContext context, List<ScoreResult> inputItems) {
@@ -36,15 +35,9 @@ public class SlidingWindowDiversityOperationRule implements OperationRule {
             return new ArrayList<>(inputItems.subList(0, targetSize));
         }
 
-        // Keep the existing channel allocation as the preferred order, but retain all remaining
-        // candidates as diversity fallbacks when the preferred set cannot satisfy the window.
-        List<ScoreResult> preferred = channelRule.handle(context, inputItems);
-        List<ScoreResult> remaining = new ArrayList<>(preferred);
-        Set<String> seenIds = new LinkedHashSet<>();
-        for (ScoreResult item : preferred) { seenIds.add(item.getId()); }
-        for (ScoreResult item : ChannelMixSupport.sorted(inputItems)) {
-            if (seenIds.add(item.getId())) { remaining.add(item); }
-        }
+        // Diversity and channel allocation are independent operation strategies. Start from the
+        // rank order here; channelRatios are consumed only by WeightedChannelOperationRule.
+        List<ScoreResult> remaining = ChannelMixSupport.sorted(inputItems);
 
         Map<String, Item> itemMap = itemMap(context);
         List<ScoreResult> result = new ArrayList<>(targetSize);

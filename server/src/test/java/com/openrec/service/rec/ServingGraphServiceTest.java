@@ -8,16 +8,21 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.openrec.graph.GraphConfig;
 import com.openrec.graph.RecTemplate;
 import com.openrec.graph.config.NodeConfig;
+import com.openrec.ab.AbExperimentService;
 import com.openrec.util.JsonUtil;
 
 public class ServingGraphServiceTest {
 
     private ServingGraphService service;
+    private RecService recService;
+    private AbExperimentService abExperimentService;
 
     @Before
     public void setUp() {
         service = new ServingGraphService();
-        ReflectionTestUtils.setField(service, "recService", new RecService());
+        recService = new RecService();
+        abExperimentService = new AbExperimentService(recService);
+        ReflectionTestUtils.setField(service, "abExperimentService", abExperimentService);
     }
 
     @Test
@@ -29,7 +34,7 @@ public class ServingGraphServiceTest {
 
     @Test
     public void onlyUpdatesExistingNodeConfigs() {
-        GraphConfig current = ((RecService) ReflectionTestUtils.getField(service, "recService")).getGraphConfig();
+        GraphConfig current = recService.getGraphConfig();
         String nodeName = current.getNodes().get(0).getName();
         int nodeCount = current.getNodes().size();
         String edges = JsonUtil.objToJson(current.getEdges());
@@ -48,5 +53,16 @@ public class ServingGraphServiceTest {
         Assert.assertEquals(edges, JsonUtil.objToJson(activated.getEdges()));
         Assert.assertFalse(activated.getNodes().stream().anyMatch(node -> "new-node".equals(node.getName())));
         Assert.assertEquals(update.getTimeout(), activated.getNodes().get(0).getTimeout());
+    }
+
+    @Test
+    public void activatesIndependentExperimentGraph() {
+        GraphConfig graph = recService.getGraphConfig();
+        NodeConfig update = JsonUtil.jsonToObj(JsonUtil.objToJson(graph.getNodes().get(0)), NodeConfig.class);
+        update.setTimeout(update.getTimeout() + 10);
+        service.activate("test1", "{\"nodes\":[" + JsonUtil.objToJson(update) + "],\"edges\":[]}", "ab-v1");
+
+        Assert.assertEquals("ab-v1", service.status("test1").get("version"));
+        Assert.assertNotEquals(update.getTimeout(), recService.getGraphConfig().getNodes().get(0).getTimeout());
     }
 }

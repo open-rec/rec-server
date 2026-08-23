@@ -1,10 +1,15 @@
+# syntax=docker/dockerfile:1.7
 ARG MAVEN_IMAGE=maven:3.9.9-eclipse-temurin-8
 ARG JAVA_IMAGE=eclipse-temurin:8-jre-jammy
 
 FROM ${MAVEN_IMAGE} AS build
 WORKDIR /src
+
 COPY . .
-RUN mvn clean package -DskipTests
+# Keep downloaded Maven artifacts outside the invalidated source layer. Source
+# changes still trigger compilation, but dependencies are only downloaded once.
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
+    mvn -B package -DskipTests
 
 FROM ${JAVA_IMAGE}
 RUN apt-get update \

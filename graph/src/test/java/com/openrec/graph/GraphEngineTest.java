@@ -19,13 +19,18 @@ public class GraphEngineTest {
     @Test
     public void testGraph() {
         GraphConfig graphConfig = new Gson().fromJson(TEST_GRAPH_CONIG, GraphConfig.class);
+        GraphPlan plan = GraphPlan.compile(graphConfig);
         long start = System.currentTimeMillis();
         GraphEngine graphEngine = GraphEngine.getSessionGraphEngine();
         graphEngine.prepare(null);
-        graphEngine.buildGraph(graphConfig);
+        graphEngine.buildGraph(plan);
         graphEngine.execGraph();
         long cost = System.currentTimeMillis() - start;
         System.out.println(cost);
         Assert.assertTrue(cost < graphConfig.getNodes().size() * 1000);
+
+        GraphEngine secondExecution = GraphEngine.getSessionGraphEngine();
+        secondExecution.execGraph(plan);
+        Assert.assertSame(graphConfig, plan.getConfig());
     }
 }

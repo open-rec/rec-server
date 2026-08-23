@@ -30,17 +30,16 @@ public class OperationNode extends SyncNode<OperationConfig> {
         super(nodeConfig);
         this.operationItems = Lists.newArrayList();
         this.operationRule = OperationRuleManager.getOperationRuleByName(config.getContent().getOperationName());
+        if (this.operationRule == null) {
+            throw new IllegalArgumentException("unknown operation rule: "
+                + config.getContent().getOperationName());
+        }
     }
 
     @Override
     public void run(GraphContext context) {
-        if (operationRule != null) {
-            operationItems = operationRule.handle(context, rankItems);
-            log.info("{}:{} exec finished", getName(), config.getContent().getOperationName());
-        } else {
-            operationItems = rankItems;
-            log.warn("{} load {} failed, please check again", getName(), config.getContent().getOperationName());
-        }
+        operationItems = operationRule.handle(context, rankItems);
+        log.info("{}:{} exec finished", getName(), config.getContent().getOperationName());
         log.info("{} with result size:{}", getName(), operationItems.size());
     }
 }

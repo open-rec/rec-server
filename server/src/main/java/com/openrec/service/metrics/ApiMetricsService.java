@@ -38,16 +38,24 @@ public class ApiMetricsService {
     }
 
     public <T> RecommendRes<T> recordRecommend(Supplier<RecommendRes<T>> action) {
-        RecommendRes<T> response = record("recommend", "recommend", action);
+        return recordRecommend("default", action);
+    }
+
+    public <T> RecommendRes<T> recordRecommend(String experiment, Supplier<RecommendRes<T>> action) {
+        RecommendRes<T> response = record("recommend", "recommend", experiment, action);
         int resultSize = response == null || response.getResults() == null ? 0 : response.getResults().size();
-        summary("openrec_recommend_result_items", "recommend").record(resultSize);
+        summary("openrec_recommend_result_items", "recommend", experiment).record(resultSize);
         return response;
     }
 
     private <T> T record(String api, String type, Supplier<T> action) {
+        return record(api, type, "default", action);
+    }
+
+    private <T> T record(String api, String type, String experiment, Supplier<T> action) {
         Counter.builder("openrec_api_requests")
             .description("Total OpenRec API requests")
-            .tags("api", api, "type", type)
+            .tags("api", api, "type", type, "ab", experiment)
             .register(meterRegistry).increment();
         long started = System.nanoTime();
         try {
@@ -55,13 +63,13 @@ public class ApiMetricsService {
         } catch (RuntimeException | Error error) {
             Counter.builder("openrec_api_errors")
                 .description("Total failed OpenRec API requests")
-                .tags("api", api, "type", type)
+                .tags("api", api, "type", type, "ab", experiment)
                 .register(meterRegistry).increment();
             throw error;
         } finally {
             Timer.builder("openrec_api_latency")
                 .description("OpenRec API processing latency")
-                .tags("api", api, "type", type)
+                .tags("api", api, "type", type, "ab", experiment)
                 .publishPercentileHistogram()
                 .register(meterRegistry)
                 .record(System.nanoTime() - started, TimeUnit.NANOSECONDS);
@@ -69,8 +77,13 @@ public class ApiMetricsService {
     }
 
     private DistributionSummary summary(String name, String type) {
+        return summary(name, type, "default");
+    }
+
+    private DistributionSummary summary(String name, String type, String experiment) {
         return DistributionSummary.builder(name)
-            .tags("api", name.startsWith("openrec_push") ? "push" : "recommend", "type", type)
+            .tags("api", name.startsWith("openrec_push") ? "push" : "recommend", "type", type,
+                "ab", experiment)
             .register(meterRegistry);
     }
 }

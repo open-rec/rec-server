@@ -39,7 +39,7 @@ public class ApiMetricsServiceTest {
     @Test
     public void recordsRecommendResultsAndErrors() {
         RecommendRes<Item> response = new RecommendRes<>(Arrays.asList(new ScoreResult(), new ScoreResult()));
-        metrics.recordRecommend(() -> response);
+        metrics.recordRecommend("test1", () -> response);
         try {
             metrics.recordRecommend(() -> { throw new IllegalStateException("failed"); });
             Assert.fail("expected recommendation failure");
@@ -47,8 +47,11 @@ public class ApiMetricsServiceTest {
             // expected
         }
 
-        Assert.assertEquals(2.0, registry.get("openrec_recommend_result_items").summary().totalAmount(), 0);
+        Assert.assertEquals(2.0, registry.get("openrec_recommend_result_items").tag("ab", "test1").summary().totalAmount(), 0);
         Assert.assertEquals(1.0, registry.get("openrec_api_errors").tag("type", "recommend").counter().count(), 0);
-        Assert.assertEquals(2L, registry.get("openrec_api_latency").tag("type", "recommend").timer().count());
+        Assert.assertEquals(1L, registry.get("openrec_api_latency").tag("type", "recommend")
+            .tag("ab", "test1").timer().count());
+        Assert.assertEquals(1L, registry.get("openrec_api_latency").tag("type", "recommend")
+            .tag("ab", "default").timer().count());
     }
 }
