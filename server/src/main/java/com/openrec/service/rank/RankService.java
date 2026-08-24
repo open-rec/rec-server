@@ -64,7 +64,12 @@ public class RankService {
     }
 
     public Map<String, Double> score(String userId, List<String> itemIds) {
-        String scoreUrl = String.format("http://%s:%s%s", rankHost, rankPort, SCORE_PATH);
+        // @Value on this older Spring stack does not reliably apply relaxed RANK_HOST/RANK_PORT
+        // environment binding. Resolve the exact Compose keys at call time before falling back to
+        // application properties; otherwise a container silently calls its own 127.0.0.1.
+        String effectiveHost = environment.getProperty("RANK_HOST", rankHost);
+        String effectivePort = environment.getProperty("RANK_PORT", rankPort);
+        String scoreUrl = String.format("http://%s:%s%s", effectiveHost, effectivePort, SCORE_PATH);
         RankUserItems rUserItems = new RankUserItems(userId, itemIds);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

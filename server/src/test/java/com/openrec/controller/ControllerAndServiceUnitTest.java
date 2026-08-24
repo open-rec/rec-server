@@ -118,6 +118,7 @@ public class ControllerAndServiceUnitTest {
         ReflectionTestUtils.setField(service, "restTemplate", rest);
         ReflectionTestUtils.setField(service, "rankHost", "localhost");
         ReflectionTestUtils.setField(service, "rankPort", "8080");
+        ReflectionTestUtils.setField(service, "environment", new MockEnvironment());
         RankService.RankItemScores success = new RankService.RankItemScores();
         success.setCode(0); success.setData(Collections.singletonMap("i", 2d));
         when(rest.postForObject(anyString(), any(), eq(RankService.RankItemScores.class))).thenReturn(success);
@@ -132,6 +133,27 @@ public class ControllerAndServiceUnitTest {
         assertEquals("u", dto.getUserId()); assertEquals("i", dto.getItemIds().get(0));
         failure.setStatus("error"); failure.setMessage("bad"); failure.setData(Collections.emptyMap());
         assertEquals("error", failure.getStatus()); assertEquals("bad", failure.getMessage());
+    }
+
+    @Test
+    public void rankServicePrefersExactContainerEnvironmentAddress() {
+        RestTemplate rest = mock(RestTemplate.class);
+        RankService service = new RankService();
+        ReflectionTestUtils.setField(service, "restTemplate", rest);
+        ReflectionTestUtils.setField(service, "rankHost", "127.0.0.1");
+        ReflectionTestUtils.setField(service, "rankPort", "8123");
+        MockEnvironment environment = new MockEnvironment()
+            .withProperty("RANK_HOST", "rank-engine").withProperty("RANK_PORT", "9123");
+        ReflectionTestUtils.setField(service, "environment", environment);
+        RankService.RankItemScores success = new RankService.RankItemScores();
+        success.setCode(0); success.setData(Collections.singletonMap("i", 1d));
+        when(rest.postForObject(anyString(), any(), eq(RankService.RankItemScores.class)))
+            .thenReturn(success);
+
+        service.score("u", Collections.singletonList("i"));
+
+        verify(rest).postForObject(eq("http://rank-engine:9123/model/score"), any(),
+            eq(RankService.RankItemScores.class));
     }
 
     @Test
