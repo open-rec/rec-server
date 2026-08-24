@@ -39,6 +39,7 @@ public class RankNode extends SyncNode<RankConfig> {
 
     public RankNode(NodeConfig nodeConfig) {
         super(nodeConfig);
+        RankScoreFusion.validate(config.getContent().getScoreStrategy());
         this.rankItems = Lists.newArrayList();
     }
 
@@ -70,10 +71,10 @@ public class RankNode extends SyncNode<RankConfig> {
         try {
             Map<String, Double> rankResult = rankService.score(userId, itemIds);
             for (ScoreResult itemScore : rankItems) {
-                // TODO: 2024/8/5 provide a simple weight fusion function.
                 double rankScore = rankResult.getOrDefault(itemScore.getId(), 0d);
                 itemScore.setRankScore(rankScore);
-                itemScore.setScore(itemScore.getRecallScore() + rankScore);
+                itemScore.setScore(RankScoreFusion.calculate(
+                    itemScore, rankScore, config.getContent().getScoreStrategy()));
             }
         } catch (Exception e) {
             // rankScore stays null on purpose: ranking did not happen, which differs from scoring 0

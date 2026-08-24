@@ -110,7 +110,17 @@
       "timeout": 200,
       "content": {
         "size": 1000,
-        "endpoint": ""
+        "scoreStrategy": {
+          "recallAggregation": "sum",
+          "recallWeight": 0.2,
+          "rankWeight": 0.9,
+          "channels": [
+            {"name": "i2i", "weight": 2.0},
+            {"name": "embedding", "weight": 1.0},
+            {"name": "hot", "weight": 2.0},
+            {"name": "new", "weight": 1.0}
+          ]
+        }
       }
     },
     {

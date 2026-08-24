@@ -6,4 +6,7 @@ import lombok.Data;
 public class RankConfig {
 
     private int size;
+
+    /** Optional recall/rank score fusion. null preserves the legacy first-recall-score + rank behavior. */
+    private RankScoreStrategyConfig scoreStrategy;
 }

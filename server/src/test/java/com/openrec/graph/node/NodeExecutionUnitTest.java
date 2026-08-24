@@ -88,6 +88,33 @@ public class NodeExecutionUnitTest {
         context.exportNodeData(closed); assertSame(recalled, context.getData("rankItems"));
     }
 
+    @Test public void rankAppliesConfiguredMultiChannelScoreStrategy() {
+        RankScoreStrategyConfig strategy = new RankScoreStrategyConfig();
+        strategy.setRecallAggregation("sum");
+        strategy.setRecallWeight(0.2);
+        strategy.setRankWeight(0.9);
+        strategy.setChannels(Arrays.asList(
+            new RankChannelWeightConfig("i2i", 2),
+            new RankChannelWeightConfig("embedding", 1),
+            new RankChannelWeightConfig("hot", 2),
+            new RankChannelWeightConfig("new", 1)));
+        RankConfig content = new RankConfig(); content.setSize(1); content.setScoreStrategy(strategy);
+        RankService rank = mock(RankService.class); when(rank.isOpen()).thenReturn(true);
+        when(rank.score("u", Collections.singletonList("a"))).thenReturn(Collections.singletonMap("a", 0.5));
+        ScoreResult item = new ScoreResult("a", 0.4);
+        item.addRecallScore("i2i", 0.4); item.addRecallScore("hot", 0.3);
+        RankNode node = new RankNode(config("rank", content, true));
+        ReflectionTestUtils.setField(node, "rankService", rank);
+        ReflectionTestUtils.setField(node, "combineItems", Collections.singletonList(item));
+        ReflectionTestUtils.setField(node, "userFeatureMap", Collections.singletonMap("userId", "u"));
+
+        GraphContext context = new GraphContext(); node.run(context); context.exportNodeData(node);
+        ScoreResult result = ((List<ScoreResult>) context.getData("rankItems")).get(0);
+        assertEquals(0.73, result.getScore(), 0.000001);
+        assertEquals(Double.valueOf(1.4), result.getRecallFusionScore());
+        assertEquals(Double.valueOf(0.5), result.getRankScore());
+    }
+
     @Test public void collectorLimitsResultAndWritesExposeOnlyWhenNonEmpty() {
         RedisService redis = mock(RedisService.class);
         CollectorNode node = new CollectorNode(config("collector", null, true));

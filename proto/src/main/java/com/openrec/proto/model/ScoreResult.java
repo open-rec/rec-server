@@ -11,7 +11,7 @@ public class ScoreResult implements Serializable {
 
     private String id;
 
-    /** What the client ranks by: recallScore + rankScore once both stages have run. */
+    /** Final score used by downstream sorting after the configured recall/rank fusion. */
     private double score;
 
     /**
@@ -26,6 +26,9 @@ public class ScoreResult implements Serializable {
      * score of 0.
      */
     private Double recallScore;
+
+    /** Aggregated recall score used by a configured rank score strategy. */
+    private Double recallFusionScore;
 
     /** What the rank engine contributed. null when ranking was skipped or failed. */
     private Double rankScore;
