@@ -6,5 +6,6 @@ public interface ProtoCode {
     int BAD_REQUEST = 400;
     int NOT_FOUND = 404;
     int ERROR = 500;
+    int NOT_IMPLEMENTED = 501;
     int TIMEOUT = 504;
 }

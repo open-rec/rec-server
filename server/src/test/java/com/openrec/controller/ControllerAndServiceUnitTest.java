@@ -86,6 +86,17 @@ public class ControllerAndServiceUnitTest {
         when(experiments.resolve(req)).thenReturn("default");
         doReturn(res).when(experiments).execute(req);
         assertSame(res, recommendController.recommend(new JsonReq<>(req)).block().getData());
+        assertEquals(RecommendReq.TARGET_ITEM, req.getTargetType());
+        assertSame(res, recommendController.recommendItem(new JsonReq<>(req)).block().getData());
+
+        RecommendReq userReq = new RecommendReq();
+        com.openrec.proto.JsonRes<RecommendRes<User>> unsupported =
+            recommendController.recommendUser(new JsonReq<>(userReq)).block();
+        assertEquals(com.openrec.proto.ProtoCode.NOT_IMPLEMENTED, unsupported.getCode());
+        assertFalse(unsupported.isStatus());
+        assertNull(unsupported.getData());
+        assertEquals(RecommendReq.TARGET_USER, userReq.getTargetType());
+        assertEquals(RecommendReq.TARGET_USER, userReq.getParams().get("targetType"));
     }
 
     @Test

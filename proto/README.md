@@ -42,7 +42,8 @@ public class JsonRes<T> {
 `requestId` is not decoration: `rec-server` pushes it into the SLF4J MDC, so every log line for a
 request carries it. Send your own to correlate client and server logs.
 
-`ProtoCode`: `SUCCESS 200`, `BAD_REQUEST 400`, `NOT_FOUND 404`, `ERROR 500`, `TIMEOUT 504`.
+`ProtoCode`: `SUCCESS 200`, `BAD_REQUEST 400`, `NOT_FOUND 404`, `ERROR 500`,
+`NOT_IMPLEMENTED 501`, `TIMEOUT 504`.
 
 `JsonResType` is a `ParameterizedType` helper that lets a client deserialize `JsonRes<T>` with Gson
 despite type erasure — `rec-client` uses it internally.
@@ -111,6 +112,7 @@ class RecommendReq {
     List<String> itemIds;  // extra triggers, e.g. the item being viewed
     String type;
     boolean debug;         // attach item details to the response
+    String targetType;     // endpoint-owned: item or user
 }
 
 class RecommendRes<T> {
@@ -118,6 +120,10 @@ class RecommendRes<T> {
     List<T> detailInfos;         // populated only when debug = true
 }
 ```
+
+`POST /api/recommend/item` returns `RecommendRes<Item>`. The original `POST /api/recommend` remains
+an item-recommendation alias. `POST /api/recommend/user` reserves the future
+`RecommendRes<User>` contract but currently returns code 501 without executing a serving graph.
 
 The field **names** of `RecommendReq` are load-bearing: `GraphEngine.prepare()` reflects over them
 and exposes each as a DAG parameter under its own name (`scene`, `size`, `userId`, `itemIds`, …), which

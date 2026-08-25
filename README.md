@@ -84,7 +84,7 @@ by a composing example.
 ```shell
 curl http://localhost:13579/health
 
-curl -s -X POST http://localhost:13579/api/recommend \
+curl -s -X POST http://localhost:13579/api/recommend/item \
   -H 'Content-Type: application/json' -d '{
   "requestId": "test-1",
   "body": {"scene": "scene_0", "size": 10, "userId": "user_247", "deviceId": "d1", "type": "click", "debug": true}
@@ -149,10 +149,16 @@ Standalone setups need neither Kafka nor the rank engine.
 
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/api/recommend` | get recommendations |
+| POST | `/api/recommend` | compatibility alias for item recommendations |
+| POST | `/api/recommend/item` | recommend items; debug details are `Item` objects |
+| POST | `/api/recommend/user` | reserved user-recommendation contract; currently returns 501 |
 | POST | `/api/push/{user,item,event}` | ingest data |
 | GET | `/api/query/user/{userId}` | read back a user |
 | GET | `/api/query/item/{itemId}` | read back an item |
+
+The endpoint owns `targetType` (`item` or `user`). User recommendation deliberately has no serving
+implementation yet; its entity schema, relationship model, recall, filtering and ranking semantics
+must be designed before it is connected to a graph.
 
 Cluster pushes use a versioned Kafka mutation envelope. `INSERT` and `UPDATE` require the normal
 entity body; `DELETE` for item/user requires only `id` (an item may optionally include `scene`).
