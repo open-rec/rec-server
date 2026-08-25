@@ -26,6 +26,8 @@
       "timeout": 50,
       "content": {
         "size": 100,
+        "tableName": "new",
+        "recallType": "new",
         "duration": 86400
       }
     },
@@ -36,7 +38,9 @@
       "open": true,
       "timeout": 100,
       "content": {
-        "size": 1000
+        "size": 1000,
+        "tableName": "hot",
+        "recallType": "hot"
       }
     },
     {
@@ -70,23 +74,51 @@
       }
     },
     {
-      "name": "i2i",
+      "name": "item_cf_i2i",
       "clazz": "com.openrec.graph.node.I2iNode",
       "configClazz": "com.openrec.graph.config.I2iConfig",
       "open": true,
       "timeout": 20,
       "content": {
-        "size": 1000
+        "size": 1000,
+        "tableName": "item-cf-i2i",
+        "recallType": "item_cf_i2i"
       }
     },
     {
-      "name": "embedding",
+      "name": "content_i2i",
+      "clazz": "com.openrec.graph.node.I2iNode",
+      "configClazz": "com.openrec.graph.config.I2iConfig",
+      "open": true,
+      "timeout": 20,
+      "content": {
+        "size": 1000,
+        "tableName": "content-i2i",
+        "recallType": "content_i2i"
+      }
+    },
+    {
+      "name": "user_cf_u2i",
+      "clazz": "com.openrec.graph.node.U2iNode",
+      "configClazz": "com.openrec.graph.config.U2iConfig",
+      "open": true,
+      "timeout": 20,
+      "content": {
+        "size": 1000,
+        "tableName": "user-cf-u2i",
+        "recallType": "user_cf_u2i"
+      }
+    },
+    {
+      "name": "item_seq_emb",
       "clazz": "com.openrec.graph.node.EmbeddingNode",
       "configClazz": "com.openrec.graph.config.EmbeddingConfig",
       "open": true,
       "timeout": 100,
       "content": {
         "size": 1000,
+        "tableName": "item-vector",
+        "recallType": "item_seq_emb",
         "vectorField": "vector",
         "idField": "id"
       }
@@ -99,7 +131,15 @@
       "timeout": 50,
       "content": {
         "size": 3000,
-        "checkExpireTime": false
+        "checkExpireTime": false,
+        "recallTypes": [
+          "item_cf_i2i",
+          "content_i2i",
+          "user_cf_u2i",
+          "item_seq_emb",
+          "hot",
+          "new"
+        ]
       }
     },
     {
@@ -115,8 +155,10 @@
           "recallWeight": 0.2,
           "rankWeight": 0.9,
           "channels": [
-            {"name": "i2i", "weight": 2.0},
-            {"name": "embedding", "weight": 1.0},
+            {"name": "item_cf_i2i", "weight": 2.0},
+            {"name": "content_i2i", "weight": 1.0},
+            {"name": "user_cf_u2i", "weight": 1.0},
+            {"name": "item_seq_emb", "weight": 1.0},
             {"name": "hot", "weight": 2.0},
             {"name": "new", "weight": 1.0}
           ]
@@ -143,8 +185,10 @@
         "repeatK": 2,
         "diversityDimensions": ["category", "tags"],
         "channelRatios": {
-          "i2i": 0.3,
-          "embedding": 0.3,
+          "item_cf_i2i": 0.2,
+          "content_i2i": 0.1,
+          "user_cf_u2i": 0.1,
+          "item_seq_emb": 0.2,
           "hot": 0.2,
           "new": 0.2
         },
@@ -166,18 +210,30 @@
   "edges": [
     {
       "from": "userTrigger",
-      "to": "i2i"
+      "to": "item_cf_i2i"
     },
     {
       "from": "userTrigger",
-      "to": "embedding"
+      "to": "content_i2i"
     },
     {
-      "from": "i2i",
+      "from": "userTrigger",
+      "to": "item_seq_emb"
+    },
+    {
+      "from": "item_cf_i2i",
       "to": "combine"
     },
     {
-      "from": "embedding",
+      "from": "content_i2i",
+      "to": "combine"
+    },
+    {
+      "from": "user_cf_u2i",
+      "to": "combine"
+    },
+    {
+      "from": "item_seq_emb",
       "to": "combine"
     },
     {

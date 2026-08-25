@@ -1,74 +1,86 @@
-# rec-online-server
+# rec-server module
 
-The service module: HTTP layer, DAG nodes, and storage access. Everything domain-specific lives here;
-the DAG machinery itself is in [rec-graph](../graph) and the wire types in [rec-proto](../proto).
+This module contains the WebFlux application, serving DAG nodes, storage adapters, runtime graph
+management, and HTTP endpoints. The generic runtime is provided by [`rec-graph`](../graph), shared
+wire models by [`rec-proto`](../proto), and operation rules by [`rec-contrib`](../contrib).
 
-Entry point: `com.openrec.RecServer`. Port 13579.
+Entry point: `com.openrec.RecServer`. Default port: `13579`.
 
-## layout
+## Package layout
 
-| Package | Contents |
+| Package | Responsibility |
 |---|---|
-| `controller/` | WebFlux endpoints — recommend, push, query, operate, health |
-| `graph/node/` | the DAG nodes (`I2iNode`, `EmbeddingNode`, `RankNode`, `CollectorNode`, …) |
-| `graph/config/` | typed config for each node, deserialized from `graph.json` |
-| `graph/` | `RecTemplate` (loads `graph.json`), `RecParams`, `RecEventType` |
-| `service/` | `RedisService`, `EsService`, `RankService`, `KafkaService`, push/query/operate |
-| `plugin/` | `OperationRuleManager` — pf4j loader for [rec-contrib](../contrib) |
-| `config/` | Spring beans: Redis, Elasticsearch, Kafka, WebFlux, RestTemplate |
-| `aop/` | `ApiDecorator` (request/response logging + MDC), `@TimeCost` |
-| `util/` | `BeanUtil`, `JsonUtil`, `FileUtil`, `TimeUtil` |
+| `controller` | Recommend, push, query, operation, health, and serving-graph APIs |
+| `graph/node` | Recall, filter, combine, rank, operation, and collector nodes |
+| `graph/config` | Typed node configuration deserialized from `graph.json` |
+| `graph` | Graph loading, request parameter constants, and event types |
+| `service/recall` | Redis and Elasticsearch recall-store implementations |
+| `service` | Entity, event, rank, Kafka, and runtime serving services |
+| `plugin` | PF4J operation-rule loader |
+| `config` | Spring configuration for storage, messaging, HTTP clients, and WebFlux |
+| `aop` | API logging, MDC correlation, and timing |
 
-## run
+## Request flow
 
-From this directory, after `mvn clean package -DskipTests` at the repo root:
+For every recommendation request, the active graph plan is selected, a request-scoped
+`GraphEngine` is created, request fields are added to its context, and ready nodes execute by DAG
+level. The collector returns ordered `ScoreResult` values and optionally loads item details for
+debug responses.
+
+The default graph combines six recall strategies:
+
+| `recallType` / node name | Node | Lookup |
+|---|---|---|
+| `item_cf_i2i` | `I2iNode` | trigger item to item-CF candidates |
+| `content_i2i` | `I2iNode` | trigger item to content-similar candidates |
+| `user_cf_u2i` | `U2iNode` | user to collaborative-filter candidates |
+| `item_seq_emb` | `EmbeddingNode` | trigger sequence vector to nearest items |
+| `hot` | `HotNode` | scene to popular items |
+| `new` | `NewNode` | scene to recent items |
+
+Recall configs separate strategy identity from storage routing:
+
+- `recallType` names the logical channel and dynamic context key.
+- `tableName` selects the Redis key namespace or Elasticsearch alias/index family.
+- `name` identifies the graph node and currently matches `recallType` for recall nodes.
+
+Recall nodes publish `recall:<recallType>` dynamically. Fixed annotation exports remain for older
+graphs, while the default `CombineNode.recallTypes` configuration consumes dynamic channels. This
+allows several instances of the same node class to coexist without overwriting the data actually
+used by the current graph.
+
+## Runtime conventions
+
+- Nodes are reflectively constructed, not managed by Spring. They access services through
+  `BeanUtil`.
+- `graph.json` is the packaged default. Runtime graph APIs validate and activate versioned graph
+  definitions without mutating that resource file.
+- `redisTemplate` stores string/sorted-set data; `redisJsonTemplate` stores JSON entity values.
+- The active profile chooses the push path: standalone writes serving state directly, while cluster
+  publishes versioned Kafka mutations for downstream processors.
+- `ApiDecorator` logs controller requests, responses, elapsed time, and the request ID in MDC.
+- Operation rules require the PF4J jar described in [`rec-contrib`](../contrib).
+
+## Run and inspect
+
+Build from the repository root, then launch with the desired profile:
 
 ```shell
-java -jar target/rec-server-1.0-SNAPSHOT.jar --spring.profiles.active=standalone
+mvn clean package -DskipTests
+java -jar server/target/rec-server-1.0-SNAPSHOT.jar \
+  --spring.profiles.active=standalone
 ```
 
-Launch from here (not the repo root) if you use the operation-rule plugin — it is resolved as
-`<working-dir>/plugins/rec-contrib-1.0-SNAPSHOT.jar`.
+Swagger UI is available at <http://localhost:13579/swagger-ui/index.html>. See the repository
+[`README`](../README.md) for dependencies, Docker usage, configuration, and endpoint examples.
 
-Needs Redis and Elasticsearch; the rank engine and Kafka are optional. Full setup, sample data and
-verification steps:
-[example_standalone](https://github.com/open-rec/example/tree/master/example_standalone).
-
-## api document
-
-http://localhost:13579/swagger-ui/index.html
-
-![api](../doc/api.png "api doc")
-
-## conventions worth knowing
-
-**Nodes are not Spring beans.** `GraphEngine` instantiates them reflectively per request, so
-`@Autowired` fields stay null. Get collaborators through `BeanUtil.getBean(RedisService.class)`.
-
-**`graph.json` is read from the classpath.** `RecTemplate` hashes it to support hot reload, but
-`RecService` caches the parsed config in its constructor — in practice, editing the graph means
-repackage and restart.
-
-**Two Redis templates exist.** `redisTemplate` uses String serializers (used for sorted sets),
-`redisJsonTemplate` uses `GenericJackson2JsonRedisSerializer` (used for user/item JSON values). Check
-which one a `RedisService` method uses before adding another.
-
-**Push implementation is profile-driven.** `PushController` injects by the `server.pushService`
-property: `pushRedisService` writes straight to Redis (dev), `pushKafkaService` publishes to the
-`item` / `user` / `event` topics (prod).
-
-**Logging.** `ApiDecorator` wraps every `*Controller` method to log the request, response and elapsed
-time, and puts `JsonReq.requestId` into the SLF4J MDC so all lines for a request are correlated. Add
-`@TimeCost` to any method for timing.
-
-## tests
+## Test
 
 ```shell
-mvn -pl server test
-mvn -pl server test -Dtest=FilterNodeTest#run
+mvn -pl server -am test
+mvn -pl server -am test -Dtest=FilterNodeTest#run
 ```
 
-These are `@SpringBootTest` and talk to **live** Redis / Elasticsearch / Kafka — start those first, or
-build with `-DskipTests`. `EsServiceTest` and `RedisServiceTest` in particular write real keys and
-indexes, and the credentials come from `application-standalone.properties`, so update `es.password` before
-running them.
+Most node and service tests are isolated unit tests. Storage, messaging, or full application tests
+may require Redis, Elasticsearch, Kafka, the operation plugin, or other profile-specific services;
+check the selected test before assuming it is self-contained.

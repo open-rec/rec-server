@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnProperty(name = "recall.store", havingValue = "elasticsearch")
 public class ElasticsearchRecallStore implements RecallStore {
 
-    private static final String EMBEDDING_INDEX_FORMAT = "%s-item-vector-index";
+    private static final String EMBEDDING_INDEX_FORMAT = "%s-%s-index";
     private static final String EMBEDDING_VECTORS_QUERY = "{\"query\":{\"constant_score\":{\"filter\":{"
         + "\"terms\":{\"id\":%s}}}}}}";
     private static final String EMBEDDING_RECALL_QUERY = "{\"knn\":{\"field\":\"vector\","
@@ -47,31 +47,33 @@ public class ElasticsearchRecallStore implements RecallStore {
     private int maxI2iHits;
 
     @Override
-    public List<ScoreResult> hot(String scene, int size) {
+    public List<ScoreResult> hot(String tableName, String scene, int size) {
         String query = String.format("{\"query\":{\"term\":{\"scene\":%s}},"
             + "\"sort\":[{\"score\":\"desc\"},{\"item\":\"asc\"}],\"size\":%d}",
             JsonUtil.objToJson(scene), size);
-        return scoredItems(search("hot", query, "1000ms"), false);
+        return scoredItems(search(tableName, query, "1000ms"), false);
     }
 
     @Override
-    public List<ScoreResult> newest(String scene, long startTime, long endTime, int size) {
+    public List<ScoreResult> newest(
+        String tableName, String scene, long startTime, long endTime, int size) {
         String query = String.format("{\"query\":{\"bool\":{\"filter\":["
                 + "{\"term\":{\"scene\":%s}},{\"range\":{\"publish_time\":{\"gte\":%d,\"lte\":%d}}}]}},"
                 + "\"sort\":[{\"score\":\"desc\"},{\"item\":\"asc\"}],\"size\":%d}",
             JsonUtil.objToJson(scene), startTime, endTime, size);
-        return scoredItems(search("new", query, "1000ms"), false);
+        return scoredItems(search(tableName, query, "1000ms"), false);
     }
 
     @Override
-    public List<ScoreResult> i2i(String scene, List<String> triggerItems, int size) {
+    public List<ScoreResult> i2i(
+        String tableName, String scene, List<String> triggerItems, int size) {
         if (triggerItems == null || triggerItems.isEmpty()) {
             return Collections.emptyList();
         }
         String query = String.format("{\"query\":{\"bool\":{\"filter\":["
                 + "{\"term\":{\"scene\":%s}},{\"terms\":{\"left_item\":%s}}]}},\"size\":%d}",
             JsonUtil.objToJson(scene), JsonUtil.objToJson(triggerItems), maxI2iHits);
-        List<ScoreResult> edges = scoredItems(search("i2i", query, "1000ms"), true);
+        List<ScoreResult> edges = scoredItems(search(tableName, query, "1000ms"), true);
         Map<String, Double> merged = new LinkedHashMap<>();
         for (ScoreResult edge : edges) {
             merged.merge(edge.getId(), edge.getScore(), Double::sum);
@@ -83,12 +85,24 @@ public class ElasticsearchRecallStore implements RecallStore {
     }
 
     @Override
+    public List<ScoreResult> u2i(String tableName, String scene, String userId, int size) {
+        if (userId == null || userId.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        String query = String.format("{\"query\":{\"bool\":{\"filter\":["
+                + "{\"term\":{\"scene\":%s}},{\"term\":{\"user\":%s}}]}},"
+                + "\"sort\":[{\"score\":\"desc\"},{\"item\":\"asc\"}],\"size\":%d}",
+            JsonUtil.objToJson(scene), JsonUtil.objToJson(userId), size);
+        return scoredItems(search(tableName, query, "1000ms"), false);
+    }
+
+    @Override
     public List<ScoreResult> embedding(
-        String scene, List<String> triggerItems, int size, long timeoutMillis) {
+        String tableName, String scene, List<String> triggerItems, int size, long timeoutMillis) {
         if (triggerItems == null || triggerItems.isEmpty()) {
             return Collections.emptyList();
         }
-        String index = String.format(EMBEDDING_INDEX_FORMAT, scene);
+        String index = String.format(EMBEDDING_INDEX_FORMAT, scene, tableName);
         String timeout = timeoutMillis + "ms";
         try {
             SearchResponse<RecallDocument> vectorsResponse = esService.search(index,

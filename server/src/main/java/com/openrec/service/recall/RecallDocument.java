@@ -13,6 +13,7 @@ public class RecallDocument {
     /** Item identifier used by the legacy embedding index. */
     private String id;
     private String item;
+    private String user;
 
     @JsonProperty("left_item")
     private String leftItem;

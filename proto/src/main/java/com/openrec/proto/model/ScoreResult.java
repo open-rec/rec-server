@@ -38,7 +38,7 @@ public class ScoreResult implements Serializable {
      * each one gave it.
      * <p>
      * An item found by several channels is emitted once, but dropping the losing channels' scores
-     * hides exactly the information needed to tune the strategy — whether i2i and hot agree, or
+     * hides exactly the information needed to tune the strategy — whether item_cf_i2i and hot agree, or
      * whether a single channel is carrying the whole result. Insertion-ordered so the merge order
      * stays readable.
      */

@@ -19,7 +19,7 @@ import com.openrec.util.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class EmbeddingNode extends SyncNode<EmbeddingConfig> {
+public class EmbeddingNode extends RecallNode<EmbeddingConfig> {
 
     private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
 
@@ -46,7 +46,9 @@ public class EmbeddingNode extends SyncNode<EmbeddingConfig> {
         }
         String scene = context.getParams().getValueToString(SCENE);
         embeddingItems = recallStore.embedding(
-            scene, triggers, config.getContent().getSize(), config.getTimeout());
-        log.info("{} with embedding size:{}", getName(), embeddingItems.size());
+            tableName(), scene, triggers, config.getContent().getSize(), config.getTimeout());
+        exportChannel(context, embeddingItems);
+        log.info("{} type:{} table:{} with embedding size:{}",
+            getName(), recallType(), tableName(), embeddingItems.size());
     }
 }

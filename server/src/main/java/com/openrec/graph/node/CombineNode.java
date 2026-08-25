@@ -40,8 +40,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CombineNode extends SyncNode<CombineConfig> {
 
-    static final String CHANNEL_I2I = "i2i";
-    static final String CHANNEL_EMBEDDING = "embedding";
+    static final String CHANNEL_I2I = "item_cf_i2i";
+    static final String CHANNEL_EMBEDDING = "item_seq_emb";
     static final String CHANNEL_HOT = "hot";
     static final String CHANNEL_NEW = "new";
 
@@ -98,10 +98,21 @@ public class CombineNode extends SyncNode<CombineConfig> {
         Map<String, ScoreResult> candidates = new LinkedHashMap<>();
         int[] counters = new int[] {0, 0, 0, 0};   // exposed, blacklisted, trigger, unavailable
 
-        collect(i2iItems, CHANNEL_I2I, candidates, triggerItemSet, counters);
-        collect(embeddingItems, CHANNEL_EMBEDDING, candidates, triggerItemSet, counters);
-        collect(hotItems, CHANNEL_HOT, candidates, triggerItemSet, counters);
-        collect(newItems, CHANNEL_NEW, candidates, triggerItemSet, counters);
+        List<String> recallTypes = config.getContent().getRecallTypes();
+        if (recallTypes == null || recallTypes.isEmpty()) {
+            // Backward compatibility for serving graphs created before dynamic recall channels.
+            collect(i2iItems, CHANNEL_I2I, candidates, triggerItemSet, counters);
+            collect(embeddingItems, CHANNEL_EMBEDDING, candidates, triggerItemSet, counters);
+            collect(hotItems, CHANNEL_HOT, candidates, triggerItemSet, counters);
+            collect(newItems, CHANNEL_NEW, candidates, triggerItemSet, counters);
+        } else {
+            for (String recallType : recallTypes) {
+                @SuppressWarnings("unchecked")
+                List<ScoreResult> items = (List<ScoreResult>) context.getData(
+                    RecallNode.CHANNEL_PREFIX + recallType);
+                collect(items, recallType, candidates, triggerItemSet, counters);
+            }
+        }
 
         List<ScoreResult> candidateList = Lists.newArrayList(candidates.values());
         if (candidateList.isEmpty()) {

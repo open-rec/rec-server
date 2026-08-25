@@ -101,7 +101,7 @@ public class ProtoModelsTest {
         score.setRecallScore(2d);
         score.setRankScore(1d);
         score.addRecallScore("hot", 2d);
-        score.addRecallScore("i2i", 1d);
+        score.addRecallScore("item_cf_i2i", 1d);
         assertEquals("hot", score.getRecallFrom());
         assertEquals(2, score.getRecallScores().size());
         ScoreResult sourced = new ScoreResult("id", 4d, "new");

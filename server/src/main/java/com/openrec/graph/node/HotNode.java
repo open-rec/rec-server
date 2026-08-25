@@ -17,7 +17,7 @@ import com.openrec.util.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class HotNode extends SyncNode<HotConfig> {
+public class HotNode extends RecallNode<HotConfig> {
     private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
     @Export("hotItems")
     private List<ScoreResult> hotItems;
@@ -40,7 +40,9 @@ public class HotNode extends SyncNode<HotConfig> {
 
         int size = config.getContent().getSize();
 
-        hotItems = recallStore.hot(scene, size);
-        log.info("{} with hot item size:{}", getName(), hotItems.size());
+        hotItems = recallStore.hot(tableName(), scene, size);
+        exportChannel(context, hotItems);
+        log.info("{} type:{} table:{} with hot item size:{}",
+            getName(), recallType(), tableName(), hotItems.size());
     }
 }

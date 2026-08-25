@@ -41,13 +41,15 @@ public class NewNodeTest {
         NewConfig content = new NewConfig();
         content.setDuration(86400);
         content.setSize(10);
+        content.setTableName("new");
+        content.setRecallType("new");
         NodeConfig<NewConfig> config = new NodeConfig<>();
         config.setName("new");
         config.setContent(content);
         config.setOpen(true);
 
         RecallStore recallStore = mock(RecallStore.class);
-        when(recallStore.newest(eq("scene-1"), anyLong(), anyLong(), eq(10)))
+        when(recallStore.newest(eq("new"), eq("scene-1"), anyLong(), anyLong(), eq(10)))
             .thenAnswer(invocation -> {
                 return Collections.singletonList(new ScoreResult("item-1", 0.75));
             });

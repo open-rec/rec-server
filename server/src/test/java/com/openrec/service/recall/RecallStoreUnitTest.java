@@ -34,19 +34,23 @@ public class RecallStoreUnitTest {
 
         List<ScoreResult> hot = Collections.singletonList(new ScoreResult("hot-1", 0.9));
         when(redis.getZSet("hot:{scene-1}", 0, Double.MAX_VALUE, 10)).thenReturn(hot);
-        assertSame(hot, store.hot("scene-1", 10));
+        assertSame(hot, store.hot("hot", "scene-1", 10));
 
         when(redis.getZSet("new:{scene-1}", 100, 200, 10))
             .thenReturn(Collections.singletonList(new ScoreResult("new-1", 150)));
-        assertEquals(0.75, store.newest("scene-1", 100, 200, 10).get(0).getScore(), 0.000001);
+        assertEquals(0.75, store.newest("new", "scene-1", 100, 200, 10).get(0).getScore(), 0.000001);
 
         List<ScoreResult> i2i = Collections.singletonList(new ScoreResult("next", 1.5));
-        when(redis.getZSet(Arrays.asList("i2i:{a}:scene-1", "i2i:{b}:scene-1"),
+        when(redis.getZSet(Arrays.asList("item-cf-i2i:{a}:scene-1", "item-cf-i2i:{b}:scene-1"),
             0, Double.MAX_VALUE, 5)).thenReturn(i2i);
-        assertSame(i2i, store.i2i("scene-1", Arrays.asList("a", "b"), 5));
+        assertSame(i2i, store.i2i("item-cf-i2i", "scene-1", Arrays.asList("a", "b"), 5));
+
+        List<ScoreResult> u2i = Collections.singletonList(new ScoreResult("personal", 0.8));
+        when(redis.getZSet("user-cf-u2i:{user-1}:scene-1", 0, Double.MAX_VALUE, 5)).thenReturn(u2i);
+        assertSame(u2i, store.u2i("user-cf-u2i", "scene-1", "user-1", 5));
 
         assertEquals(Collections.emptyList(), store.embedding(
-            "scene-1", Arrays.asList("a", "b"), 5, 50));
+            "item-vector", "scene-1", Arrays.asList("a", "b"), 5, 50));
     }
 
     @Test
@@ -58,7 +62,7 @@ public class RecallStoreUnitTest {
             response(document("scene-1", "hot-1", null, 0.9), 1.0);
         when(es.search(eq("openrec-recall-hot-active"), anyString(), eq(RecallDocument.class), eq("1000ms")))
             .thenReturn(hotResponse);
-        assertEquals(Collections.singletonList("hot-1"), ids(store.hot("scene-1", 10)));
+        assertEquals(Collections.singletonList("hot-1"), ids(store.hot("hot", "scene-1", 10)));
         verify(es).search(eq("openrec-recall-hot-active"),
             org.mockito.ArgumentMatchers.contains("scene-1"), eq(RecallDocument.class), eq("1000ms"));
 
@@ -66,7 +70,7 @@ public class RecallStoreUnitTest {
             response(document("scene-1", "new-1", null, 0.75), 1.0);
         when(es.search(eq("openrec-recall-new-active"), anyString(), eq(RecallDocument.class), eq("1000ms")))
             .thenReturn(newResponse);
-        assertEquals(0.75, store.newest("scene-1", 100, 200, 10).get(0).getScore(), 0.000001);
+        assertEquals(0.75, store.newest("new", "scene-1", 100, 200, 10).get(0).getScore(), 0.000001);
         verify(es).search(eq("openrec-recall-new-active"),
             org.mockito.ArgumentMatchers.contains("publish_time"), eq(RecallDocument.class), eq("1000ms"));
     }
@@ -79,13 +83,28 @@ public class RecallStoreUnitTest {
             document("scene-1", null, "same", 0.7),
             document("scene-1", null, "other", 0.8),
             document("scene-1", null, "same", 0.6)));
-        when(es.search(eq("openrec-recall-i2i-active"), anyString(), eq(RecallDocument.class), eq("1000ms")))
+        when(es.search(eq("openrec-recall-item-cf-i2i-active"), anyString(), eq(RecallDocument.class), eq("1000ms")))
             .thenReturn(i2iResponse);
 
-        List<ScoreResult> result = store.i2i("scene-1", Arrays.asList("a", "b"), 2);
+        List<ScoreResult> result = store.i2i("item-cf-i2i", "scene-1", Arrays.asList("a", "b"), 2);
         assertEquals(Arrays.asList("same", "other"), ids(result));
         assertEquals(1.3, result.get(0).getScore(), 0.000001);
         assertEquals(0.8, result.get(1).getScore(), 0.000001);
+    }
+
+    @Test
+    public void elasticsearchU2iUsesConfiguredAliasAndUserKey() throws IOException {
+        EsService es = mock(EsService.class);
+        ElasticsearchRecallStore store = elasticsearchStore(es);
+        SearchResponse<RecallDocument> response =
+            response(document("scene-1", "personal", null, 0.8), 1.0);
+        when(es.search(eq("openrec-recall-user-cf-u2i-active"), anyString(),
+            eq(RecallDocument.class), eq("1000ms"))).thenReturn(response);
+
+        assertEquals(Collections.singletonList("personal"),
+            ids(store.u2i("user-cf-u2i", "scene-1", "user-1", 10)));
+        verify(es).search(eq("openrec-recall-user-cf-u2i-active"),
+            org.mockito.ArgumentMatchers.contains("user-1"), eq(RecallDocument.class), eq("1000ms"));
     }
 
     @Test
@@ -103,7 +122,7 @@ public class RecallStoreUnitTest {
             .thenReturn(response(trigger, 1.0), response(recalled, 0.75));
 
         List<ScoreResult> result = store.embedding(
-            "scene-1", Collections.singletonList("trigger"), 5, 50);
+            "item-vector", "scene-1", Collections.singletonList("trigger"), 5, 50);
         assertEquals(Collections.singletonList("embedding-result"), ids(result));
         assertEquals(0.75, result.get(0).getScore(), 0.000001);
     }

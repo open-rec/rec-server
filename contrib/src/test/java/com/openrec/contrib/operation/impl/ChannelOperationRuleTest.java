@@ -21,18 +21,18 @@ public class ChannelOperationRuleTest {
     @Test
     public void weightedRuleEnforcesRatioAndKeepsHighestScores() {
         GraphContext context = context(10,
-            ratios("i2i", 0.3, "embedding", 0.3, "hot", 0.2, "new", 0.2), null);
+            ratios("item_cf_i2i", 0.3, "item_seq_emb", 0.3, "hot", 0.2, "new", 0.2), null);
         List<ScoreResult> input = new ArrayList<>();
-        add(input, "i2i", 5, 0.50);
-        add(input, "embedding", 5, 0.60);
+        add(input, "item_cf_i2i", 5, 0.50);
+        add(input, "item_seq_emb", 5, 0.60);
         add(input, "hot", 5, 0.90);
         add(input, "new", 5, 1.00);
 
         List<ScoreResult> result = new WeightedChannelOperationRule().handle(context, input);
 
         assertEquals(10, result.size());
-        assertEquals(3, count(result, "i2i"));
-        assertEquals(3, count(result, "embedding"));
+        assertEquals(3, count(result, "item_cf_i2i"));
+        assertEquals(3, count(result, "item_seq_emb"));
         assertEquals(2, count(result, "hot"));
         assertEquals(2, count(result, "new"));
         for (int i = 1; i < result.size(); i++) {
@@ -43,25 +43,25 @@ public class ChannelOperationRuleTest {
 
     @Test
     public void weightedRuleFillsQuotaShortageWithHighestRemainingCandidates() {
-        GraphContext context = context(4, ratios("i2i", 0.5, "new", 0.5), null);
+        GraphContext context = context(4, ratios("item_cf_i2i", 0.5, "new", 0.5), null);
         List<ScoreResult> input = new ArrayList<>();
-        add(input, "i2i", 4, 0.80);
+        add(input, "item_cf_i2i", 4, 0.80);
         add(input, "new", 1, 1.00);
 
         List<ScoreResult> result = new WeightedChannelOperationRule().handle(context, input);
 
         assertEquals(4, result.size());
         assertEquals(1, count(result, "new"));
-        assertEquals(3, count(result, "i2i"));
+        assertEquals(3, count(result, "item_cf_i2i"));
     }
 
     @Test
     public void weightedRuleRoundsStandaloneSizeToExpectedQuotas() {
         Map<String, Integer> quotas = ChannelMixSupport.proportionalQuotas(
-            ratios("i2i", 0.3, "embedding", 0.3, "hot", 0.2, "new", 0.2), 12);
+            ratios("item_cf_i2i", 0.3, "item_seq_emb", 0.3, "hot", 0.2, "new", 0.2), 12);
 
-        assertEquals(Integer.valueOf(4), quotas.get("i2i"));
-        assertEquals(Integer.valueOf(4), quotas.get("embedding"));
+        assertEquals(Integer.valueOf(4), quotas.get("item_cf_i2i"));
+        assertEquals(Integer.valueOf(4), quotas.get("item_seq_emb"));
         assertEquals(Integer.valueOf(2), quotas.get("hot"));
         assertEquals(Integer.valueOf(2), quotas.get("new"));
     }
@@ -70,7 +70,7 @@ public class ChannelOperationRuleTest {
     public void randomRuleGuaranteesConfiguredCandidatesAtRandomPositions() {
         GraphContext context = context(10, null, ratios("hot", 0.1, "new", 0.1));
         List<ScoreResult> input = new ArrayList<>();
-        add(input, "i2i", 8, 0.80);
+        add(input, "item_cf_i2i", 8, 0.80);
         add(input, "hot", 3, 0.95);
         add(input, "new", 3, 1.00);
 

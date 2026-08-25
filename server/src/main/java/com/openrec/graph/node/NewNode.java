@@ -18,7 +18,7 @@ import com.openrec.util.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class NewNode extends SyncNode<NewConfig> {
+public class NewNode extends RecallNode<NewConfig> {
 
     private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
     @Export("newItems")
@@ -44,7 +44,9 @@ public class NewNode extends SyncNode<NewConfig> {
         int size = config.getContent().getSize();
         long nowSecs = TimeUtil.nowSecs();
 
-        newItems = recallStore.newest(scene, nowSecs - duration, nowSecs, size);
-        log.info("{} with new item size:{}", getName(), newItems.size());
+        newItems = recallStore.newest(tableName(), scene, nowSecs - duration, nowSecs, size);
+        exportChannel(context, newItems);
+        log.info("{} type:{} table:{} with new item size:{}",
+            getName(), recallType(), tableName(), newItems.size());
     }
 }

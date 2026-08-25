@@ -1,28 +1,29 @@
 # rec-graph
 
-A small async DAG engine. It knows nothing about recommendation — it loads a node graph from config,
-runs nodes as their dependencies complete, and moves data between them through a shared context.
-`rec-server`'s recall / rank / operation nodes are built on it.
+`rec-graph` is a lightweight asynchronous DAG runtime. It has no recommendation or Spring
+dependencies: it compiles a graph definition, runs ready nodes concurrently, and exchanges data
+through a request-scoped context. Recommendation-specific nodes live in `rec-server`.
 
-Dependencies: Guava, Gson, commons-lang3, Lombok, slf4j. No Spring.
+## Use the engine
 
-## usage
+Compile reusable graph metadata once, then create one engine per request:
 
 ```java
-GraphEngine engine = GraphEngine.getSessionGraphEngine();  // one instance per request
-engine.prepare(requestObject);                             // request fields -> params
-engine.buildGraph(graphConfig);
-engine.execGraph();
+GraphPlan plan = GraphPlan.compile(graphConfig);
+
+GraphEngine engine = GraphEngine.getSessionGraphEngine();
+engine.prepare(requestObject);       // declared fields become graph parameters
+engine.execGraph(plan);
 List<MyResult> result = engine.getResult();
 ```
 
-`GraphEngine` is stateful and single-use: it holds the queue, the visited set and the context for one
-execution. Do not share one across requests.
+`GraphEngine` is stateful and must not be shared between requests. `GraphPlan` is immutable and may
+be reused. The older `buildGraph(...)` followed by `execGraph()` API remains available.
 
-> `destroy()` shuts down the **static** thread pools shared by every engine instance, killing
-> execution for all in-flight requests. `rec-server` deliberately never calls it.
+Do not call `destroy()` during normal request handling: it shuts down the static executor pools
+shared by all engine instances.
 
-## config
+## Graph definition
 
 ```json
 {
@@ -42,128 +43,89 @@ execution. Do not share one across requests.
 }
 ```
 
-| Field | Meaning |
+| Field | Purpose |
 |---|---|
-| `name` | node id, referenced by `edges`; also the key in the context's config map |
-| `clazz` | implementation class, instantiated **reflectively** |
-| `configClazz` | type that `content` is deserialized into; `null` for nodes without config |
-| `open` | feature switch — see below, the node still runs |
-| `timeout` | milliseconds before the engine cancels the node |
-| `content` | node-specific config, typed by `configClazz` |
+| `name` | Unique node ID used by edges and the context config map |
+| `clazz` | Node implementation class |
+| `configClazz` | Type used to deserialize `content`; may be `null` |
+| `open` | Node-level feature switch interpreted by the node |
+| `timeout` | Execution timeout in milliseconds |
+| `content` | Node-specific configuration |
 
-Nodes are created with `Class.forName(clazz).getDeclaredConstructor(NodeConfig.class)`, so **every
-node needs a public constructor taking a single `NodeConfig`**. A class that fails to instantiate is
-logged and skipped, leaving its consumers to fail later.
+`GraphPlan.compile(...)` validates node classes and edges, resolves each node's
+`NodeConfig` constructor, and precomputes dependency metadata. Invalid classes and edge references
+fail before request execution. In an acyclic definition, nodes with no incoming edges are roots.
+Applications accepting runtime graph updates should also validate cycles, as `rec-server` does.
 
-A node listed in `nodes` but absent from `edges` never executes. Nodes that appear only as an
-edge `from` (no parents) become roots and start immediately.
+## Write a node
 
-## writing a node
-
-Extend `SyncNode<C>`, where `C` is the config content type (`Void` if the node has none):
+Most server nodes extend `SyncNode<C>`:
 
 ```java
 public class HotNode extends SyncNode<HotConfig> {
 
     @Import("triggerItems")
-    private List<ScoreResult> triggerItems;      // filled in before run()
+    private List<ScoreResult> triggerItems;
 
     @Export("hotItems")
-    private List<ScoreResult> hotItems;          // published after run()
+    private List<ScoreResult> hotItems = Lists.newArrayList();
 
     public HotNode(NodeConfig nodeConfig) {
         super(nodeConfig);
-        this.hotItems = Lists.newArrayList();    // initialize! see below
     }
 
     @Override
     public void run(GraphContext context) {
         if (!config.isOpen()) {
-            return;                              // honour the switch yourself
+            return;
         }
         String scene = context.getParams().getValueToString("scene");
-        int size = config.getContent().getSize();
-        hotItems = ...;
+        // Populate hotItems.
     }
 }
 ```
 
-`AsyncNode` exists for non-blocking implementations (`buildQuery` / `handleResult`) but the shipped
-nodes are all `SyncNode`; the engine already runs each node on its own thread.
+Nodes are instantiated reflectively, so each implementation needs a constructor accepting one
+`NodeConfig`. They are not Spring beans; server nodes obtain application services through the
+server's `BeanUtil` bridge.
 
-### data flow is by annotation, not method call
+### Data exchange
 
-Nodes never reference each other. After a node runs, every `@Export("key")` field is copied into the
-context's data map; before a node runs, every `@Import("key")` field is populated from it. **The
-string keys are the entire contract between nodes** — a typo compiles fine and silently yields null.
+Before a node runs, fields annotated with `@Import("key")` are populated from `GraphContext`.
+After it finishes, `@Export("key")` fields are published. The key is the contract, so producers and
+consumers must use exactly the same value.
 
-Consequences worth knowing:
+Nodes may also call `context.addData(key, value)` and `context.getData(key)` for keys chosen at
+runtime. `rec-server` uses this for configurable recall channels while retaining fixed annotation
+exports for backward compatibility. A later write to the same key replaces the earlier value.
 
-- **Initialize exported collections in the constructor.** A node with `open: false`, or one cancelled by its timeout, still gets its exports published — whatever the field holds at that moment. An uninitialized field publishes `null` and NPEs its consumer.
-- **A missing producer is not a graceful failure.** If the node that exports a key is not in the graph, the importing node's field stays null.
+Initialize exported collections even when a node can be disabled or time out. Otherwise consumers
+may receive `null`.
 
-### reading request params
+### Request parameters and result
 
-`prepare(obj)` reflects over the declared fields of the object you pass and puts them into
-`GraphParams` **keyed by field name**. Typed getters:
-
-```java
-context.getParams().getValueToString("scene");
-context.getParams().getValueToInt("size");
-context.getParams().getValueToList("itemIds");
-```
-
-Adding a field to the request object makes it available automatically. `getValueTo*` return
-zero-values (`""`, `0`, `false`) for absent keys, but the collection getters return `null`.
-
-### obtaining collaborators
-
-Nodes are constructed reflectively, not by Spring, so `@Autowired` does **not** work in them.
-`rec-server` reaches its services through a static accessor:
+`prepare(object)` reflects over the object's declared fields and stores each value under its field
+name. Parameters can also be added explicitly:
 
 ```java
-private RedisService redisService = BeanUtil.getBean(RedisService.class);
+engine.addParam("scene", "home");
+String scene = context.getParams().getValueToString("scene");
 ```
 
-## execution model
+The terminal node calls `context.setResult(value)`; the caller retrieves it with
+`engine.getResult()`.
 
-Despite the name, execution is level-synchronized rather than fully pipelined:
+## Execution and timeout behavior
 
-1. collect every node whose parents have all finished
-2. submit that batch to a shared pool, one task per node
-3. `CountDownLatch.await()` the whole batch
-4. repeat until the queue drains
+The runtime executes one dependency level at a time. All ready nodes in a level run concurrently,
+then the next level starts after the batch completes. A timeout interrupts the node task and graph
+execution continues, so nodes should tolerate interruption and publish safe empty output when they
+cannot complete.
 
-So a slow node in a batch delays the entire next level, even nodes that do not depend on it.
-
-Each node is also handed to a watchdog pool that calls `future.cancel(true)` after `timeout` ms.
-
-### timeouts degrade silently
-
-A cancelled node's thread is interrupted; the resulting `InterruptedException` surfaces inside the
-node, and nodes typically catch and log it. Execution continues, the node publishes whatever its
-fields hold, and the request succeeds minus that node's contribution. There is no signal in the
-response that a node was dropped.
-
-Set `timeout` generously for anything doing I/O on a cold JVM: a first request paying for a TLS
-handshake can take several hundred milliseconds where steady state is tens.
-
-## returning a result
-
-The terminal node sets the result on the context; `getResult()` casts it for the caller:
-
-```java
-context.setResult(finalItems);
-```
-
-## testing
-
-`GraphEngineTest` builds a three-node graph out of `SleepNode` and asserts total time is below the
-serial sum, i.e. that independent nodes really do run concurrently. `EmptyNode`, `SleepNode` and
-`RootNode` are there for tests and as the graph's synthetic entry point.
+## Test
 
 ```shell
 mvn -pl graph test
 ```
 
-These tests need no external services.
+The graph module tests are self-contained and require no external services.

@@ -40,15 +40,32 @@ public class NodeExecutionUnitTest {
     @Test public void i2iUsesOneKeyPerTrigger() {
         RecallStore recallStore = mock(RecallStore.class);
         I2iConfig content = new I2iConfig(); content.setSize(4);
-        I2iNode node = new I2iNode(config("i2i", content, true));
+        content.setTableName("item-cf-i2i"); content.setRecallType("item_cf_i2i");
+        I2iNode node = new I2iNode(config("item_cf_i2i", content, true));
         ReflectionTestUtils.setField(node, "recallStore", recallStore);
         ReflectionTestUtils.setField(node, "triggerItems", Arrays.asList(new ScoreResult("a", 1), new ScoreResult("b", 2)));
-        when(recallStore.i2i("s", Arrays.asList("a", "b"), 4))
+        when(recallStore.i2i("item-cf-i2i", "s", Arrays.asList("a", "b"), 4))
             .thenReturn(Collections.singletonList(new ScoreResult("result", 3)));
         GraphContext context = new GraphContext(); context.addParam("scene", "s");
         node.run(context); context.exportNodeData(node);
         assertEquals("result", ((List<ScoreResult>) context.getData("i2iItems")).get(0).getId());
-        verify(recallStore).i2i("s", Arrays.asList("a", "b"), 4);
+        verify(recallStore).i2i("item-cf-i2i", "s", Arrays.asList("a", "b"), 4);
+        assertSame(context.getData("i2iItems"), context.getData("recall:item_cf_i2i"));
+    }
+
+    @Test public void u2iLooksUpRequestUserAndExportsConfiguredChannel() {
+        RecallStore recallStore = mock(RecallStore.class);
+        U2iConfig content = new U2iConfig(); content.setSize(4);
+        content.setTableName("user-cf-u2i"); content.setRecallType("user_cf_u2i");
+        U2iNode node = new U2iNode(config("userCf", content, true));
+        ReflectionTestUtils.setField(node, "recallStore", recallStore);
+        List<ScoreResult> recalled = Collections.singletonList(new ScoreResult("result", 3));
+        when(recallStore.u2i("user-cf-u2i", "s", "u", 4)).thenReturn(recalled);
+        GraphContext context = new GraphContext();
+        context.addParam("scene", "s"); context.addParam("userId", "u");
+        node.run(context); context.exportNodeData(node);
+        assertSame(recalled, context.getData("u2iItems"));
+        assertSame(recalled, context.getData("recall:user_cf_u2i"));
     }
 
     @Test public void rankFusesScoresAndHandlesFailureAndClosedMode() {
@@ -94,15 +111,15 @@ public class NodeExecutionUnitTest {
         strategy.setRecallWeight(0.2);
         strategy.setRankWeight(0.9);
         strategy.setChannels(Arrays.asList(
-            new RankChannelWeightConfig("i2i", 2),
-            new RankChannelWeightConfig("embedding", 1),
+            new RankChannelWeightConfig("item_cf_i2i", 2),
+            new RankChannelWeightConfig("item_seq_emb", 1),
             new RankChannelWeightConfig("hot", 2),
             new RankChannelWeightConfig("new", 1)));
         RankConfig content = new RankConfig(); content.setSize(1); content.setScoreStrategy(strategy);
         RankService rank = mock(RankService.class); when(rank.isOpen()).thenReturn(true);
         when(rank.score("u", Collections.singletonList("a"))).thenReturn(Collections.singletonMap("a", 0.5));
         ScoreResult item = new ScoreResult("a", 0.4);
-        item.addRecallScore("i2i", 0.4); item.addRecallScore("hot", 0.3);
+        item.addRecallScore("item_cf_i2i", 0.4); item.addRecallScore("hot", 0.3);
         RankNode node = new RankNode(config("rank", content, true));
         ReflectionTestUtils.setField(node, "rankService", rank);
         ReflectionTestUtils.setField(node, "combineItems", Collections.singletonList(item));

@@ -1,9 +1,7 @@
 # rec-proto
 
-The wire protocol shared between `rec-server` and its clients. Plain POJOs with Lombok — no Spring,
-no transport code — so both sides can depend on it without pulling in a server stack.
-
-Consumed by [rec-client](https://github.com/open-rec/sdk), `example/init` and `rec-server` itself.
+`rec-proto` contains the Java wire contract shared by `rec-server`, the Java SDK, and example data
+loaders. It consists of serializable POJOs and enums without Spring or transport dependencies.
 
 ```xml
 <dependency>
@@ -13,124 +11,107 @@ Consumed by [rec-client](https://github.com/open-rec/sdk), `example/init` and `r
 </dependency>
 ```
 
-It is published to your local Maven repo by `mvn install` at the `rec-server` root, which must
-therefore be built before the sdk or the example loader.
+Run `mvn install` from the `rec-server` root before building consumers against a local snapshot.
 
-## envelope
+## Envelope
 
-Every request body is wrapped in `JsonReq<T>`, every response in `JsonRes<T>`.
+Every request and response uses a common envelope:
 
 ```java
-public class JsonReq<T> {
-    private String requestId;   // auto-generated UUID
-    private T body;
+class JsonReq<T> {
+    String requestId;
+    T body;
 }
 
-public class JsonRes<T> {
-    private int code;           // see ProtoCode
-    private boolean status;
-    private String msg;
-    private T data;
+class JsonRes<T> {
+    int code;
+    boolean status;
+    String msg;
+    T data;
 }
 ```
 
-```json
-{"requestId": "b9c1…", "body": {"scene": "scene_0", "size": 10}}
-{"code": 200, "status": true, "msg": "", "data": {}}
-```
+The server places `requestId` in the logging MDC. Clients should set it when they need end-to-end
+trace correlation; otherwise the request model generates a UUID. `ProtoCode` defines the standard
+HTTP-style result codes. `JsonResType` helps Gson deserialize `JsonRes<T>` despite type erasure.
 
-`requestId` is not decoration: `rec-server` pushes it into the SLF4J MDC, so every log line for a
-request carries it. Send your own to correlate client and server logs.
+## Entities
 
-`ProtoCode`: `SUCCESS 200`, `BAD_REQUEST 400`, `NOT_FOUND 404`, `ERROR 500`,
-`NOT_IMPLEMENTED 501`, `TIMEOUT 504`.
+`Item`, `User`, and `Event` represent the records accepted by the push APIs. Time fields are strings
+containing epoch seconds. `extFields` preserves application-specific attributes not covered by the
+core model.
 
-`JsonResType` is a `ParameterizedType` helper that lets a client deserialize `JsonRes<T>` with Gson
-despite type erasure — `rec-client` uses it internally.
+Important compatibility details:
 
-## data model
+- `Item.tags` is a comma-separated string, while `User.tags` is `List<String>`.
+- Event type values are free-form, but `click`, `expose`, and `dislike` have built-in serving
+  behavior for triggers and filters.
+- Entity field names and serialized forms are shared contracts; update SDK and example consumers
+  when changing them.
 
-`Item`, `User` and `Event` mirror the three tables open-rec ingests. Timestamps are **strings holding
-epoch seconds**, and `extFields` is an untyped escape hatch for anything not modelled.
+## Push contract
 
-```java
-class Item { String id, title, category, tags, scene, pubTime, modifyTime, expireTime;
-             int weight, status; Object extFields; }
-
-class User { String id, deviceId, name, gender, phone, country, city, registerTime, loginTime;
-             int age; List<String> tags; Object extFields; }
-
-class Event { String userId, deviceId, itemId, traceId, scene, type, value, time;
-              boolean isLogin; Object extFields; }
-```
-
-Note the asymmetry: `Item.tags` is a comma-separated `String` while `User.tags` is a `List<String>`.
-
-`Event.type` is free-form on the wire; the server-side enum `RecEventType` covers `click`, `expose`,
-`collect`, `like`, `comment`, `buy`, `dislike`. `click` drives trigger selection and `expose` drives
-exposure filtering, so those two names matter.
-
-Result carriers:
+`ItemReq`, `UserReq`, and `EventReq` extend the same batch request:
 
 ```java
-class ScoreResult  { String id; double score; }        // an item plus its score
-class VectorResult { String id; List<Double> vector; } // an item plus its embedding
-```
-
-## push
-
-`AbstractPushReq<T>` carries a command plus a batch, so one call can insert, update or delete many
-rows:
-
-```java
-class AbstractPushReq<T> { PushCmd cmd = PushCmd.INSERT; List<T> data; }
+class AbstractPushReq<T> {
+    PushCmd cmd = PushCmd.INSERT;
+    List<T> data;
+}
 
 enum PushCmd { INSERT, UPDATE, DELETE }
 ```
 
-`ItemReq`, `UserReq` and `EventReq` are the concrete subclasses. `INSERT` and `UPDATE` behave
-identically server-side (an upsert); `DELETE` removes the keys.
+`INSERT` and `UPDATE` are upserts in the current server implementations. `DELETE` removes the
+corresponding records. The active Spring profile decides whether mutations are written directly to
+Redis or published as versioned Kafka messages.
 
-```json
-{
-  "requestId": "1",
-  "body": {
-    "cmd": "INSERT",
-    "data": [{"id": "item-1", "title": "…", "category": "c1", "scene": "s1", "status": 1, "pubTime": "1667355833"}]
-  }
-}
-```
-
-## recommend
+## Recommendation contract
 
 ```java
 class RecommendReq {
-    String scene;          // required, partitions all data
-    int size;              // how many items to return
+    String scene;
+    int size;
     String userId;
-    String deviceId;       // for unlogged users
-    List<String> itemIds;  // extra triggers, e.g. the item being viewed
+    String deviceId;
+    List<String> itemIds;
     String type;
-    boolean debug;         // attach item details to the response
-    String targetType;     // endpoint-owned: item or user
+    boolean debug;
+    String targetType;
 }
 
 class RecommendRes<T> {
-    List<ScoreResult> results;   // ids + scores, in final order
-    List<T> detailInfos;         // populated only when debug = true
+    List<ScoreResult> results;
+    List<T> detailInfos;
 }
 ```
 
-`POST /api/recommend/item` returns `RecommendRes<Item>`. The original `POST /api/recommend` remains
-an item-recommendation alias. `POST /api/recommend/user` reserves the future
-`RecommendRes<User>` contract but currently returns code 501 without executing a serving graph.
+`debug=true` asks the item endpoint to attach entity details. `targetType` is assigned by the
+endpoint. The item endpoint is implemented; the reserved user-recommendation endpoint currently
+returns `NOT_IMPLEMENTED`.
 
-The field **names** of `RecommendReq` are load-bearing: `GraphEngine.prepare()` reflects over them
-and exposes each as a DAG parameter under its own name (`scene`, `size`, `userId`, `itemIds`, …), which
-nodes read via the constants in `RecParams`. Renaming a field silently detaches it from the nodes
-that consume it.
+`GraphEngine.prepare()` exposes `RecommendReq` fields to nodes by field name. Renaming one is
+therefore a serving-graph contract change, not a cosmetic refactor.
 
-## operate
+### Scores and recall provenance
 
-The blacklist API takes a bare `JsonReq<Set<String>>` of item ids rather than a dedicated request
-type.
+`ScoreResult` carries the final ordering score and the contributions used to derive it:
+
+| Field | Meaning |
+|---|---|
+| `id` | Item ID |
+| `score` | Final score used for sorting |
+| `recallFrom` | First recall channel that produced the item |
+| `recallScore` | Score from `recallFrom`, or `null` if recall did not run |
+| `recallFusionScore` | Aggregated multi-channel recall score |
+| `rankScore` | Rank-engine contribution, or `null` when ranking was skipped |
+| `recallScores` | Insertion-ordered map of every recall channel and its score |
+
+An item recalled by several channels is emitted once while retaining all channel contributions.
+`VectorResult` is the separate `id` plus item-sequence-vector carrier used by `item_seq_emb`.
+
+## Compatibility
+
+Changes in this module can affect `sdk/java-client`, `example/init`, `example/web`, and serialized
+Kafka or HTTP payloads. Preserve backward parsing where possible and verify those consumers for any
+field, enum, or envelope change.

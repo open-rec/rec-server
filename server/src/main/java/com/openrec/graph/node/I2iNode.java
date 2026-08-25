@@ -18,7 +18,7 @@ import com.openrec.util.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class I2iNode extends SyncNode<I2iConfig> {
+public class I2iNode extends RecallNode<I2iConfig> {
 
     private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
 
@@ -50,7 +50,8 @@ public class I2iNode extends SyncNode<I2iConfig> {
         for (ScoreResult trigger : triggerItems) {
             triggers.add(trigger.getId());
         }
-        i2iItems = recallStore.i2i(scene, triggers, size);
-        log.info("{} with i2i size:{}", getName(), i2iItems.size());
+        i2iItems = recallStore.i2i(tableName(), scene, triggers, size);
+        exportChannel(context, i2iItems);
+        log.info("{} type:{} table:{} with i2i size:{}", getName(), recallType(), tableName(), i2iItems.size());
     }
 }

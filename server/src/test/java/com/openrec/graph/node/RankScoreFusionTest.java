@@ -16,7 +16,7 @@ public class RankScoreFusionTest {
     public void firstUsesConfiguredChannelOrderAndWeights() {
         ScoreResult item = itemWithAllRecallScores();
         RankScoreStrategyConfig strategy = strategy("first", 0.2, 0.9,
-            channel("hot", 2), channel("i2i", 10));
+            channel("hot", 2), channel("item_cf_i2i", 10));
 
         assertEquals(1.7, RankScoreFusion.calculate(item, 1, strategy), 0.000001);
         assertEquals(Double.valueOf(4), item.getRecallFusionScore());
@@ -26,7 +26,7 @@ public class RankScoreFusionTest {
     public void maxUsesLargestWeightedChannelValue() {
         ScoreResult item = itemWithAllRecallScores();
         RankScoreStrategyConfig strategy = strategy("max", 0.2, 0.9,
-            channel("i2i", 2), channel("embedding", 1), channel("hot", 2));
+            channel("item_cf_i2i", 2), channel("item_seq_emb", 1), channel("hot", 2));
 
         assertEquals(1.7, RankScoreFusion.calculate(item, 1, strategy), 0.000001);
         assertEquals(Double.valueOf(4), item.getRecallFusionScore());
@@ -36,7 +36,7 @@ public class RankScoreFusionTest {
     public void sumAddsEveryMatchedWeightedChannel() {
         ScoreResult item = itemWithAllRecallScores();
         RankScoreStrategyConfig strategy = strategy("sum", 0.4, 0.6,
-            channel("i2i", 1), channel("embedding", 1), channel("hot", 1), channel("new", 1));
+            channel("item_cf_i2i", 1), channel("item_seq_emb", 1), channel("hot", 1), channel("new", 1));
 
         assertEquals(4.6, RankScoreFusion.calculate(item, 1, strategy), 0.000001);
         assertEquals(Double.valueOf(10), item.getRecallFusionScore());
@@ -60,22 +60,22 @@ public class RankScoreFusionTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void rejectsUnsupportedAggregation() {
-        RankScoreStrategyConfig strategy = strategy("average", 1, 1, channel("i2i", 1));
+        RankScoreStrategyConfig strategy = strategy("average", 1, 1, channel("item_cf_i2i", 1));
         RankScoreFusion.validate(strategy);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void rejectsDuplicateChannels() {
         RankScoreStrategyConfig strategy = strategy("sum", 1, 1,
-            channel("i2i", 1), channel("i2i", 2));
+            channel("item_cf_i2i", 1), channel("item_cf_i2i", 2));
         RankScoreFusion.validate(strategy);
     }
 
     private static ScoreResult itemWithAllRecallScores() {
         ScoreResult item = new ScoreResult("item", 1);
         item.setRecallScore(1d);
-        item.addRecallScore("i2i", 1);
-        item.addRecallScore("embedding", 2);
+        item.addRecallScore("item_cf_i2i", 1);
+        item.addRecallScore("item_seq_emb", 2);
         item.addRecallScore("hot", 2);
         item.addRecallScore("new", 5);
         return item;

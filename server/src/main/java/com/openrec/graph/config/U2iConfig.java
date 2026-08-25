@@ -3,8 +3,7 @@ package com.openrec.graph.config;
 import lombok.Data;
 
 @Data
-public class NewConfig extends RecallConfig {
+public class U2iConfig extends RecallConfig {
 
     private int size;
-    private int duration;
 }
