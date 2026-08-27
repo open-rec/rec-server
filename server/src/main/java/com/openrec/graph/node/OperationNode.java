@@ -31,14 +31,14 @@ public class OperationNode extends SyncNode<OperationConfig> {
         this.operationItems = Lists.newArrayList();
         this.operationRule = OperationRuleManager.getOperationRuleByName(config.getContent().getOperationName());
         if (this.operationRule == null) {
-            throw new IllegalArgumentException("unknown operation rule: "
-                + config.getContent().getOperationName());
+            log.warn("unknown operation rule:{}, use pass-through behavior",
+                config.getContent().getOperationName());
         }
     }
 
     @Override
     public void run(GraphContext context) {
-        operationItems = operationRule.handle(context, rankItems);
+        operationItems = operationRule == null ? rankItems : operationRule.handle(context, rankItems);
         log.info("{}:{} exec finished", getName(), config.getContent().getOperationName());
         log.info("{} with result size:{}", getName(), operationItems.size());
     }
