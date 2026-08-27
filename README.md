@@ -1,5 +1,10 @@
 # rec-server
 
+[![CI](https://github.com/open-rec/rec-server/actions/workflows/ci.yml/badge.svg)](https://github.com/open-rec/rec-server/actions/workflows/ci.yml)
+![Java](https://img.shields.io/badge/Java-8-ED8B00?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-2.3.1-6DB33F?logo=springboot&logoColor=white)
+![Maven](https://img.shields.io/badge/build-Maven-C71A36?logo=apachemaven&logoColor=white)
+
 `rec-server` is OpenRec's online recommendation service. Each request executes a configurable DAG
 that recalls, filters, combines, ranks, and post-processes candidates before returning items.
 
