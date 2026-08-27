@@ -26,3 +26,16 @@ jobs:
           cache: maven
       - name: Run tests
         run: mvn --batch-mode --no-transfer-progress clean test
+      - name: Print test failure reports
+        if: failure()
+        shell: bash
+        run: |
+          find . -path '*/target/surefire-reports/*.txt' -type f -print -exec cat {} \;
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: surefire-reports
+          path: '**/target/surefire-reports/'
+          if-no-files-found: ignore
+          retention-days: 7
