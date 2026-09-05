@@ -36,7 +36,7 @@
       "clazz": "com.openrec.graph.node.HotNode",
       "configClazz": "com.openrec.graph.config.HotConfig",
       "open": true,
-      "timeout": 100,
+      "timeout": 200,
       "content": {
         "size": 1000,
         "tableName": "hot",
@@ -78,7 +78,7 @@
       "clazz": "com.openrec.graph.node.I2iNode",
       "configClazz": "com.openrec.graph.config.I2iConfig",
       "open": true,
-      "timeout": 20,
+      "timeout": 200,
       "content": {
         "size": 1000,
         "tableName": "item-cf-i2i",
@@ -90,7 +90,7 @@
       "clazz": "com.openrec.graph.node.I2iNode",
       "configClazz": "com.openrec.graph.config.I2iConfig",
       "open": true,
-      "timeout": 20,
+      "timeout": 200,
       "content": {
         "size": 1000,
         "tableName": "content-i2i",
@@ -102,7 +102,7 @@
       "clazz": "com.openrec.graph.node.U2iNode",
       "configClazz": "com.openrec.graph.config.U2iConfig",
       "open": true,
-      "timeout": 20,
+      "timeout": 200,
       "content": {
         "size": 1000,
         "tableName": "user-cf-u2i",
@@ -114,7 +114,7 @@
       "clazz": "com.openrec.graph.node.EmbeddingNode",
       "configClazz": "com.openrec.graph.config.EmbeddingConfig",
       "open": true,
-      "timeout": 100,
+      "timeout": 300,
       "content": {
         "size": 1000,
         "tableName": "item-vector",
