@@ -26,13 +26,17 @@ public class ServingGraphService {
     }
 
     public Map<String, Object> activate(String experiment, String graphJson, String requestedVersion) {
+        return activate("item", experiment, graphJson, requestedVersion);
+    }
+
+    public Map<String, Object> activate(String targetType, String experiment, String graphJson, String requestedVersion) {
         GraphConfig parsed = RecTemplate.parse(graphJson);
-        GraphConfig merged = mergeNodeConfigs(abExperimentService.graph(experiment), parsed);
+        GraphConfig merged = mergeNodeConfigs(abExperimentService.graph(targetType, experiment), parsed);
         validate(merged);
         String canonical = JsonUtil.objToJson(merged);
-        abExperimentService.activate(experiment, merged,
+        abExperimentService.activate(targetType, experiment, merged,
             StringUtils.defaultIfBlank(requestedVersion, "graph-" + System.currentTimeMillis()), sha256(canonical));
-        return status(experiment);
+        return status(targetType, experiment);
     }
 
     private GraphConfig mergeNodeConfigs(GraphConfig current, GraphConfig received) {
@@ -70,11 +74,20 @@ public class ServingGraphService {
         return abExperimentService.status(experiment);
     }
 
+    public Map<String, Object> status(String targetType, String experiment) {
+        ensureDefaultChecksum(targetType);
+        return abExperimentService.status(targetType, experiment);
+    }
+
     private void ensureDefaultChecksum() {
-        Map<String, Object> current = abExperimentService.status(AbExperimentService.DEFAULT_EXPERIMENT);
+        ensureDefaultChecksum("item");
+    }
+
+    private void ensureDefaultChecksum(String targetType) {
+        Map<String, Object> current = abExperimentService.status(targetType, AbExperimentService.DEFAULT_EXPERIMENT);
         if (current.get("checksum") == null) {
             GraphConfig graph = (GraphConfig) current.get("graph");
-            abExperimentService.activate(AbExperimentService.DEFAULT_EXPERIMENT, graph,
+            abExperimentService.activate(targetType, AbExperimentService.DEFAULT_EXPERIMENT, graph,
                 String.valueOf(current.get("version")), sha256(JsonUtil.objToJson(graph)));
         }
     }

@@ -21,6 +21,12 @@ public class RecallDocument {
     @JsonProperty("right_item")
     private String rightItem;
 
+    @JsonProperty("left_user")
+    private String leftUser;
+
+    @JsonProperty("right_user")
+    private String rightUser;
+
     private Double score;
 
     @JsonProperty("publish_time")

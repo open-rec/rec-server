@@ -19,7 +19,7 @@ import com.openrec.util.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class CollectorNode extends SyncNode<Void> {
+public class CollectorNode extends AbstractCollectorNode {
 
     @Import("operationItems")
     private List<ScoreResult> finalItems;
@@ -46,11 +46,9 @@ public class CollectorNode extends SyncNode<Void> {
         log.info("write fake expose size:{}", finalItems.size());
     }
 
-    @Override
-    public void run(GraphContext context) {
-        finalItems = finalItems.subList(0, Math.min(finalItems.size(), context.getParams().getValueToInt(SIZE)));
-        context.setResult(finalItems);
+    @Override protected List<ScoreResult> candidates() { return finalItems; }
 
+    @Override protected void afterCollect(GraphContext context, List<ScoreResult> finalItems) {
         // Keep this capability deploy-time configurable: standalone enables it, while cluster
         // clients report impressions that were actually rendered through the Push API.
         if (environment == null

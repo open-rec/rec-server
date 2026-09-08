@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.openrec.aop.TimeCost;
@@ -20,20 +21,31 @@ import com.openrec.service.redis.RedisService;
 @Service
 public class RecService {
 
-    private final AtomicReference<GraphConfig> graphConfig;
-    private final AtomicReference<GraphPlan> graphPlan;
+    private final AtomicReference<GraphConfig> itemGraphConfig;
+    private final AtomicReference<GraphConfig> userGraphConfig;
+    private final AtomicReference<GraphPlan> itemGraphPlan;
+    private final AtomicReference<GraphPlan> userGraphPlan;
 
     @Autowired
     private RedisService redisService;
 
     public RecService() {
-        this.graphConfig = new AtomicReference<>(RecTemplate.toGraphConfig());
-        this.graphPlan = new AtomicReference<>(GraphPlan.compile(graphConfig.get()));
+        this("item_graph.json", "user_graph.json");
+    }
+
+    @Autowired
+    public RecService(@Value("${serving.graph.item-file:item_graph.json}") String itemGraphFile,
+        @Value("${serving.graph.user-file:user_graph.json}") String userGraphFile) {
+        this.itemGraphConfig = new AtomicReference<>(RecTemplate.toGraphConfig(itemGraphFile));
+        this.userGraphConfig = new AtomicReference<>(RecTemplate.toGraphConfig(userGraphFile));
+        this.itemGraphPlan = new AtomicReference<>(GraphPlan.compile(itemGraphConfig.get()));
+        this.userGraphPlan = new AtomicReference<>(GraphPlan.compile(userGraphConfig.get()));
     }
 
     @TimeCost
     public RecommendRes execute(RecommendReq recommendReq) {
-        return execute(recommendReq, graphPlan.get());
+        return execute(recommendReq, RecommendReq.TARGET_USER.equals(recommendReq.getTargetType())
+            ? userGraphPlan.get() : itemGraphPlan.get());
     }
 
     public RecommendRes execute(RecommendReq recommendReq, GraphPlan selectedGraphPlan) {
@@ -47,19 +59,27 @@ public class RecService {
         List<ScoreResult> results = graphEngine.getResult();
         recommendRes.setResults(results);
         if (recommendReq.isDebug()) {
-            recommendRes.setDetailInfos(redisService
-                .getVs(results.stream().map(i -> String.format("item:{%s}", i.getId())).collect(Collectors.toList())));
+            String entity = RecommendReq.TARGET_USER.equals(recommendReq.getTargetType()) ? "user" : "item";
+            recommendRes.setDetailInfos(redisService.getVs(results.stream()
+                .map(i -> String.format(entity + ":{%s}", i.getId())).collect(Collectors.toList())));
         }
         return recommendRes;
     }
 
-    public void replaceGraphConfig(GraphConfig newGraphConfig) {
+    public void replaceGraphConfig(String targetType, GraphConfig newGraphConfig) {
         GraphPlan newGraphPlan = GraphPlan.compile(newGraphConfig);
-        graphConfig.set(newGraphConfig);
-        graphPlan.set(newGraphPlan);
+        if (RecommendReq.TARGET_USER.equals(targetType)) {
+            userGraphConfig.set(newGraphConfig); userGraphPlan.set(newGraphPlan);
+        } else {
+            itemGraphConfig.set(newGraphConfig); itemGraphPlan.set(newGraphPlan);
+        }
+    }
+
+    public GraphConfig getGraphConfig(String targetType) {
+        return RecommendReq.TARGET_USER.equals(targetType) ? userGraphConfig.get() : itemGraphConfig.get();
     }
 
     public GraphConfig getGraphConfig() {
-        return graphConfig.get();
+        return getGraphConfig(RecommendReq.TARGET_ITEM);
     }
 }

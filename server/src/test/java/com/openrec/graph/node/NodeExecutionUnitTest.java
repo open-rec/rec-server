@@ -160,6 +160,29 @@ public class NodeExecutionUnitTest {
         verifyNoInteractions(redis);
     }
 
+    @Test public void userNodesReuseMergeAndCollectionWithoutItemSideEffects() {
+        CombineConfig content = new CombineConfig(); content.setSize(10);
+        content.setRecallTypes(Arrays.asList("behavior_u2u", "attribute_u2u"));
+        UserCombineNode combine = new UserCombineNode(config("combine", content, true));
+        GraphContext context = new GraphContext(); context.addParam("userId", "self");
+        context.addData("recall:behavior_u2u", Arrays.asList(
+            new ScoreResult("self", 9), new ScoreResult("u2", 0.7)));
+        context.addData("recall:attribute_u2u", Arrays.asList(
+            new ScoreResult("u2", 0.2), new ScoreResult("u3", 0.4)));
+        combine.run(context); context.exportNodeData(combine);
+
+        List<ScoreResult> merged = (List<ScoreResult>) context.getData("userCandidates");
+        assertEquals(Arrays.asList("u2", "u3"), Arrays.asList(merged.get(0).getId(), merged.get(1).getId()));
+        assertEquals(0.9, merged.get(0).getScore(), 0.000001);
+        assertEquals(2, merged.get(0).getRecallScores().size());
+
+        UserCollectorNode collector = new UserCollectorNode(config("collector", null, true));
+        ReflectionTestUtils.setField(collector, "candidates", merged);
+        context.addParam("size", 1); collector.run(context);
+        assertEquals(Collections.singletonList("u2"), ((List<ScoreResult>) context.getResult()).stream()
+            .map(ScoreResult::getId).collect(java.util.stream.Collectors.toList()));
+    }
+
     @Test public void simpleFeatureBlackSearchAndOperationNodesWork() {
         GraphContext context = new GraphContext(); context.addParam("userId", "u");
         UserFeatureNode user = new UserFeatureNode(config("userFeature", null, true)); user.run(context); context.exportNodeData(user);

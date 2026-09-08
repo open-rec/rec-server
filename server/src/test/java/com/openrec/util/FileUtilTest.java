@@ -6,7 +6,7 @@ import org.junit.Test;
 
 public class FileUtilTest {
 
-    private static final String TEST_READ_FILE = "graph.json";
+    private static final String TEST_READ_FILE = "item_graph.json";
 
     @Test
     public void read() {

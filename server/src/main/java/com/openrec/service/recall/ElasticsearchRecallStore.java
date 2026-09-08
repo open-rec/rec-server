@@ -97,6 +97,22 @@ public class ElasticsearchRecallStore implements RecallStore {
     }
 
     @Override
+    public List<ScoreResult> u2u(String tableName, String scene, String userId, int size) {
+        if (userId == null || userId.trim().isEmpty()) return Collections.emptyList();
+        String query = String.format("{\"query\":{\"bool\":{\"filter\":["
+                + "{\"term\":{\"scene\":%s}},{\"term\":{\"left_user\":%s}}]}},"
+                + "\"sort\":[{\"score\":\"desc\"},{\"right_user\":\"asc\"}],\"size\":%d}",
+            JsonUtil.objToJson(scene), JsonUtil.objToJson(userId), size);
+        SearchResponse<RecallDocument> response = search(tableName, query, "1000ms");
+        if (response == null || response.hits() == null) return Collections.emptyList();
+        return response.hits().hits().stream().filter(hit -> hit.source() != null
+                && hit.source().getRightUser() != null)
+            .map(hit -> new ScoreResult(hit.source().getRightUser(), hit.source().getScore() == null
+                ? (hit.score() == null ? 0d : hit.score()) : hit.source().getScore()))
+            .collect(Collectors.toList());
+    }
+
+    @Override
     public List<ScoreResult> embedding(
         String tableName, String scene, List<String> triggerItems, int size, long timeoutMillis) {
         if (triggerItems == null || triggerItems.isEmpty()) {

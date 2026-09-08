@@ -5,7 +5,6 @@ import org.springframework.web.bind.annotation.*;
 
 import com.openrec.proto.JsonReq;
 import com.openrec.proto.JsonRes;
-import com.openrec.proto.ProtoCode;
 import com.openrec.proto.biz.recommend.RecommendReq;
 import com.openrec.proto.biz.recommend.RecommendRes;
 import com.openrec.proto.model.Item;
@@ -49,8 +48,9 @@ public class RecommendController {
     @ResponseBody
     public Mono<JsonRes<RecommendRes<User>>> recommendUser(@RequestBody JsonReq<RecommendReq> recommendReq) {
         prepareTarget(recommendReq.getBody(), RecommendReq.TARGET_USER);
-        return Mono.just(new JsonRes<>(ProtoCode.NOT_IMPLEMENTED, false,
-            "user recommendation is not implemented", null));
+        String experiment = abExperimentService.resolve(recommendReq.getBody());
+        return Mono.just(new JsonRes<>(apiMetricsService.recordRecommend(experiment,
+            () -> abExperimentService.execute(recommendReq.getBody()))));
     }
 
     private static void prepareTarget(RecommendReq request, String targetType) {

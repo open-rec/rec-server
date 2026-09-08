@@ -8,32 +8,8 @@ import com.openrec.util.JsonUtil;
 
 public class RecTemplate {
 
-    private static final String TEMPLATE_FILE_NAME = "graph.json";
-    private static String template;
-    private static int version;
-    private static boolean needUpdate;
-    private static GraphConfig graphConfig;
-
-    static {
-        load();
-    }
-
-    private static void load() {
-        template = FileUtil.read(TEMPLATE_FILE_NAME);
-        int newVersion = template.hashCode();
-        if (newVersion != version) {
-            version = newVersion;
-            needUpdate = true;
-        }
-    }
-
-    public static GraphConfig toGraphConfig() {
-        load();
-        if (needUpdate) {
-            graphConfig = parse(template);
-            needUpdate = false;
-        }
-        return graphConfig;
+    public static GraphConfig toGraphConfig(String templateFileName) {
+        return parse(FileUtil.read(templateFileName));
     }
 
     public static GraphConfig parse(String graphJson) {
@@ -55,7 +31,7 @@ public class RecTemplate {
         return parsed;
     }
 
-    public static String getTemplate() {
-        return template;
+    public static GraphConfig toGraphConfig() {
+        return toGraphConfig("item_graph.json");
     }
 }

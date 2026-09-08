@@ -17,6 +17,9 @@ public interface RecallStore {
 
     List<ScoreResult> u2i(String tableName, String scene, String userId, int size);
 
+    /** Returns user-to-user candidates keyed by the requesting user. */
+    List<ScoreResult> u2u(String tableName, String scene, String userId, int size);
+
     List<ScoreResult> embedding(
         String tableName, String scene, List<String> triggerItems, int size, long timeoutMillis);
 }

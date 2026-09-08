@@ -1,0 +1,42 @@
+{
+  "nodes": [
+    {
+      "name": "behavior_u2u",
+      "clazz": "com.openrec.graph.node.U2uNode",
+      "configClazz": "com.openrec.graph.config.U2uConfig",
+      "open": true,
+      "timeout": 200,
+      "content": {"size": 1000, "tableName": "behavior-u2u", "recallType": "behavior_u2u"}
+    },
+    {
+      "name": "attribute_u2u",
+      "clazz": "com.openrec.graph.node.U2uNode",
+      "configClazz": "com.openrec.graph.config.U2uConfig",
+      "open": true,
+      "timeout": 200,
+      "content": {"size": 1000, "tableName": "attribute-u2u", "recallType": "attribute_u2u"}
+    },
+    {
+      "name": "combine",
+      "clazz": "com.openrec.graph.node.UserCombineNode",
+      "configClazz": "com.openrec.graph.config.CombineConfig",
+      "open": true,
+      "timeout": 50,
+      "content": {"size": 1000, "checkExpireTime": false,
+        "recallTypes": ["behavior_u2u", "attribute_u2u"]}
+    },
+    {
+      "name": "collector",
+      "clazz": "com.openrec.graph.node.UserCollectorNode",
+      "configClazz": null,
+      "open": true,
+      "timeout": 50,
+      "content": null
+    }
+  ],
+  "edges": [
+    {"from": "behavior_u2u", "to": "combine"},
+    {"from": "attribute_u2u", "to": "combine"},
+    {"from": "combine", "to": "collector"}
+  ]
+}

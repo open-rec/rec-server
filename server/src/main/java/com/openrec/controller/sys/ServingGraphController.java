@@ -31,11 +31,12 @@ public class ServingGraphController {
     public Mono<JsonRes<Map<String, Object>>> publish(
         @RequestHeader(value = "X-OpenRec-Token", required = false) String requestToken,
         @RequestHeader(value = "X-Graph-Version", required = false) String version,
+        @RequestHeader(value = "X-Graph-Target", defaultValue = "item") String targetType,
         @RequestHeader(value = "X-Ab-Experiment", defaultValue = "default") String experiment,
         @RequestBody String graphJson) {
         authorize(requestToken);
         try {
-            return Mono.just(new JsonRes<>(servingGraphService.activate(experiment, graphJson, version)));
+            return Mono.just(new JsonRes<>(servingGraphService.activate(targetType, experiment, graphJson, version)));
         } catch (IllegalArgumentException error) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, error.getMessage(), error);
         }
@@ -44,10 +45,11 @@ public class ServingGraphController {
     @GetMapping
     public Mono<JsonRes<Map<String, Object>>> status(
         @RequestHeader(value = "X-OpenRec-Token", required = false) String requestToken,
+        @RequestParam(value = "target", defaultValue = "item") String targetType,
         @RequestParam(value = "experiment", required = false) String experiment) {
         authorize(requestToken);
-        return Mono.just(new JsonRes<>(experiment == null ? servingGraphService.status()
-            : servingGraphService.status(experiment)));
+        return Mono.just(new JsonRes<>(servingGraphService.status(targetType,
+            experiment == null ? AbExperimentService.DEFAULT_EXPERIMENT : experiment)));
     }
 
     @PutMapping("/routing")

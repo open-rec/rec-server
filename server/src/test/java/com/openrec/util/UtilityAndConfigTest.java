@@ -17,7 +17,7 @@ public class UtilityAndConfigTest {
         assertEquals("x", JsonUtil.jsonToObj(JsonUtil.objToJson("x"), String.class));
         long before = System.currentTimeMillis(); assertTrue(TimeUtil.now() >= before);
         assertTrue(Math.abs(TimeUtil.nowSecs() - System.currentTimeMillis() / 1000) <= 1);
-        assertTrue(FileUtil.read("graph.json").contains("nodes"));
+        assertTrue(FileUtil.read("item_graph.json").contains("nodes"));
     }
 
     @Test public void beanUtilityHandlesMissingAndPresentContext() {

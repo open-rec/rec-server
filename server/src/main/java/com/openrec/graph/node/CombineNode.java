@@ -13,7 +13,6 @@ import org.assertj.core.util.Lists;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openrec.graph.GraphContext;
-import com.openrec.graph.config.CombineConfig;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
@@ -38,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
  * an item and what each thought of it.
  */
 @Slf4j
-public class CombineNode extends SyncNode<CombineConfig> {
+public class CombineNode extends AbstractCombineNode {
 
     static final String CHANNEL_I2I = "item_cf_i2i";
     static final String CHANNEL_EMBEDDING = "item_seq_emb";
@@ -94,25 +93,14 @@ public class CombineNode extends SyncNode<CombineConfig> {
         int size = config.getContent().getSize();
         Set<String> triggerItemSet = triggerItems.stream().map(ScoreResult::getId).collect(Collectors.toSet());
 
-        // insertion-ordered, so the channel order below doubles as the tie-break for duplicates
-        Map<String, ScoreResult> candidates = new LinkedHashMap<>();
-        int[] counters = new int[] {0, 0, 0, 0};   // exposed, blacklisted, trigger, unavailable
-
-        List<String> recallTypes = config.getContent().getRecallTypes();
-        if (recallTypes == null || recallTypes.isEmpty()) {
-            // Backward compatibility for serving graphs created before dynamic recall channels.
-            collect(i2iItems, CHANNEL_I2I, candidates, triggerItemSet, counters);
-            collect(embeddingItems, CHANNEL_EMBEDDING, candidates, triggerItemSet, counters);
-            collect(hotItems, CHANNEL_HOT, candidates, triggerItemSet, counters);
-            collect(newItems, CHANNEL_NEW, candidates, triggerItemSet, counters);
-        } else {
-            for (String recallType : recallTypes) {
-                @SuppressWarnings("unchecked")
-                List<ScoreResult> items = (List<ScoreResult>) context.getData(
-                    RecallNode.CHANNEL_PREFIX + recallType);
-                collect(items, recallType, candidates, triggerItemSet, counters);
-            }
-        }
+        Map<String, List<ScoreResult>> fallback = new LinkedHashMap<>();
+        fallback.put(CHANNEL_I2I, i2iItems);
+        fallback.put(CHANNEL_EMBEDDING, embeddingItems);
+        fallback.put(CHANNEL_HOT, hotItems);
+        fallback.put(CHANNEL_NEW, newItems);
+        MergeResult merged = mergeChannels(context, fallback, filterItemSet, blackItemSet, triggerItemSet);
+        Map<String, ScoreResult> candidates = merged.candidates();
+        int unavailable = 0;
 
         List<ScoreResult> candidateList = Lists.newArrayList(candidates.values());
         if (candidateList.isEmpty()) {
@@ -136,11 +124,10 @@ public class CombineNode extends SyncNode<CombineConfig> {
             Object value = itemValues == null || i >= itemValues.size() ? null : itemValues.get(i);
             Item item = value == null ? null : objectMapper.convertValue(value, Item.class);
             if (!isAvailable(item, scene, nowSecs, checkExpireTime)) {
-                counters[3]++;
+                unavailable++;
                 continue;
             }
             if (isNegativeFeedbackMatch(item, blackCategorySet, blackTagSet)) {
-                counters[1]++;
                 continue;
             }
             combineItems.add(candidateList.get(i));
@@ -148,8 +135,10 @@ public class CombineNode extends SyncNode<CombineConfig> {
         }
 
         log.info(
-            "{} with result size:{}, candidates:{}, filter count:{}, black count:{}, trigger count:{}, unavailable count:{}",
-            getName(), combineItems.size(), candidates.size(), counters[0], counters[1], counters[2], counters[3]);
+            "{} with result size:{}, candidates:{}, filter count:{}, black count:{}, "
+                + "trigger count:{}, unavailable count:{}",
+            getName(), combineItems.size(), candidates.size(), merged.filtered(), merged.blacklisted(),
+            merged.triggered(), unavailable);
     }
 
     static boolean isNegativeFeedbackMatch(Item item, Set<String> categories, Set<String> tags) {
@@ -160,38 +149,6 @@ public class CombineNode extends SyncNode<CombineConfig> {
             if (tags.contains(tag.trim())) { return true; }
         }
         return false;
-    }
-
-    private void collect(List<ScoreResult> items, String channel, Map<String, ScoreResult> candidates,
-        Set<String> triggerItemSet, int[] counters) {
-        if (items == null) {
-            return;
-        }
-        for (ScoreResult item : items) {
-            String id = item.getId();
-            if (filterItemSet.contains(id)) {
-                counters[0]++;
-                continue;
-            }
-            if (blackItemSet != null && blackItemSet.contains(id)) {
-                counters[1]++;
-                continue;
-            }
-            if (triggerItemSet.contains(id)) {
-                counters[2]++;
-                continue;
-            }
-            ScoreResult existing = candidates.get(id);
-            if (existing != null) {
-                // Already surfaced by an earlier channel. The earlier score stays the one that
-                // ranks, but this channel's contribution is recorded too — which channels agreed on
-                // an item, and how strongly, is the point of keeping the breakdown.
-                existing.addRecallScore(channel, item.getScore());
-                continue;
-            }
-            item.addRecallScore(channel, item.getScore());
-            candidates.put(id, item);
-        }
     }
 
     static boolean isAvailable(Item item, String scene, long nowSecs, boolean checkExpireTime) {

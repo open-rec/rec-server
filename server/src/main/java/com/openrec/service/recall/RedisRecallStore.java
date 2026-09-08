@@ -64,6 +64,11 @@ public class RedisRecallStore implements RecallStore {
     }
 
     @Override
+    public List<ScoreResult> u2u(String tableName, String scene, String userId, int size) {
+        return u2i(tableName, scene, userId, size);
+    }
+
+    @Override
     public List<ScoreResult> embedding(
         String tableName, String scene, List<String> triggerItems, int size, long timeoutMillis) {
         return Collections.emptyList();

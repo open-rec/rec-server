@@ -29,6 +29,7 @@ public class AbExperimentService {
 
     private final RecService recService;
     private final ConcurrentMap<String, Experiment> experiments = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Experiment> userExperiments = new ConcurrentHashMap<>();
     private final AtomicReference<RoutingConfig> routing = new AtomicReference<>(new RoutingConfig());
 
     @Autowired
@@ -36,6 +37,9 @@ public class AbExperimentService {
         this.recService = recService;
         experiments.put(DEFAULT_EXPERIMENT, new Experiment(recService.getGraphConfig(),
             GraphPlan.compile(recService.getGraphConfig()), "classpath-default", null, Instant.now().toString(), true));
+        GraphConfig userGraph = recService.getGraphConfig(RecommendReq.TARGET_USER);
+        userExperiments.put(DEFAULT_EXPERIMENT, new Experiment(userGraph,
+            GraphPlan.compile(userGraph), "classpath-default", null, Instant.now().toString(), true));
     }
 
     public <T> RecommendRes<T> execute(RecommendReq request) {
@@ -53,17 +57,27 @@ public class AbExperimentService {
     }
 
     public GraphConfig graph(String experiment) {
-        Experiment item = experiments.get(normalize(experiment));
-        return item == null ? required(DEFAULT_EXPERIMENT).graph : item.graph;
+        return graph(RecommendReq.TARGET_ITEM, experiment);
+    }
+
+    public GraphConfig graph(String targetType, String experiment) {
+        ConcurrentMap<String, Experiment> values = experiments(targetType);
+        Experiment item = values.get(normalize(experiment));
+        return item == null ? required(values, DEFAULT_EXPERIMENT).graph : item.graph;
     }
 
     public void activate(String experiment, GraphConfig graph, String version, String checksum) {
+        activate(RecommendReq.TARGET_ITEM, experiment, graph, version, checksum);
+    }
+
+    public void activate(String targetType, String experiment, GraphConfig graph, String version, String checksum) {
         String name = normalize(experiment);
         GraphPlan plan = GraphPlan.compile(graph);
-        Experiment previous = experiments.get(name);
+        ConcurrentMap<String, Experiment> values = experiments(targetType);
+        Experiment previous = values.get(name);
         boolean enabled = DEFAULT_EXPERIMENT.equals(name) || previous != null && previous.enabled;
-        experiments.put(name, new Experiment(graph, plan, version, checksum, Instant.now().toString(), enabled));
-        if (DEFAULT_EXPERIMENT.equals(name)) recService.replaceGraphConfig(graph);
+        values.put(name, new Experiment(graph, plan, version, checksum, Instant.now().toString(), enabled));
+        if (DEFAULT_EXPERIMENT.equals(name)) recService.replaceGraphConfig(targetType, graph);
     }
 
     public Map<String, Object> create(String requestedName) {
@@ -105,9 +119,14 @@ public class AbExperimentService {
     }
 
     public Map<String, Object> status(String experiment) {
+        return status(RecommendReq.TARGET_ITEM, experiment);
+    }
+
+    public Map<String, Object> status(String targetType, String experiment) {
         String name = normalize(experiment);
-        Experiment item = experiments.get(name);
-        if (item == null) item = required(DEFAULT_EXPERIMENT);
+        ConcurrentMap<String, Experiment> values = experiments(targetType);
+        Experiment item = values.get(name);
+        if (item == null) item = required(values, DEFAULT_EXPERIMENT);
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("experiment", name);
         result.put("version", item.version);
@@ -157,7 +176,8 @@ public class AbExperimentService {
     }
 
     private Experiment select(RecommendReq request) {
-        return required(resolve(request));
+        String targetType = request == null ? RecommendReq.TARGET_ITEM : request.getTargetType();
+        return required(experiments(targetType), resolve(request));
     }
 
     private boolean isRoutable(String experiment) {
@@ -167,9 +187,17 @@ public class AbExperimentService {
     }
 
     private Experiment required(String experiment) {
-        Experiment item = experiments.get(normalize(experiment));
+        return required(experiments, experiment);
+    }
+
+    private Experiment required(ConcurrentMap<String, Experiment> values, String experiment) {
+        Experiment item = values.get(normalize(experiment));
         if (item == null) throw new IllegalArgumentException("experiment does not exist: " + experiment);
         return item;
+    }
+
+    private ConcurrentMap<String, Experiment> experiments(String targetType) {
+        return RecommendReq.TARGET_USER.equals(targetType) ? userExperiments : experiments;
     }
 
     private static String normalize(String experiment) {
