@@ -5,7 +5,7 @@ import com.openrec.graph.GraphContext;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class RootNode extends SyncNode {
+public class RootNode extends AbstractSyncNode {
 
     @Override
     public void run(GraphContext context) {

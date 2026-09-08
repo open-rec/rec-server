@@ -30,15 +30,14 @@ public class WeightedChannelOperationRule implements OperationRule {
             return inputItems;
         }
         int size = ChannelMixSupport.resultSize(context, inputItems);
-        Map<String, Integer> quotas =
-            ChannelMixSupport.proportionalQuotas(config.getChannelRatios(), size);
+        Map<String, Integer> quotas = ChannelMixSupport.proportionalQuotas(config.getChannelRatios(), size);
         Map<String, List<ScoreResult>> buckets = ChannelMixSupport.buckets(inputItems);
         Map<String, Integer> shortages = ChannelMixSupport.quotaShortages(quotas, buckets);
         List<ScoreResult> selected = ChannelMixSupport.selectReserved(quotas, buckets);
         ChannelMixSupport.fillHighest(inputItems, selected, size);
         selected.sort((left, right) -> Double.compare(right.getScore(), left.getScore()));
-        LOG.info("weighted channel allocation target:{}, actual:{}, shortage:{}, inputSize:{}, resultSize:{}",
-            quotas, ChannelMixSupport.channelCounts(selected), shortages, inputItems.size(), selected.size());
+        LOG.info("weighted channel allocation target:{}, actual:{}, shortage:{}, inputSize:{}, resultSize:{}", quotas,
+            ChannelMixSupport.channelCounts(selected), shortages, inputItems.size(), selected.size());
         return new ArrayList<>(selected);
     }
 }

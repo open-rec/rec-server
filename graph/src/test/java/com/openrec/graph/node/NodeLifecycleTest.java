@@ -52,10 +52,21 @@ public class NodeLifecycleTest {
     public void rootAndAsyncNodeImplementTheirContracts() {
         RootNode root = new RootNode();
         root.run(new GraphContext());
-        AsyncNode<String> async = new AsyncNode<String>() {
-            @Override public Map<String, String> buildQuery(GraphContext context) { return Collections.singletonMap("q", "v"); }
-            @Override public void handleResult(GraphContext context, String result) { context.setResult(result); }
-            @Override public void run(GraphContext context) { handleResult(context, buildQuery(context).get("q")); }
+        AbstractAsyncNode<String> async = new AbstractAsyncNode<String>() {
+            @Override
+            public Map<String, String> buildQuery(GraphContext context) {
+                return Collections.singletonMap("q", "v");
+            }
+
+            @Override
+            public void handleResult(GraphContext context, String result) {
+                context.setResult(result);
+            }
+
+            @Override
+            public void run(GraphContext context) {
+                handleResult(context, buildQuery(context).get("q"));
+            }
         };
         GraphContext context = new GraphContext();
         assertEquals("v", async.buildQuery(context).get("q"));

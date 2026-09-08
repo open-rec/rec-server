@@ -26,6 +26,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <jacoco.version>0.8.12</jacoco.version>
+        <formatter-maven-plugin.version>2.16.0</formatter-maven-plugin.version>
     </properties>
 
     <build>
@@ -39,6 +40,25 @@
             </plugins>
         </pluginManagement>
         <plugins>
+            <plugin>
+                <groupId>net.revelc.code.formatter</groupId>
+                <artifactId>formatter-maven-plugin</artifactId>
+                <version>${formatter-maven-plugin.version}</version>
+                <configuration>
+                    <configFile>${maven.multiModuleProjectDirectory}/style/alibaba-eclipse-codestyle.xml</configFile>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <lineEnding>LF</lineEnding>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>validate-alibaba-java-style</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>validate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>

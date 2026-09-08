@@ -53,7 +53,8 @@ public class RedisServiceUnitTest {
 
     @Test
     public void entityWritesAndReadsUseJsonSerializer() {
-        Map<String, Object> entities = Collections.singletonMap("item:{item-1}", Collections.singletonMap("id", "item-1"));
+        Map<String, Object> entities =
+            Collections.singletonMap("item:{item-1}", Collections.singletonMap("id", "item-1"));
         service.addKvs(entities);
         verify(jsonValues).multiSet(entities);
         verify(plainValues, never()).multiSet(entities);
@@ -88,21 +89,26 @@ public class RedisServiceUnitTest {
         service.addSets("set", new java.util.LinkedHashSet<>(java.util.Arrays.asList("a", "b")));
         when(setOperations.members("set")).thenReturn(Collections.singleton("a"));
         Assert.assertEquals(Collections.singleton("a"), service.getSet("set"));
-        service.addKv("key", "value"); when(plainValues.get("key")).thenReturn("value");
+        service.addKv("key", "value");
+        when(plainValues.get("key")).thenReturn("value");
         Assert.assertEquals("value", service.getV("key"));
-        LinkedHashMap json = new LinkedHashMap(); json.put("id", "i"); when(jsonValues.get("json")).thenReturn(json);
+        LinkedHashMap json = new LinkedHashMap();
+        json.put("id", "i");
+        when(jsonValues.get("json")).thenReturn(json);
         Assert.assertSame(json, service.getJsonV("json"));
-        service.removeK("key"); service.removeKs(java.util.Arrays.asList("a", "b"));
-        verify(redisTemplate).delete("key"); verify(redisTemplate).delete(java.util.Arrays.asList("a", "b"));
+        service.removeK("key");
+        service.removeKs(java.util.Arrays.asList("a", "b"));
+        verify(redisTemplate).delete("key");
+        verify(redisTemplate).delete(java.util.Arrays.asList("a", "b"));
     }
 
     @Test
     public void sortedSetsAreWrittenReadMergedAndUnquoted() {
         service.addZSet("z", "a", 1d);
         service.addZSets("z", Collections.singletonMap("b", 2d));
-        ZSetOperations.TypedTuple<String> quoted = new org.springframework.data.redis.core.DefaultTypedTuple<>("\"a\"", 3d);
-        when(zSetOperations.reverseRangeByScoreWithScores("z", 0, 10, 0, 5))
-            .thenReturn(Collections.singleton(quoted));
+        ZSetOperations.TypedTuple<String> quoted =
+            new org.springframework.data.redis.core.DefaultTypedTuple<>("\"a\"", 3d);
+        when(zSetOperations.reverseRangeByScoreWithScores("z", 0, 10, 0, 5)).thenReturn(Collections.singleton(quoted));
         Assert.assertEquals("a", service.getZSet("z", 0, 10, 5).get(0).getId());
 
         when(zSetOperations.reverseRangeByScoreWithScores(anyString(), eq(0d), eq(10d), eq(0L), eq(5L)))

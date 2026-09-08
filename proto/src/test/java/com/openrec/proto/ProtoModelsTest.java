@@ -32,7 +32,11 @@ public class ProtoModelsTest {
         request.setRequestId("request-id");
         assertEquals("request-id", request.getRequestId());
         assertEquals("body", request.getBody());
-        assertEquals(request, new JsonReq<String>("body") {{ setRequestId("request-id"); }});
+        assertEquals(request, new JsonReq<String>("body") {
+            {
+                setRequestId("request-id");
+            }
+        });
         assertEquals(request.hashCode(), request.hashCode());
         assertTrue(request.toString().contains("body"));
 
@@ -54,7 +58,7 @@ public class ProtoModelsTest {
     public void parameterizedResponseTypeExposesItsTypes() {
         JsonResType type = new JsonResType(String.class);
         assertEquals(JsonRes.class, type.getRawType());
-        assertArrayEquals(new Type[]{String.class}, type.getActualTypeArguments());
+        assertArrayEquals(new Type[] {String.class}, type.getActualTypeArguments());
         assertNull(type.getOwnerType());
     }
 
@@ -131,15 +135,18 @@ public class ProtoModelsTest {
 
     private static void exerciseBean(Object bean) throws Exception {
         for (Method setter : bean.getClass().getMethods()) {
-            if (!setter.getName().startsWith("set") || setter.getParameterTypes().length != 1) continue;
+            if (!setter.getName().startsWith("set") || setter.getParameterTypes().length != 1)
+                continue;
             Class<?> type = setter.getParameterTypes()[0];
-            Object value = type == String.class ? "value" : type == int.class ? 7 :
-                type == boolean.class ? true : type == java.util.List.class ? Collections.singletonList("value") :
-                type == java.util.Map.class ? Collections.singletonMap("key", "value") : new Object();
+            Object value = type == String.class ? "value"
+                : type == int.class ? 7
+                    : type == boolean.class ? true : type == java.util.List.class ? Collections.singletonList("value")
+                        : type == java.util.Map.class ? Collections.singletonMap("key", "value") : new Object();
             setter.invoke(bean, value);
             Method getter;
             try {
-                getter = bean.getClass().getMethod((type == boolean.class ? "is" : "get") + setter.getName().substring(3));
+                getter =
+                    bean.getClass().getMethod((type == boolean.class ? "is" : "get") + setter.getName().substring(3));
             } catch (NoSuchMethodException ignored) {
                 getter = bean.getClass().getMethod("get" + setter.getName().substring(3));
             }

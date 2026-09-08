@@ -54,10 +54,9 @@ public class NewNodeTest {
         config.setOpen(true);
 
         RecallStore recallStore = mock(RecallStore.class);
-        when(recallStore.newest(eq("new"), eq("scene-1"), anyLong(), anyLong(), eq(10)))
-            .thenAnswer(invocation -> {
-                return Collections.singletonList(new ScoreResult("item-1", 0.75));
-            });
+        when(recallStore.newest(eq("new"), eq("scene-1"), anyLong(), anyLong(), eq(10))).thenAnswer(invocation -> {
+            return Collections.singletonList(new ScoreResult("item-1", 0.75));
+        });
 
         NewNode node = new NewNode(config);
         ReflectionTestUtils.setField(node, "recallStore", recallStore);

@@ -21,7 +21,7 @@ import com.openrec.util.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class FilterNode extends SyncNode<FilterConfig> {
+public class FilterNode extends AbstractSyncNode<FilterConfig> {
 
     private RedisService redisService = BeanUtil.getBean(RedisService.class);
     private String bizType = "event";

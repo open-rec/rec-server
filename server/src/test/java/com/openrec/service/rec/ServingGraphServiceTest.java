@@ -48,7 +48,7 @@ public class ServingGraphServiceTest {
 
         service.activate(graph, "node-config-only");
 
-        GraphConfig activated = (GraphConfig) service.status().get("graph");
+        GraphConfig activated = (GraphConfig)service.status().get("graph");
         Assert.assertEquals(nodeCount, activated.getNodes().size());
         Assert.assertEquals(edges, JsonUtil.objToJson(activated.getEdges()));
         Assert.assertFalse(activated.getNodes().stream().anyMatch(node -> "new-node".equals(node.getName())));

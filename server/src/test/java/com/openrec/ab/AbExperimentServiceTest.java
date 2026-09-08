@@ -69,8 +69,8 @@ public class AbExperimentServiceTest {
 
         service.delete("test1");
 
-        Map<?, ?> experiments = (Map<?, ?>) service.status().get("experiments");
+        Map<?, ?> experiments = (Map<?, ?>)service.status().get("experiments");
         Assert.assertFalse(experiments.containsKey("test1"));
-        Assert.assertTrue(((Map<?, ?>) service.routing().get("routes")).isEmpty());
+        Assert.assertTrue(((Map<?, ?>)service.routing().get("routes")).isEmpty());
     }
 }

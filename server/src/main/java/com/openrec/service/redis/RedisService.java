@@ -45,10 +45,10 @@ public class RedisService {
     }
 
     /**
-     * Members written by InitStandalone went through a JSON serializer, so they arrive quoted
-     * ("item_1"). Both overloads strip that, otherwise ids from different code paths do not compare
-     * equal — which silently defeated exposure filtering for the i2i channel, whose ids came from
-     * the multi-key overload below while the filter set came from this one.
+     * Members written by InitStandalone went through a JSON serializer, so they arrive quoted ("item_1"). Both
+     * overloads strip that, otherwise ids from different code paths do not compare equal — which silently defeated
+     * exposure filtering for the i2i channel, whose ids came from the multi-key overload below while the filter set
+     * came from this one.
      */
     private static String unquote(String member) {
         return member == null ? null : member.replaceAll("^\"|\"$", "");
@@ -57,7 +57,8 @@ public class RedisService {
     public List<ScoreResult> getZSet(String key, double scoreMin, double scoreMax, int size) {
         Set<ZSetOperations.TypedTuple<String>> tupleSet =
             redisTemplate.opsForZSet().reverseRangeByScoreWithScores(key, scoreMin, scoreMax, 0, size);
-        return tupleSet.stream().map(t -> new ScoreResult(unquote(t.getValue()), t.getScore())).collect(Collectors.toList());
+        return tupleSet.stream().map(t -> new ScoreResult(unquote(t.getValue()), t.getScore()))
+            .collect(Collectors.toList());
     }
 
     public List<ScoreResult> getZSet(List<String> keys, double scoreMin, double scoreMax, int size) {
@@ -66,8 +67,8 @@ public class RedisService {
         redisTemplate.opsForZSet().unionAndStore(tmpKey, keys, tmpKey);
         Set<ZSetOperations.TypedTuple<String>> tupleSet =
             redisTemplate.opsForZSet().reverseRangeByScoreWithScores(tmpKey, scoreMin, scoreMax, 0, size);
-        List<ScoreResult> mergeResult =
-            tupleSet.stream().map(t -> new ScoreResult(unquote(t.getValue()), t.getScore())).collect(Collectors.toList());
+        List<ScoreResult> mergeResult = tupleSet.stream().map(t -> new ScoreResult(unquote(t.getValue()), t.getScore()))
+            .collect(Collectors.toList());
         redisTemplate.delete(tmpKey);
         return mergeResult;
     }
@@ -85,8 +86,9 @@ public class RedisService {
     }
 
     public LinkedHashMap getJsonV(String key) {
-        return (LinkedHashMap) redisJsonTemplate.opsForValue().get(key);
+        return (LinkedHashMap)redisJsonTemplate.opsForValue().get(key);
     }
+
     public void removeK(String key) {
         redisTemplate.delete(key);
     }

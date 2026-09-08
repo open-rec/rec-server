@@ -20,7 +20,7 @@ import com.openrec.util.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class BlackNode extends SyncNode<FilterConfig> {
+public class BlackNode extends AbstractSyncNode<FilterConfig> {
 
     private RedisService redisService = BeanUtil.getBean(RedisService.class);
     private String bizType = "black";
@@ -57,24 +57,30 @@ public class BlackNode extends SyncNode<FilterConfig> {
         blackCategorySet = Sets.newHashSet();
         blackTagSet = Sets.newHashSet();
 
-        FilterConfig.TypeFilterConfig dislike = config.getContent() == null
-            || config.getContent().getFilterMap() == null ? null
-            : config.getContent().getFilterMap().get(RecEventType.DISLIKE.toString());
+        FilterConfig.TypeFilterConfig dislike =
+            config.getContent() == null || config.getContent().getFilterMap() == null ? null
+                : config.getContent().getFilterMap().get(RecEventType.DISLIKE.toString());
         if (dislike != null) {
             String userId = context.getParams().getValueToString(USER_ID);
             String scene = context.getParams().getValueToString(SCENE);
             long nowSecs = TimeUtil.nowSecs();
-            redisService.getZSet(String.format(DISLIKE_KEY_FORMAT, userId, scene),
-                nowSecs - dislike.getDuration(), nowSecs, dislike.getSize()).forEach(rule -> addRule(rule.getId()));
+            redisService.getZSet(String.format(DISLIKE_KEY_FORMAT, userId, scene), nowSecs - dislike.getDuration(),
+                nowSecs, dislike.getSize()).forEach(rule -> addRule(rule.getId()));
         }
-        log.info("{} with black item size:{}, category size:{}, tag size:{}", getName(),
-            blackItemSet.size(), blackCategorySet.size(), blackTagSet.size());
+        log.info("{} with black item size:{}, category size:{}, tag size:{}", getName(), blackItemSet.size(),
+            blackCategorySet.size(), blackTagSet.size());
     }
 
     private void addRule(String rule) {
-        if (rule == null) { return; }
-        if (rule.startsWith("id:")) { blackItemSet.add(rule.substring(3)); }
-        else if (rule.startsWith("category:")) { blackCategorySet.add(rule.substring(9)); }
-        else if (rule.startsWith("tag:")) { blackTagSet.add(rule.substring(4)); }
+        if (rule == null) {
+            return;
+        }
+        if (rule.startsWith("id:")) {
+            blackItemSet.add(rule.substring(3));
+        } else if (rule.startsWith("category:")) {
+            blackCategorySet.add(rule.substring(9));
+        } else if (rule.startsWith("tag:")) {
+            blackTagSet.add(rule.substring(4));
+        }
     }
 }

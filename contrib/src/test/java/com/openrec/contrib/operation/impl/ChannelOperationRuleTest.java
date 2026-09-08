@@ -20,8 +20,8 @@ public class ChannelOperationRuleTest {
 
     @Test
     public void weightedRuleEnforcesRatioAndKeepsHighestScores() {
-        GraphContext context = context(10,
-            ratios("item_cf_i2i", 0.3, "item_seq_emb", 0.3, "hot", 0.2, "new", 0.2), null);
+        GraphContext context =
+            context(10, ratios("item_cf_i2i", 0.3, "item_seq_emb", 0.3, "hot", 0.2, "new", 0.2), null);
         List<ScoreResult> input = new ArrayList<>();
         add(input, "item_cf_i2i", 5, 0.50);
         add(input, "item_seq_emb", 5, 0.60);
@@ -57,8 +57,8 @@ public class ChannelOperationRuleTest {
 
     @Test
     public void weightedRuleRoundsStandaloneSizeToExpectedQuotas() {
-        Map<String, Integer> quotas = ChannelMixSupport.proportionalQuotas(
-            ratios("item_cf_i2i", 0.3, "item_seq_emb", 0.3, "hot", 0.2, "new", 0.2), 12);
+        Map<String, Integer> quotas = ChannelMixSupport
+            .proportionalQuotas(ratios("item_cf_i2i", 0.3, "item_seq_emb", 0.3, "hot", 0.2, "new", 0.2), 12);
 
         assertEquals(Integer.valueOf(4), quotas.get("item_cf_i2i"));
         assertEquals(Integer.valueOf(4), quotas.get("item_seq_emb"));
@@ -74,18 +74,15 @@ public class ChannelOperationRuleTest {
         add(input, "hot", 3, 0.95);
         add(input, "new", 3, 1.00);
 
-        List<ScoreResult> result =
-            new RandomInsertOperationRule(new Random(7)).handle(context, input);
+        List<ScoreResult> result = new RandomInsertOperationRule(new Random(7)).handle(context, input);
 
         assertEquals(10, result.size());
         assertEquals(1, count(result, "hot"));
         assertEquals(1, count(result, "new"));
-        assertTrue(result.indexOf(find(result, "hot")) != 8
-            || result.indexOf(find(result, "new")) != 9);
+        assertTrue(result.indexOf(find(result, "hot")) != 8 || result.indexOf(find(result, "new")) != 9);
     }
 
-    private static GraphContext context(int size, Map<String, Double> ratios,
-        Map<String, Double> randomRatios) {
+    private static GraphContext context(int size, Map<String, Double> ratios, Map<String, Double> randomRatios) {
         OperationConfig operation = new OperationConfig();
         operation.setChannelRatios(ratios);
         operation.setRandomInsertRatios(randomRatios);

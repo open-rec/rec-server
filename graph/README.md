@@ -59,10 +59,10 @@ Applications accepting runtime graph updates should also validate cycles, as `re
 
 ## Write a node
 
-Most server nodes extend `SyncNode<C>`:
+Most server nodes extend `AbstractSyncNode<C>`:
 
 ```java
-public class HotNode extends SyncNode<HotConfig> {
+public class HotNode extends AbstractSyncNode<HotConfig> {
 
     @Import("triggerItems")
     private List<ScoreResult> triggerItems;

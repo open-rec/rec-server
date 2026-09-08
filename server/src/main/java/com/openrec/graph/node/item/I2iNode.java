@@ -20,7 +20,7 @@ import com.openrec.util.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class I2iNode extends RecallNode<I2iConfig> {
+public class I2iNode extends AbstractRecallNode<I2iConfig> {
 
     private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
 

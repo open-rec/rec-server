@@ -13,14 +13,17 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class UtilityAndConfigTest {
-    @Test public void jsonAndTimeUtilitiesWork() {
+    @Test
+    public void jsonAndTimeUtilitiesWork() {
         assertEquals("x", JsonUtil.jsonToObj(JsonUtil.objToJson("x"), String.class));
-        long before = System.currentTimeMillis(); assertTrue(TimeUtil.now() >= before);
+        long before = System.currentTimeMillis();
+        assertTrue(TimeUtil.now() >= before);
         assertTrue(Math.abs(TimeUtil.nowSecs() - System.currentTimeMillis() / 1000) <= 1);
         assertTrue(FileUtil.read("item_graph.json").contains("nodes"));
     }
 
-    @Test public void beanUtilityHandlesMissingAndPresentContext() {
+    @Test
+    public void beanUtilityHandlesMissingAndPresentContext() {
         new BeanUtil().setApplicationContext(null);
         assertNull(BeanUtil.getBean(String.class));
         ApplicationContext context = mock(ApplicationContext.class);
@@ -29,7 +32,8 @@ public class UtilityAndConfigTest {
         assertEquals("bean", BeanUtil.getBean(String.class));
     }
 
-    @Test public void lightweightConfigurationsCreateBeans() {
+    @Test
+    public void lightweightConfigurationsCreateBeans() {
         assertNotNull(AppConfig.getPropertyPlaceholderConfigurer());
         assertNotNull(new RestConfig().restTemplate());
         KafkaConfig kafka = new KafkaConfig(new KafkaProperties());

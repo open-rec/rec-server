@@ -81,7 +81,8 @@ public class GraphEngine {
             from.addChild(to);
             to.addParent(from);
         }
-        for (int root : plan.getRoots()) rootNode.addChild(nodes[root]);
+        for (int root : plan.getRoots())
+            rootNode.addChild(nodes[root]);
 
         queue.add(rootNode);
         log.info("build graph finished");
@@ -154,7 +155,8 @@ public class GraphEngine {
         }
         int[] dependencies = plan.newDependencyCounts();
         List<Integer> ready = new ArrayList<>();
-        for (int root : plan.getRoots()) ready.add(root);
+        for (int root : plan.getRoots())
+            ready.add(root);
         int executed = 0;
         while (!ready.isEmpty()) {
             CountDownLatch latch = new CountDownLatch(ready.size());
@@ -168,7 +170,8 @@ public class GraphEngine {
                         node.run(context);
                         context.exportNodeData(node);
                     } catch (Exception error) {
-                        log.error("node:{} exec with exception:{}", node.getName(), ExceptionUtils.getStackTrace(error));
+                        log.error("node:{} exec with exception:{}", node.getName(),
+                            ExceptionUtils.getStackTrace(error));
                     } finally {
                         node.stop();
                         latch.countDown();
@@ -187,12 +190,14 @@ public class GraphEngine {
             for (int index : ready) {
                 executed++;
                 for (int child : plan.getChildren(index)) {
-                    if (--dependencies[child] == 0) next.add(child);
+                    if (--dependencies[child] == 0)
+                        next.add(child);
                 }
             }
             ready = next;
         }
-        if (executed != nodes.length) throw new IllegalStateException("compiled graph contains unreachable nodes");
+        if (executed != nodes.length)
+            throw new IllegalStateException("compiled graph contains unreachable nodes");
     }
 
     public <T> T getResult() {

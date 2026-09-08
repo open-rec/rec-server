@@ -32,7 +32,7 @@ public class OperationRuleManager {
         }
     }
 
-    public static void load(String jarFile, String pluginId) throws Exception{
+    public static void load(String jarFile, String pluginId) throws Exception {
         pluginManager.loadPlugin(Paths.get(jarFile));
         pluginManager.startPlugin(pluginId);
         operationRuleMap = pluginManager.getExtensions(OperationRule.class).stream()

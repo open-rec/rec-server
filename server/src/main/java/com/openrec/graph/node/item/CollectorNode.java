@@ -48,13 +48,16 @@ public class CollectorNode extends AbstractCollectorNode {
         log.info("write fake expose size:{}", finalItems.size());
     }
 
-    @Override protected List<ScoreResult> candidates() { return finalItems; }
+    @Override
+    protected List<ScoreResult> candidates() {
+        return finalItems;
+    }
 
-    @Override protected void afterCollect(GraphContext context, List<ScoreResult> finalItems) {
+    @Override
+    protected void afterCollect(GraphContext context, List<ScoreResult> finalItems) {
         // Keep this capability deploy-time configurable: standalone enables it, while cluster
         // clients report impressions that were actually rendered through the Push API.
-        if (environment == null
-            || environment.getProperty("collector.fake-expose.enabled", Boolean.class, true)) {
+        if (environment == null || environment.getProperty("collector.fake-expose.enabled", Boolean.class, true)) {
             writeFakeExpose(context, finalItems);
         }
         log.info("{} return with final item size:{}", getName(), finalItems.size());

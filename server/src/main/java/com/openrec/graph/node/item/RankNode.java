@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
 
 @Slf4j
-public class RankNode extends SyncNode<RankConfig> {
+public class RankNode extends AbstractSyncNode<RankConfig> {
 
     private RankService rankService = BeanUtil.getBean(RankService.class);
 
@@ -58,7 +58,7 @@ public class RankNode extends SyncNode<RankConfig> {
         }
 
         rankItems = combineItems.subList(0, Math.min(size, combineItems.size()));
-        if(CollectionUtils.isEmpty(rankItems)) {
+        if (CollectionUtils.isEmpty(rankItems)) {
             return;
         }
 
@@ -75,8 +75,8 @@ public class RankNode extends SyncNode<RankConfig> {
             for (ScoreResult itemScore : rankItems) {
                 double rankScore = rankResult.getOrDefault(itemScore.getId(), 0d);
                 itemScore.setRankScore(rankScore);
-                itemScore.setScore(RankScoreFusion.calculate(
-                    itemScore, rankScore, config.getContent().getScoreStrategy()));
+                itemScore
+                    .setScore(RankScoreFusion.calculate(itemScore, rankScore, config.getContent().getScoreStrategy()));
             }
         } catch (Exception e) {
             // rankScore stays null on purpose: ranking did not happen, which differs from scoring 0

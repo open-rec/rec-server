@@ -9,13 +9,20 @@ import com.openrec.graph.config.NodeConfig;
 import com.openrec.proto.model.ScoreResult;
 
 /** Shared safe truncation and terminal result publication for recommendation graphs. */
-public abstract class AbstractCollectorNode extends SyncNode<Void> {
-    protected AbstractCollectorNode(NodeConfig nodeConfig) { super(nodeConfig); }
+public abstract class AbstractCollectorNode extends AbstractSyncNode<Void> {
+    protected AbstractCollectorNode(NodeConfig nodeConfig) {
+        super(nodeConfig);
+    }
+
     protected abstract List<ScoreResult> candidates();
-    protected void afterCollect(GraphContext context, List<ScoreResult> results) { }
-    @Override public final void run(GraphContext context) {
+
+    protected void afterCollect(GraphContext context, List<ScoreResult> results) {}
+
+    @Override
+    public final void run(GraphContext context) {
         List<ScoreResult> values = candidates();
-        if (values == null) values = Collections.emptyList();
+        if (values == null)
+            values = Collections.emptyList();
         int requested = context.getParams().getValueToInt(SIZE);
         int limit = Math.min(values.size(), Math.max(0, requested));
         List<ScoreResult> results = new ArrayList<>(values.subList(0, limit));

@@ -95,7 +95,7 @@ public class RankService {
         headers.setAccept(Lists.list(MediaType.APPLICATION_JSON));
         HttpEntity<RankUserItems> reqEntity = new HttpEntity<>(rUserItems, headers);
         RankItemScores rankItemScores = restTemplate.postForObject(scoreUrl, reqEntity, RankItemScores.class);
-        if(rankItemScores.getCode() == 0) {
+        if (rankItemScores.getCode() == 0) {
             return rankItemScores.getData();
         }
         return Maps.newHashMap();

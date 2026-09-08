@@ -11,8 +11,8 @@ import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.redis.RedisService;
 
 /**
- * Redis recall implementation retained for development and correctness comparison only.
- * It stores mutable sorted sets in place and therefore cannot stage or atomically switch versions.
+ * Redis recall implementation retained for development and correctness comparison only. It stores mutable sorted sets
+ * in place and therefore cannot stage or atomically switch versions.
  */
 @Service
 @ConditionalOnProperty(name = "recall.store", havingValue = "redis", matchIfMissing = true)
@@ -31,10 +31,9 @@ public class RedisRecallStore implements RecallStore {
     }
 
     @Override
-    public List<ScoreResult> newest(
-        String tableName, String scene, long startTime, long endTime, int size) {
-        List<ScoreResult> result = redisService.getZSet(
-            String.format(SCENE_KEY, tableName, scene), startTime, endTime, size);
+    public List<ScoreResult> newest(String tableName, String scene, long startTime, long endTime, int size) {
+        List<ScoreResult> result =
+            redisService.getZSet(String.format(SCENE_KEY, tableName, scene), startTime, endTime, size);
         if (endTime > 0) {
             result.forEach(item -> item.setScore(item.getScore() / endTime));
         }
@@ -42,8 +41,17 @@ public class RedisRecallStore implements RecallStore {
     }
 
     @Override
-    public List<ScoreResult> i2i(
-        String tableName, String scene, List<String> triggerItems, int size) {
+    public List<ScoreResult> hotUsers(String tableName, String scene, int size) {
+        return hot(tableName, scene, size);
+    }
+
+    @Override
+    public List<ScoreResult> newestUsers(String tableName, String scene, long startTime, long endTime, int size) {
+        return newest(tableName, scene, startTime, endTime, size);
+    }
+
+    @Override
+    public List<ScoreResult> i2i(String tableName, String scene, List<String> triggerItems, int size) {
         if (triggerItems == null || triggerItems.isEmpty()) {
             return Collections.emptyList();
         }
@@ -59,8 +67,7 @@ public class RedisRecallStore implements RecallStore {
         if (userId == null || userId.trim().isEmpty()) {
             return Collections.emptyList();
         }
-        return redisService.getZSet(
-            String.format(U2I_KEY, tableName, userId, scene), 0, Double.MAX_VALUE, size);
+        return redisService.getZSet(String.format(U2I_KEY, tableName, userId, scene), 0, Double.MAX_VALUE, size);
     }
 
     @Override
@@ -69,8 +76,8 @@ public class RedisRecallStore implements RecallStore {
     }
 
     @Override
-    public List<ScoreResult> embedding(
-        String tableName, String scene, List<String> triggerItems, int size, long timeoutMillis) {
+    public List<ScoreResult> embedding(String tableName, String scene, List<String> triggerItems, int size,
+        long timeoutMillis) {
         return Collections.emptyList();
     }
 }

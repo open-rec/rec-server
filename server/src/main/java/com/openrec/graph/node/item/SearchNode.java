@@ -6,7 +6,7 @@ import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.NodeConfig;
 
 // TODO: 2022/11/2 waiting for elastic search.
-public class SearchNode extends SyncNode<Void> {
+public class SearchNode extends AbstractSyncNode<Void> {
     public SearchNode(NodeConfig nodeConfig) {
         super(nodeConfig);
     }

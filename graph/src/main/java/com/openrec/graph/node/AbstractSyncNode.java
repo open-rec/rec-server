@@ -3,13 +3,13 @@ package com.openrec.graph.node;
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.NodeConfig;
 
-public abstract class SyncNode<C> extends AbstractNode<C> {
+public abstract class AbstractSyncNode<C> extends AbstractNode<C> {
 
-    public SyncNode() {
+    public AbstractSyncNode() {
         super();
     }
 
-    public SyncNode(NodeConfig nodeConfig) {
+    public AbstractSyncNode(NodeConfig nodeConfig) {
         super(nodeConfig);
     }
 

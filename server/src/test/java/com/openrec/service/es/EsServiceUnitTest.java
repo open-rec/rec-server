@@ -31,7 +31,8 @@ public class EsServiceUnitTest {
         EsService service = new EsService();
         ReflectionTestUtils.setField(service, "esClient", client);
         assertTrue(service.createIndex("idx", "{}"));
-        service.deleteIndex("idx"); verify(indices).delete(any(DeleteIndexRequest.class));
+        service.deleteIndex("idx");
+        verify(indices).delete(any(DeleteIndexRequest.class));
         service.bulk("idx", Arrays.asList(Pair.of(1, "one"), Pair.of(2, "two")));
         verify(client).bulk(argThat((BulkRequest request) -> request.operations().size() == 2));
 

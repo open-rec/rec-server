@@ -8,8 +8,16 @@ import com.openrec.proto.model.ScoreResult;
 import com.openrec.graph.node.AbstractCollectorNode;
 
 /** Terminates a user recommendation graph without writing item exposure events. */
-public class UserCollectorNode extends AbstractCollectorNode {
-    @Import("rankUsers") private List<ScoreResult> candidates;
-    public UserCollectorNode(NodeConfig nodeConfig) { super(nodeConfig); }
-    @Override protected List<ScoreResult> candidates() { return candidates; }
+public class CollectorNode extends AbstractCollectorNode {
+    @Import("operationUsers")
+    private List<ScoreResult> candidates;
+
+    public CollectorNode(NodeConfig nodeConfig) {
+        super(nodeConfig);
+    }
+
+    @Override
+    protected List<ScoreResult> candidates() {
+        return candidates;
+    }
 }

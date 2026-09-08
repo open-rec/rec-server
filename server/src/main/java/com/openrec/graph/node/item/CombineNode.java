@@ -27,16 +27,16 @@ import com.openrec.util.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Merges the recall channels into one candidate list, dropping anything filtered, blacklisted or
- * already used as a trigger.
+ * Merges the recall channels into one candidate list, dropping anything filtered, blacklisted or already used as a
+ * trigger.
  * <p>
- * Channels are merged in a fixed order and de-duplicated: an item surfaced by more than one channel
- * is kept once, and ranks by the first channel's score. Without that, the same item takes several
- * slots of the size budget and reaches the client more than once.
+ * Channels are merged in a fixed order and de-duplicated: an item surfaced by more than one channel is kept once, and
+ * ranks by the first channel's score. Without that, the same item takes several slots of the size budget and reaches
+ * the client more than once.
  * <p>
  * De-duplicating does not discard the other channels though — each contribution is recorded in
- * {@link ScoreResult#getRecallScores()}, so downstream can still see that i2i and hot both produced
- * an item and what each thought of it.
+ * {@link ScoreResult#getRecallScores()}, so downstream can still see that i2i and hot both produced an item and what
+ * each thought of it.
  */
 @Slf4j
 public class CombineNode extends AbstractCombineNode {
@@ -110,8 +110,8 @@ public class CombineNode extends AbstractCombineNode {
             log.info("{} with empty candidates", getName());
             return;
         }
-        List<String> itemKeys = candidateList.stream().map(item -> String.format("item:{%s}", item.getId()))
-            .collect(Collectors.toList());
+        List<String> itemKeys =
+            candidateList.stream().map(item -> String.format("item:{%s}", item.getId())).collect(Collectors.toList());
         List<Object> itemValues = redisService.getVs(itemKeys);
         String scene = context.getParams().getValueToString(SCENE);
         long nowSecs = TimeUtil.nowSecs();
@@ -144,11 +144,19 @@ public class CombineNode extends AbstractCombineNode {
     }
 
     static boolean isNegativeFeedbackMatch(Item item, Set<String> categories, Set<String> tags) {
-        if (item == null) { return false; }
-        if (categories != null && categories.contains(item.getCategory())) { return true; }
-        if (tags == null || tags.isEmpty() || item.getTags() == null) { return false; }
+        if (item == null) {
+            return false;
+        }
+        if (categories != null && categories.contains(item.getCategory())) {
+            return true;
+        }
+        if (tags == null || tags.isEmpty() || item.getTags() == null) {
+            return false;
+        }
         for (String tag : item.getTags().split("[,|]")) {
-            if (tags.contains(tag.trim())) { return true; }
+            if (tags.contains(tag.trim())) {
+                return true;
+            }
         }
         return false;
     }

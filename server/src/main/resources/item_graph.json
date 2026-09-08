@@ -2,7 +2,7 @@
   "nodes": [
     {
       "name": "userTrigger",
-      "clazz": "com.openrec.graph.node.item.UserTriggerNode",
+      "clazz": "com.openrec.graph.node.item.TriggerNode",
       "configClazz": "com.openrec.graph.config.UserTriggerConfig",
       "open": true,
       "timeout": 50,
@@ -12,7 +12,7 @@
     },
     {
       "name": "userFeature",
-      "clazz": "com.openrec.graph.node.item.UserFeatureNode",
+      "clazz": "com.openrec.graph.node.item.FeatureNode",
       "configClazz": null,
       "open": true,
       "timeout": 20,

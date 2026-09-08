@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /** Independent item-feature preparation node reserved for the ranking stage. */
 @Slf4j
-public class ItemFeatureNode extends SyncNode<Void> {
+public class ItemFeatureNode extends AbstractSyncNode<Void> {
 
     public ItemFeatureNode(NodeConfig nodeConfig) {
         super(nodeConfig);

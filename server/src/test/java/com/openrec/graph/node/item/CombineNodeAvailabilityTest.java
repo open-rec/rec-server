@@ -62,9 +62,12 @@ public class CombineNodeAvailabilityTest {
     @Test
     public void mergesConfiguredDynamicRecallTypesWithoutFixedExportKeys() {
         CombineConfig content = new CombineConfig();
-        content.setSize(10); content.setRecallTypes(Arrays.asList("item_cf_i2i", "content_i2i"));
+        content.setSize(10);
+        content.setRecallTypes(Arrays.asList("item_cf_i2i", "content_i2i"));
         NodeConfig<CombineConfig> config = new NodeConfig<>();
-        config.setName("combine"); config.setOpen(true); config.setContent(content);
+        config.setName("combine");
+        config.setOpen(true);
+        config.setContent(content);
         CombineNode node = new CombineNode(config);
         RedisService redis = mock(RedisService.class);
         Item available = item("scene-1", 1, "0");
@@ -76,13 +79,13 @@ public class CombineNodeAvailabilityTest {
         ReflectionTestUtils.setField(node, "blackItemSet", Collections.emptySet());
         ReflectionTestUtils.setField(node, "blackCategorySet", Collections.emptySet());
         ReflectionTestUtils.setField(node, "blackTagSet", Collections.emptySet());
-        GraphContext context = new GraphContext(); context.addParam("scene", "scene-1");
-        context.addData("recall:item_cf_i2i",
-            Collections.singletonList(new ScoreResult("item-1", 0.8)));
-        context.addData("recall:content_i2i",
-            Collections.singletonList(new ScoreResult("item-1", 0.6)));
+        GraphContext context = new GraphContext();
+        context.addParam("scene", "scene-1");
+        context.addData("recall:item_cf_i2i", Collections.singletonList(new ScoreResult("item-1", 0.8)));
+        context.addData("recall:content_i2i", Collections.singletonList(new ScoreResult("item-1", 0.6)));
 
-        node.run(context); context.exportNodeData(node);
+        node.run(context);
+        context.exportNodeData(node);
 
         List<ScoreResult> result = (List<ScoreResult>)context.getData("combineItems");
         Assert.assertEquals(1, result.size());

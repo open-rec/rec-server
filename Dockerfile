@@ -11,6 +11,10 @@ COPY . .
 RUN --mount=type=cache,target=/root/.m2,sharing=locked \
     mvn -B package -DskipTests
 
+FROM build AS test
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
+    mvn -B clean test
+
 FROM ${JAVA_IMAGE}
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \

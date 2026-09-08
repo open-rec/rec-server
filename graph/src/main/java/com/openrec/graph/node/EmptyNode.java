@@ -6,7 +6,7 @@ import com.openrec.graph.config.NodeConfig;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class EmptyNode extends SyncNode {
+public class EmptyNode extends AbstractSyncNode {
 
     public EmptyNode() {
         super();

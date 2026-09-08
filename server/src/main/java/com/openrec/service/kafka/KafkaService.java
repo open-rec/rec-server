@@ -30,13 +30,11 @@ public class KafkaService {
     private KafkaTemplate<String, String> kafkaTemplate;
 
     public void writeItem(PushCmd operation, Item item) {
-        kafkaTemplate.send(itemTopic, item.getId(),
-            JsonUtil.objToJson(EntityMutation.of("item", operation, item)));
+        kafkaTemplate.send(itemTopic, item.getId(), JsonUtil.objToJson(EntityMutation.of("item", operation, item)));
     }
 
     public void writeUser(PushCmd operation, User user) {
-        kafkaTemplate.send(userTopic, user.getId(),
-            JsonUtil.objToJson(EntityMutation.of("user", operation, user)));
+        kafkaTemplate.send(userTopic, user.getId(), JsonUtil.objToJson(EntityMutation.of("user", operation, user)));
     }
 
     public void writeEvent(PushCmd operation, Event event) {

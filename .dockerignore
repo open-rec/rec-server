@@ -1,6 +1,8 @@
 .git
 .idea
 .vscode
+.cache
+.m2-repository
 **/target
 **/*.iml
 **/.classpath

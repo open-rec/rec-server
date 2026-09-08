@@ -16,15 +16,13 @@ public class GraphEngineTest {
 
     private static final String TEST_GRAPH_CONIG = "{\n" + "\t\"nodes\": [{\n" + "\t\t\t\"name\": \"a\",\n"
         + "\t\t\t\"clazz\": \"com.openrec.graph.node.SleepNode\",\n" + "\t\t\t\"open\": true,\n"
-        + "\t\t\t\"timeout\": 2000,\n"
-        + "\t\t\t\"content\": null\n" + "\t\t},\n" + "\t\t{\n" + "\t\t\t\"name\": \"b\",\n"
-        + "\t\t\t\"clazz\": \"com.openrec.graph.node.SleepNode\",\n" + "\t\t\t\"open\": true,\n"
-        + "\t\t\t\"timeout\": 2000,\n"
-        + "\t\t\t\"content\": null\n" + "\t\t},\n" + "\t\t{\n" + "\t\t\t\"name\": \"c\",\n"
-        + "\t\t\t\"clazz\": \"com.openrec.graph.node.SleepNode\",\n" + "\t\t\t\"open\": true,\n"
-        + "\t\t\t\"timeout\": 2000,\n"
-        + "\t\t\t\"content\": null\n" + "\t\t}\n" + "\t],\n" + "\t\"edges\": [{\n" + "\t\t\"from\": \"a\",\n"
-        + "\t\t\"to\": \"c\"\n" + "\t}, {\n" + "\t\t\"from\": \"b\",\n" + "\t\t\"to\": \"c\"\n" + "\t}]\n" + "}";
+        + "\t\t\t\"timeout\": 2000,\n" + "\t\t\t\"content\": null\n" + "\t\t},\n" + "\t\t{\n"
+        + "\t\t\t\"name\": \"b\",\n" + "\t\t\t\"clazz\": \"com.openrec.graph.node.SleepNode\",\n"
+        + "\t\t\t\"open\": true,\n" + "\t\t\t\"timeout\": 2000,\n" + "\t\t\t\"content\": null\n" + "\t\t},\n"
+        + "\t\t{\n" + "\t\t\t\"name\": \"c\",\n" + "\t\t\t\"clazz\": \"com.openrec.graph.node.SleepNode\",\n"
+        + "\t\t\t\"open\": true,\n" + "\t\t\t\"timeout\": 2000,\n" + "\t\t\t\"content\": null\n" + "\t\t}\n" + "\t],\n"
+        + "\t\"edges\": [{\n" + "\t\t\"from\": \"a\",\n" + "\t\t\"to\": \"c\"\n" + "\t}, {\n" + "\t\t\"from\": \"b\",\n"
+        + "\t\t\"to\": \"c\"\n" + "\t}]\n" + "}";
 
     @Test(timeout = 10000)
     public void testGraph() {

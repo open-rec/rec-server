@@ -21,7 +21,7 @@ import com.openrec.util.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class UserTriggerNode extends SyncNode<UserTriggerConfig> {
+public class TriggerNode extends AbstractSyncNode<UserTriggerConfig> {
     private RedisService redisService = BeanUtil.getBean(RedisService.class);
     private String bizType = "event";
     private String filterType = "click";
@@ -29,7 +29,7 @@ public class UserTriggerNode extends SyncNode<UserTriggerConfig> {
     @Export("triggerItems")
     private List<ScoreResult> triggerItems;
 
-    public UserTriggerNode(NodeConfig nodeConfig) {
+    public TriggerNode(NodeConfig nodeConfig) {
         super(nodeConfig);
         this.triggerItems = Lists.newArrayList();
     }

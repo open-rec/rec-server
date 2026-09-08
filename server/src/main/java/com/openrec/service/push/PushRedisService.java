@@ -44,9 +44,9 @@ public class PushRedisService implements PushService {
     }
 
     private void removeFromNewIndexes(List<Item> items) {
-        Map<String, List<String>> itemsByScene = items.stream()
-            .filter(item -> item != null && item.getScene() != null && item.getId() != null)
-            .collect(Collectors.groupingBy(Item::getScene, Collectors.mapping(Item::getId, Collectors.toList())));
+        Map<String, List<String>> itemsByScene =
+            items.stream().filter(item -> item != null && item.getScene() != null && item.getId() != null)
+                .collect(Collectors.groupingBy(Item::getScene, Collectors.mapping(Item::getId, Collectors.toList())));
         for (Map.Entry<String, List<String>> entry : itemsByScene.entrySet()) {
             redisService.removeZSetValues(String.format(NEW_KEY, entry.getKey()), entry.getValue());
         }
@@ -102,9 +102,8 @@ public class PushRedisService implements PushService {
                     }
                 }
             }
-            Map<String,
-                Map<String, Double>> userEvents = events.stream()
-                    .filter(event -> !"dislike".equalsIgnoreCase(event.getType()))
+            Map<String, Map<String, Double>> userEvents =
+                events.stream().filter(event -> !"dislike".equalsIgnoreCase(event.getType()))
                     .collect(Collectors.groupingBy(
                         event -> String.format(EVENT_KEY, event.getUserId(), event.getScene(), event.getType()),
                         Collectors.toMap(event -> event.getItemId(), event -> Double.valueOf(event.getTime()))));
@@ -112,9 +111,11 @@ public class PushRedisService implements PushService {
                 redisService.addZSets(userEventEntry.getKey(), userEventEntry.getValue());
             }
         } else {
-            Map<String, List<String>> eventItems = events.stream().collect(Collectors.groupingBy(
-                event -> String.format(EVENT_KEY, event.getUserId(), event.getScene(), event.getType()),
-                Collectors.mapping(Event::getItemId, Collectors.toList())));
+            Map<String,
+                List<String>> eventItems = events.stream()
+                    .collect(Collectors.groupingBy(
+                        event -> String.format(EVENT_KEY, event.getUserId(), event.getScene(), event.getType()),
+                        Collectors.mapping(Event::getItemId, Collectors.toList())));
             for (Map.Entry<String, List<String>> entry : eventItems.entrySet()) {
                 redisService.removeZSetValues(entry.getKey(), entry.getValue());
             }

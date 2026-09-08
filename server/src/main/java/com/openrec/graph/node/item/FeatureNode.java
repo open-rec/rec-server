@@ -14,12 +14,12 @@ import com.openrec.graph.tools.anno.Export;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class UserFeatureNode extends SyncNode<Void> {
+public class FeatureNode extends AbstractSyncNode<Void> {
 
     @Export("userFeatureMap")
     private Map<String, String> userFeatureMap;
 
-    public UserFeatureNode(NodeConfig nodeConfig) {
+    public FeatureNode(NodeConfig nodeConfig) {
         super(nodeConfig);
         this.userFeatureMap = Maps.newHashMap();
     }

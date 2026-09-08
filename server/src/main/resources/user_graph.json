@@ -1,6 +1,54 @@
 {
   "nodes": [
     {
+      "name": "trigger",
+      "clazz": "com.openrec.graph.node.user.TriggerNode",
+      "configClazz": "com.openrec.graph.config.UserTriggerConfig",
+      "open": true,
+      "timeout": 50,
+      "content": {"size": 1}
+    },
+    {
+      "name": "feature",
+      "clazz": "com.openrec.graph.node.user.FeatureNode",
+      "configClazz": null,
+      "open": true,
+      "timeout": 20,
+      "content": null
+    },
+    {
+      "name": "filter",
+      "clazz": "com.openrec.graph.node.user.FilterNode",
+      "configClazz": "com.openrec.graph.config.FilterConfig",
+      "open": true,
+      "timeout": 50,
+      "content": {"filterMap": {"expose": {"duration": 86400, "size": 1000}}}
+    },
+    {
+      "name": "black",
+      "clazz": "com.openrec.graph.node.user.BlackNode",
+      "configClazz": "com.openrec.graph.config.FilterConfig",
+      "open": true,
+      "timeout": 20,
+      "content": {"filterMap": {}}
+    },
+    {
+      "name": "hot",
+      "clazz": "com.openrec.graph.node.user.HotNode",
+      "configClazz": "com.openrec.graph.config.HotConfig",
+      "open": false,
+      "timeout": 200,
+      "content": {"size": 1000, "tableName": "user-hot", "recallType": "hot"}
+    },
+    {
+      "name": "new",
+      "clazz": "com.openrec.graph.node.user.NewNode",
+      "configClazz": "com.openrec.graph.config.NewConfig",
+      "open": false,
+      "timeout": 50,
+      "content": {"size": 100, "tableName": "user-new", "recallType": "new", "duration": 86400}
+    },
+    {
       "name": "user_cf_u2u",
       "clazz": "com.openrec.graph.node.user.U2uNode",
       "configClazz": "com.openrec.graph.config.U2uConfig",
@@ -18,24 +66,25 @@
     },
     {
       "name": "user_emb_u2u",
-      "clazz": "com.openrec.graph.node.user.U2uNode",
-      "configClazz": "com.openrec.graph.config.U2uConfig",
+      "clazz": "com.openrec.graph.node.user.EmbeddingNode",
+      "configClazz": "com.openrec.graph.config.EmbeddingConfig",
       "open": true,
-      "timeout": 200,
-      "content": {"size": 1000, "tableName": "user-emb-u2u", "recallType": "user_emb_u2u"}
+      "timeout": 300,
+      "content": {"size": 1000, "tableName": "user-emb-u2u", "recallType": "user_emb_u2u",
+        "vectorField": "vector", "idField": "id"}
     },
     {
       "name": "combine",
-      "clazz": "com.openrec.graph.node.user.UserCombineNode",
+      "clazz": "com.openrec.graph.node.user.CombineNode",
       "configClazz": "com.openrec.graph.config.CombineConfig",
       "open": true,
       "timeout": 50,
       "content": {"size": 1000, "checkExpireTime": false,
-        "recallTypes": ["user_cf_u2u", "content_u2u", "user_emb_u2u"]}
+        "recallTypes": ["user_cf_u2u", "content_u2u", "user_emb_u2u", "hot", "new"]}
     },
     {
       "name": "rank",
-      "clazz": "com.openrec.graph.node.user.UserRankNode",
+      "clazz": "com.openrec.graph.node.user.RankNode",
       "configClazz": "com.openrec.graph.config.RankConfig",
       "open": true,
       "timeout": 200,
@@ -48,8 +97,16 @@
         ]}}
     },
     {
+      "name": "operation",
+      "clazz": "com.openrec.graph.node.user.OperationNode",
+      "configClazz": "com.openrec.graph.config.OperationConfig",
+      "open": true,
+      "timeout": 20,
+      "content": {"operationName": "UserOperationRule"}
+    },
+    {
       "name": "collector",
-      "clazz": "com.openrec.graph.node.user.UserCollectorNode",
+      "clazz": "com.openrec.graph.node.user.CollectorNode",
       "configClazz": null,
       "open": true,
       "timeout": 50,
@@ -57,10 +114,18 @@
     }
   ],
   "edges": [
+    {"from": "trigger", "to": "user_emb_u2u"},
+    {"from": "filter", "to": "combine"},
+    {"from": "black", "to": "combine"},
+    {"from": "trigger", "to": "combine"},
+    {"from": "hot", "to": "combine"},
+    {"from": "new", "to": "combine"},
     {"from": "user_cf_u2u", "to": "combine"},
     {"from": "content_u2u", "to": "combine"},
     {"from": "user_emb_u2u", "to": "combine"},
     {"from": "combine", "to": "rank"},
-    {"from": "rank", "to": "collector"}
+    {"from": "feature", "to": "rank"},
+    {"from": "rank", "to": "operation"},
+    {"from": "operation", "to": "collector"}
   ]
 }

@@ -4,7 +4,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.openrec.graph.node.SyncNode;
+import com.openrec.graph.node.AbstractSyncNode;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
 
@@ -41,7 +41,7 @@ public class GraphContextTest {
         Assert.assertEquals(0, graphContext.getParams().size());
     }
 
-    static class ExportNode extends SyncNode {
+    static class ExportNode extends AbstractSyncNode {
 
         @Export(TEST_STRING_KEY)
         private String str;
@@ -52,7 +52,7 @@ public class GraphContextTest {
         }
     }
 
-    static class ImportNode extends SyncNode {
+    static class ImportNode extends AbstractSyncNode {
 
         @Import(TEST_STRING_KEY)
         private String str;

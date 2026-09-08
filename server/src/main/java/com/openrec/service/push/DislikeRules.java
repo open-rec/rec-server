@@ -21,9 +21,13 @@ public final class DislikeRules {
             add(rules, ID_PREFIX, dislike == null ? null : dislike.getId());
             add(rules, CATEGORY_PREFIX, dislike == null ? null : dislike.getCategory());
             if (dislike != null && dislike.getTags() != null) {
-                for (String tag : dislike.getTags()) { add(rules, TAG_PREFIX, tag); }
+                for (String tag : dislike.getTags()) {
+                    add(rules, TAG_PREFIX, tag);
+                }
             }
-            if (rules.isEmpty()) { throw new IllegalArgumentException("dislike value has no id, category or tags"); }
+            if (rules.isEmpty()) {
+                throw new IllegalArgumentException("dislike value has no id, category or tags");
+            }
             return rules;
         } catch (RuntimeException e) {
             throw new IllegalArgumentException(
@@ -32,6 +36,8 @@ public final class DislikeRules {
     }
 
     private static void add(Set<String> rules, String prefix, String value) {
-        if (value != null && !value.trim().isEmpty()) { rules.add(prefix + value.trim()); }
+        if (value != null && !value.trim().isEmpty()) {
+            rules.add(prefix + value.trim());
+        }
     }
 }

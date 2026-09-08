@@ -39,8 +39,8 @@ public class RecommendController {
     public Mono<JsonRes<RecommendRes<Item>>> recommendItem(@RequestBody JsonReq<RecommendReq> recommendReq) {
         prepareTarget(recommendReq.getBody(), RecommendReq.TARGET_ITEM);
         String experiment = abExperimentService.resolve(recommendReq.getBody());
-        return Mono.just(new JsonRes<>(apiMetricsService.recordRecommend(experiment,
-            () -> abExperimentService.execute(recommendReq.getBody()))));
+        return Mono.just(new JsonRes<>(
+            apiMetricsService.recordRecommend(experiment, () -> abExperimentService.execute(recommendReq.getBody()))));
     }
 
     @ApiOperation("用户推荐接口")
@@ -49,8 +49,8 @@ public class RecommendController {
     public Mono<JsonRes<RecommendRes<User>>> recommendUser(@RequestBody JsonReq<RecommendReq> recommendReq) {
         prepareTarget(recommendReq.getBody(), RecommendReq.TARGET_USER);
         String experiment = abExperimentService.resolve(recommendReq.getBody());
-        return Mono.just(new JsonRes<>(apiMetricsService.recordRecommend(experiment,
-            () -> abExperimentService.execute(recommendReq.getBody()))));
+        return Mono.just(new JsonRes<>(
+            apiMetricsService.recordRecommend(experiment, () -> abExperimentService.execute(recommendReq.getBody()))));
     }
 
     private static void prepareTarget(RecommendReq request, String targetType) {

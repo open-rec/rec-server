@@ -18,7 +18,7 @@ import com.openrec.proto.model.ScoreResult;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class OperationNode extends SyncNode<OperationConfig> {
+public class OperationNode extends AbstractSyncNode<OperationConfig> {
 
     @Import("rankItems")
     private List<ScoreResult> rankItems;
@@ -33,8 +33,7 @@ public class OperationNode extends SyncNode<OperationConfig> {
         this.operationItems = Lists.newArrayList();
         this.operationRule = OperationRuleManager.getOperationRuleByName(config.getContent().getOperationName());
         if (this.operationRule == null) {
-            log.warn("unknown operation rule:{}, use pass-through behavior",
-                config.getContent().getOperationName());
+            log.warn("unknown operation rule:{}, use pass-through behavior", config.getContent().getOperationName());
         }
     }
 

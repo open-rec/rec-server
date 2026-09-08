@@ -15,15 +15,14 @@ public class ScoreResult implements Serializable {
     private double score;
 
     /**
-     * The channel whose score is carried in {@link #recallScore} — the first one that produced this
-     * item. See {@link #recallScores} for everything that produced it.
+     * The channel whose score is carried in {@link #recallScore} — the first one that produced this item. See
+     * {@link #recallScores} for everything that produced it.
      */
     private String recallFrom;
 
     /**
-     * The score as it came out of recall, kept separate so the two stages can be told apart
-     * downstream. Boxed deliberately: null means the stage did not run, which is not the same as a
-     * score of 0.
+     * The score as it came out of recall, kept separate so the two stages can be told apart downstream. Boxed
+     * deliberately: null means the stage did not run, which is not the same as a score of 0.
      */
     private Double recallScore;
 
@@ -34,13 +33,11 @@ public class ScoreResult implements Serializable {
     private Double rankScore;
 
     /**
-     * Every recall channel that surfaced this item, in the order they were merged, with the score
-     * each one gave it.
+     * Every recall channel that surfaced this item, in the order they were merged, with the score each one gave it.
      * <p>
-     * An item found by several channels is emitted once, but dropping the losing channels' scores
-     * hides exactly the information needed to tune the strategy — whether item_cf_i2i and hot agree, or
-     * whether a single channel is carrying the whole result. Insertion-ordered so the merge order
-     * stays readable.
+     * An item found by several channels is emitted once, but dropping the losing channels' scores hides exactly the
+     * information needed to tune the strategy — whether item_cf_i2i and hot agree, or whether a single channel is
+     * carrying the whole result. Insertion-ordered so the merge order stays readable.
      */
     private Map<String, Double> recallScores;
 

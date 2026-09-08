@@ -8,11 +8,11 @@ import com.openrec.graph.config.RecallConfig;
 import com.openrec.proto.model.ScoreResult;
 
 /** Shared configuration and dynamic channel export for table-backed recall nodes. */
-public abstract class RecallNode<C extends RecallConfig> extends SyncNode<C> {
+public abstract class AbstractRecallNode<C extends RecallConfig> extends AbstractSyncNode<C> {
 
     static final String CHANNEL_PREFIX = "recall:";
 
-    protected RecallNode(NodeConfig nodeConfig) {
+    protected AbstractRecallNode(NodeConfig nodeConfig) {
         super(nodeConfig);
         if (nodeConfig != null && nodeConfig.isOpen()) {
             if (config.getContent() == null) {

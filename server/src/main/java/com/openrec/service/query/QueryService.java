@@ -39,9 +39,9 @@ public class QueryService {
         LinkedHashMap data = redisService.getJsonV(key);
         return objectMapper.convertValue(data, objClass);
     }
+
     public List<ScoreResult> queryEvent(String userId, String scene, String type) {
         String eventKey = String.format(EVENT_KEY, userId, scene, type);
-        return redisService.getZSet(eventKey, 0, Double.MAX_VALUE,
-            Integer.MAX_VALUE);
+        return redisService.getZSet(eventKey, 0, Double.MAX_VALUE, Integer.MAX_VALUE);
     }
 }

@@ -34,8 +34,7 @@ public class PushController {
     @RequestMapping(value = {"/user"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<String>> pushUser(@RequestBody JsonReq<UserReq> userReq) {
-        apiMetricsService.recordPush("user", userReq.getBody(),
-            () -> pushService.pushUser(userReq.getBody()));
+        apiMetricsService.recordPush("user", userReq.getBody(), () -> pushService.pushUser(userReq.getBody()));
         return Mono.just(new JsonRes<>());
     }
 
@@ -43,8 +42,7 @@ public class PushController {
     @RequestMapping(value = {"/item"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<String>> pushItem(@RequestBody JsonReq<ItemReq> itemReq) {
-        apiMetricsService.recordPush("item", itemReq.getBody(),
-            () -> pushService.pushItem(itemReq.getBody()));
+        apiMetricsService.recordPush("item", itemReq.getBody(), () -> pushService.pushItem(itemReq.getBody()));
         return Mono.just(new JsonRes<>());
     }
 
@@ -52,8 +50,7 @@ public class PushController {
     @RequestMapping(value = {"/event"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<String>> pushEvent(@RequestBody JsonReq<EventReq> eventReq) {
-        apiMetricsService.recordPush("event", eventReq.getBody(),
-            () -> pushService.pushEvent(eventReq.getBody()));
+        apiMetricsService.recordPush("event", eventReq.getBody(), () -> pushService.pushEvent(eventReq.getBody()));
         return Mono.just(new JsonRes<>());
     }
 }

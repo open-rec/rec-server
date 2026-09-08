@@ -16,7 +16,7 @@ import com.openrec.graph.config.RankConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
 import com.openrec.graph.node.RankScoreFusion;
-import com.openrec.graph.node.SyncNode;
+import com.openrec.graph.node.AbstractSyncNode;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.rank.RankService;
 import com.openrec.util.BeanUtil;
@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /** Scores candidate users with the user-target rank model. */
 @Slf4j
-public class UserRankNode extends SyncNode<RankConfig> {
+public class RankNode extends AbstractSyncNode<RankConfig> {
     private RankService rankService = BeanUtil.getBean(RankService.class);
 
     @Import("userCandidates")
@@ -34,7 +34,7 @@ public class UserRankNode extends SyncNode<RankConfig> {
     @Export("rankUsers")
     private List<ScoreResult> rankUsers;
 
-    public UserRankNode(NodeConfig nodeConfig) {
+    public RankNode(NodeConfig nodeConfig) {
         super(nodeConfig);
         RankScoreFusion.validate(config.getContent().getScoreStrategy());
         rankUsers = Lists.newArrayList();
@@ -46,10 +46,11 @@ public class UserRankNode extends SyncNode<RankConfig> {
             rankUsers = userCandidates;
             return;
         }
-        rankUsers = userCandidates.subList(0, Math.min(config.getContent().getSize(),
-                                                       userCandidates.size()));
-        if (CollectionUtils.isEmpty(rankUsers)) return;
-        for (ScoreResult candidate : rankUsers) candidate.setRecallScore(candidate.getScore());
+        rankUsers = userCandidates.subList(0, Math.min(config.getContent().getSize(), userCandidates.size()));
+        if (CollectionUtils.isEmpty(rankUsers))
+            return;
+        for (ScoreResult candidate : rankUsers)
+            candidate.setRecallScore(candidate.getScore());
         String userId = context.getParams().getValueToString(USER_ID);
         List<String> ids = rankUsers.stream().map(ScoreResult::getId).collect(Collectors.toList());
         try {
@@ -57,8 +58,8 @@ public class UserRankNode extends SyncNode<RankConfig> {
             for (ScoreResult candidate : rankUsers) {
                 double rankScore = scores.getOrDefault(candidate.getId(), 0d);
                 candidate.setRankScore(rankScore);
-                candidate.setScore(RankScoreFusion.calculate(
-                    candidate, rankScore, config.getContent().getScoreStrategy()));
+                candidate
+                    .setScore(RankScoreFusion.calculate(candidate, rankScore, config.getContent().getScoreStrategy()));
             }
         } catch (Exception error) {
             log.warn("user rank failed with exception: {}", ExceptionUtils.getStackTrace(error));

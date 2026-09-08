@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /** Looks up a precomputed user-to-item recall table by scene and request user. */
 @Slf4j
-public class U2iNode extends RecallNode<U2iConfig> {
+public class U2iNode extends AbstractRecallNode<U2iConfig> {
 
     private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
 
@@ -43,7 +43,6 @@ public class U2iNode extends RecallNode<U2iConfig> {
         String userId = context.getParams().getValueToString(USER_ID);
         u2iItems = recallStore.u2i(tableName(), scene, userId, config.getContent().getSize());
         exportChannel(context, u2iItems);
-        log.info("{} type:{} table:{} with u2i size:{}",
-            getName(), recallType(), tableName(), u2iItems.size());
+        log.info("{} type:{} table:{} with u2i size:{}", getName(), recallType(), tableName(), u2iItems.size());
     }
 }

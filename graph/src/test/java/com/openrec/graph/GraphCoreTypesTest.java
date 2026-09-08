@@ -32,7 +32,11 @@ public class GraphCoreTypesTest {
         params.put("double", 2.5d);
         params.put("list", Arrays.asList("a", "b"));
         params.put("set", new HashSet<>(Collections.singletonList("a")));
-        params.put("map", new HashMap<String, Integer>() {{ put("a", 1); }});
+        params.put("map", new HashMap<String, Integer>() {
+            {
+                put("a", 1);
+            }
+        });
         assertEquals("value", params.getValueToString("string"));
         assertEquals(3, params.getValueToInt("int"));
         assertTrue(params.getValueToBool("bool"));
@@ -64,11 +68,11 @@ public class GraphCoreTypesTest {
 
         NodeConfigType type = new NodeConfigType(String.class);
         assertEquals(NodeConfig.class, type.getRawType());
-        assertArrayEquals(new Type[]{String.class}, type.getActualTypeArguments());
+        assertArrayEquals(new Type[] {String.class}, type.getActualTypeArguments());
         assertNull(type.getOwnerType());
         Type canonicalType = NodeConfigTool.getNodeConfigType(String.class);
         assertTrue(canonicalType instanceof java.lang.reflect.ParameterizedType);
-        assertEquals(NodeConfig.class, ((java.lang.reflect.ParameterizedType) canonicalType).getRawType());
+        assertEquals(NodeConfig.class, ((java.lang.reflect.ParameterizedType)canonicalType).getRawType());
         assertNotNull(new Gson().fromJson("{\"content\":\"x\"}", NodeConfigTool.getNodeConfigType(String.class)));
     }
 
@@ -91,7 +95,10 @@ public class GraphCoreTypesTest {
 
     @Test
     public void engineAcceptsParamsAndGracefullySkipsUnknownNodeClasses() {
-        class Params { private String user = "u"; private int size = 2; }
+        class Params {
+            private String user = "u";
+            private int size = 2;
+        }
         GraphEngine engine = GraphEngine.getSessionGraphEngine();
         engine.prepare(new Params());
         GraphConfig config = new GraphConfig();

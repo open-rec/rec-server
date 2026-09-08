@@ -9,7 +9,7 @@ import com.openrec.graph.GraphContext;
  *
  * @param <T>
  */
-public abstract class AsyncNode<T> extends AbstractNode {
+public abstract class AbstractAsyncNode<T> extends AbstractNode {
 
     public abstract Map<String, String> buildQuery(GraphContext context);
 

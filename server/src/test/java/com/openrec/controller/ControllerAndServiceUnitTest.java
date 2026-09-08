@@ -51,11 +51,15 @@ public class ControllerAndServiceUnitTest {
         PushController controller = new PushController();
         ReflectionTestUtils.setField(controller, "pushService", push);
         ReflectionTestUtils.setField(controller, "apiMetricsService", new ApiMetricsService(new SimpleMeterRegistry()));
-        UserReq users = new UserReq(); ItemReq items = new ItemReq(); EventReq events = new EventReq();
+        UserReq users = new UserReq();
+        ItemReq items = new ItemReq();
+        EventReq events = new EventReq();
         assertTrue(controller.pushUser(new JsonReq<>(users)).block().isStatus());
         assertTrue(controller.pushItem(new JsonReq<>(items)).block().isStatus());
         assertTrue(controller.pushEvent(new JsonReq<>(events)).block().isStatus());
-        verify(push).pushUser(users); verify(push).pushItem(items); verify(push).pushEvent(events);
+        verify(push).pushUser(users);
+        verify(push).pushItem(items);
+        verify(push).pushEvent(events);
 
         OperateService operate = mock(OperateService.class);
         OperateController operateController = new OperateController();
@@ -70,7 +74,8 @@ public class ControllerAndServiceUnitTest {
         QueryService query = mock(QueryService.class);
         QueryController controller = new QueryController();
         ReflectionTestUtils.setField(controller, "queryService", query);
-        User user = new User(); Item item = new Item();
+        User user = new User();
+        Item item = new Item();
         when(query.queryUser("u")).thenReturn(user);
         when(query.queryItem("i")).thenReturn(item);
         when(query.queryEvent("u", "s", "t")).thenReturn(Collections.singletonList(new ScoreResult("i", 1)));
@@ -81,8 +86,10 @@ public class ControllerAndServiceUnitTest {
         AbExperimentService experiments = mock(AbExperimentService.class);
         RecommendController recommendController = new RecommendController();
         ReflectionTestUtils.setField(recommendController, "abExperimentService", experiments);
-        ReflectionTestUtils.setField(recommendController, "apiMetricsService", new ApiMetricsService(new SimpleMeterRegistry()));
-        RecommendReq req = new RecommendReq(); RecommendRes<Item> res = new RecommendRes<>();
+        ReflectionTestUtils.setField(recommendController, "apiMetricsService",
+            new ApiMetricsService(new SimpleMeterRegistry()));
+        RecommendReq req = new RecommendReq();
+        RecommendRes<Item> res = new RecommendRes<>();
         when(experiments.resolve(req)).thenReturn("default");
         doReturn(res).when(experiments).execute(req);
         assertSame(res, recommendController.recommend(new JsonReq<>(req)).block().getData());
@@ -107,8 +114,10 @@ public class ControllerAndServiceUnitTest {
         QueryService query = new QueryService();
         ReflectionTestUtils.setField(query, "redisService", redis);
         ReflectionTestUtils.setField(query, "objectMapper", new ObjectMapper());
-        LinkedHashMap<String, Object> userData = new LinkedHashMap<>(); userData.put("id", "u");
-        LinkedHashMap<String, Object> itemData = new LinkedHashMap<>(); itemData.put("id", "i");
+        LinkedHashMap<String, Object> userData = new LinkedHashMap<>();
+        userData.put("id", "u");
+        LinkedHashMap<String, Object> itemData = new LinkedHashMap<>();
+        itemData.put("id", "i");
         when(redis.getJsonV("user:{u}")).thenReturn(userData);
         when(redis.getJsonV("item:{i}")).thenReturn(itemData);
         when(redis.getZSet(anyString(), eq(0d), eq(Double.MAX_VALUE), eq(Integer.MAX_VALUE)))
@@ -133,19 +142,26 @@ public class ControllerAndServiceUnitTest {
         ReflectionTestUtils.setField(service, "rankPort", "8080");
         ReflectionTestUtils.setField(service, "environment", new MockEnvironment());
         RankService.RankItemScores success = new RankService.RankItemScores();
-        success.setCode(0); success.setData(Collections.singletonMap("i", 2d));
+        success.setCode(0);
+        success.setData(Collections.singletonMap("i", 2d));
         when(rest.postForObject(anyString(), any(), eq(RankService.RankItemScores.class))).thenReturn(success);
         assertEquals(2d, service.score("u", Arrays.asList("i")).get("i"), 0d);
-        verify(rest).postForObject(eq("http://localhost:8080/model/score"), any(), eq(RankService.RankItemScores.class));
+        verify(rest).postForObject(eq("http://localhost:8080/model/score"), any(),
+            eq(RankService.RankItemScores.class));
 
-        RankService.RankItemScores failure = new RankService.RankItemScores(); failure.setCode(1);
+        RankService.RankItemScores failure = new RankService.RankItemScores();
+        failure.setCode(1);
         when(rest.postForObject(anyString(), any(), eq(RankService.RankItemScores.class))).thenReturn(failure);
         assertTrue(service.score("u", Collections.singletonList("i")).isEmpty());
 
         RankService.RankUserItems dto = new RankService.RankUserItems("u", Collections.singletonList("i"));
-        assertEquals("u", dto.getUserId()); assertEquals("i", dto.getItemIds().get(0));
-        failure.setStatus("error"); failure.setMessage("bad"); failure.setData(Collections.emptyMap());
-        assertEquals("error", failure.getStatus()); assertEquals("bad", failure.getMessage());
+        assertEquals("u", dto.getUserId());
+        assertEquals("i", dto.getItemIds().get(0));
+        failure.setStatus("error");
+        failure.setMessage("bad");
+        failure.setData(Collections.emptyMap());
+        assertEquals("error", failure.getStatus());
+        assertEquals("bad", failure.getMessage());
     }
 
     @Test
@@ -155,13 +171,13 @@ public class ControllerAndServiceUnitTest {
         ReflectionTestUtils.setField(service, "restTemplate", rest);
         ReflectionTestUtils.setField(service, "rankHost", "127.0.0.1");
         ReflectionTestUtils.setField(service, "rankPort", "8123");
-        MockEnvironment environment = new MockEnvironment()
-            .withProperty("RANK_HOST", "rank-engine").withProperty("RANK_PORT", "9123");
+        MockEnvironment environment =
+            new MockEnvironment().withProperty("RANK_HOST", "rank-engine").withProperty("RANK_PORT", "9123");
         ReflectionTestUtils.setField(service, "environment", environment);
         RankService.RankItemScores success = new RankService.RankItemScores();
-        success.setCode(0); success.setData(Collections.singletonMap("i", 1d));
-        when(rest.postForObject(anyString(), any(), eq(RankService.RankItemScores.class)))
-            .thenReturn(success);
+        success.setCode(0);
+        success.setData(Collections.singletonMap("i", 1d));
+        when(rest.postForObject(anyString(), any(), eq(RankService.RankItemScores.class))).thenReturn(success);
 
         service.score("u", Collections.singletonList("i"));
 

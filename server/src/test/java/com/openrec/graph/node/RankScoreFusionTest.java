@@ -15,8 +15,7 @@ public class RankScoreFusionTest {
     @Test
     public void firstUsesConfiguredChannelOrderAndWeights() {
         ScoreResult item = itemWithAllRecallScores();
-        RankScoreStrategyConfig strategy = strategy("first", 0.2, 0.9,
-            channel("hot", 2), channel("item_cf_i2i", 10));
+        RankScoreStrategyConfig strategy = strategy("first", 0.2, 0.9, channel("hot", 2), channel("item_cf_i2i", 10));
 
         assertEquals(1.7, RankScoreFusion.calculate(item, 1, strategy), 0.000001);
         assertEquals(Double.valueOf(4), item.getRecallFusionScore());
@@ -25,8 +24,8 @@ public class RankScoreFusionTest {
     @Test
     public void maxUsesLargestWeightedChannelValue() {
         ScoreResult item = itemWithAllRecallScores();
-        RankScoreStrategyConfig strategy = strategy("max", 0.2, 0.9,
-            channel("item_cf_i2i", 2), channel("item_seq_emb", 1), channel("hot", 2));
+        RankScoreStrategyConfig strategy =
+            strategy("max", 0.2, 0.9, channel("item_cf_i2i", 2), channel("item_seq_emb", 1), channel("hot", 2));
 
         assertEquals(1.7, RankScoreFusion.calculate(item, 1, strategy), 0.000001);
         assertEquals(Double.valueOf(4), item.getRecallFusionScore());
@@ -35,8 +34,8 @@ public class RankScoreFusionTest {
     @Test
     public void sumAddsEveryMatchedWeightedChannel() {
         ScoreResult item = itemWithAllRecallScores();
-        RankScoreStrategyConfig strategy = strategy("sum", 0.4, 0.6,
-            channel("item_cf_i2i", 1), channel("item_seq_emb", 1), channel("hot", 1), channel("new", 1));
+        RankScoreStrategyConfig strategy = strategy("sum", 0.4, 0.6, channel("item_cf_i2i", 1),
+            channel("item_seq_emb", 1), channel("hot", 1), channel("new", 1));
 
         assertEquals(4.6, RankScoreFusion.calculate(item, 1, strategy), 0.000001);
         assertEquals(Double.valueOf(10), item.getRecallFusionScore());
@@ -66,8 +65,7 @@ public class RankScoreFusionTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void rejectsDuplicateChannels() {
-        RankScoreStrategyConfig strategy = strategy("sum", 1, 1,
-            channel("item_cf_i2i", 1), channel("item_cf_i2i", 2));
+        RankScoreStrategyConfig strategy = strategy("sum", 1, 1, channel("item_cf_i2i", 1), channel("item_cf_i2i", 2));
         RankScoreFusion.validate(strategy);
     }
 
@@ -81,8 +79,8 @@ public class RankScoreFusionTest {
         return item;
     }
 
-    private static RankScoreStrategyConfig strategy(String aggregation, double recallWeight,
-        double rankWeight, RankChannelWeightConfig... channels) {
+    private static RankScoreStrategyConfig strategy(String aggregation, double recallWeight, double rankWeight,
+        RankChannelWeightConfig... channels) {
         RankScoreStrategyConfig strategy = new RankScoreStrategyConfig();
         strategy.setRecallAggregation(aggregation);
         strategy.setRecallWeight(recallWeight);

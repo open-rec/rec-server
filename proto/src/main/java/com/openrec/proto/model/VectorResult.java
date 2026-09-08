@@ -12,5 +12,6 @@ public class VectorResult implements Serializable {
 
     private String id;
     private List<Double> vector;
+
     public VectorResult() {}
 }

@@ -38,8 +38,8 @@ public class AbExperimentService {
         experiments.put(DEFAULT_EXPERIMENT, new Experiment(recService.getGraphConfig(),
             GraphPlan.compile(recService.getGraphConfig()), "classpath-default", null, Instant.now().toString(), true));
         GraphConfig userGraph = recService.getGraphConfig(RecommendReq.TARGET_USER);
-        userExperiments.put(DEFAULT_EXPERIMENT, new Experiment(userGraph,
-            GraphPlan.compile(userGraph), "classpath-default", null, Instant.now().toString(), true));
+        userExperiments.put(DEFAULT_EXPERIMENT, new Experiment(userGraph, GraphPlan.compile(userGraph),
+            "classpath-default", null, Instant.now().toString(), true));
     }
 
     public <T> RecommendRes<T> execute(RecommendReq request) {
@@ -48,11 +48,12 @@ public class AbExperimentService {
 
     public String resolve(RecommendReq request) {
         RoutingConfig config = routing.get();
-        Object routeValue = request == null || request.getParams() == null ? null
-            : request.getParams().get(config.getParam());
+        Object routeValue =
+            request == null || request.getParams() == null ? null : request.getParams().get(config.getParam());
         String value = routeValue == null ? "" : String.valueOf(routeValue).trim();
         String candidate = config.getRoutes().get(value);
-        if (StringUtils.isBlank(candidate) && isRoutable(value)) candidate = value;
+        if (StringUtils.isBlank(candidate) && isRoutable(value))
+            candidate = value;
         return isRoutable(candidate) ? candidate : config.getDefaultExperiment();
     }
 
@@ -77,15 +78,17 @@ public class AbExperimentService {
         Experiment previous = values.get(name);
         boolean enabled = DEFAULT_EXPERIMENT.equals(name) || previous != null && previous.enabled;
         values.put(name, new Experiment(graph, plan, version, checksum, Instant.now().toString(), enabled));
-        if (DEFAULT_EXPERIMENT.equals(name)) recService.replaceGraphConfig(targetType, graph);
+        if (DEFAULT_EXPERIMENT.equals(name))
+            recService.replaceGraphConfig(targetType, graph);
     }
 
     public Map<String, Object> create(String requestedName) {
         String name = validateName(requestedName);
-        if (DEFAULT_EXPERIMENT.equals(name)) throw new IllegalArgumentException("default experiment already exists");
+        if (DEFAULT_EXPERIMENT.equals(name))
+            throw new IllegalArgumentException("default experiment already exists");
         Experiment source = required(DEFAULT_EXPERIMENT);
-        Experiment created = new Experiment(source.graph, source.plan, "draft", source.checksum,
-            Instant.now().toString(), false);
+        Experiment created =
+            new Experiment(source.graph, source.plan, "draft", source.checksum, Instant.now().toString(), false);
         if (experiments.putIfAbsent(name, created) != null) {
             throw new IllegalArgumentException("experiment already exists: " + name);
         }
@@ -98,7 +101,8 @@ public class AbExperimentService {
             throw new IllegalArgumentException("default experiment cannot be disabled");
         }
         experiments.compute(name, (key, item) -> {
-            if (item == null) throw new IllegalArgumentException("experiment does not exist: " + name);
+            if (item == null)
+                throw new IllegalArgumentException("experiment does not exist: " + name);
             if (enabled && "draft".equals(item.version)) {
                 throw new IllegalArgumentException("experiment graph must be published before enabling: " + name);
             }
@@ -109,11 +113,16 @@ public class AbExperimentService {
 
     public Map<String, Object> delete(String experiment) {
         String name = validateName(experiment);
-        if (DEFAULT_EXPERIMENT.equals(name)) throw new IllegalArgumentException("default experiment cannot be deleted");
-        if (experiments.remove(name) == null) throw new IllegalArgumentException("experiment does not exist: " + name);
+        if (DEFAULT_EXPERIMENT.equals(name))
+            throw new IllegalArgumentException("default experiment cannot be deleted");
+        if (experiments.remove(name) == null)
+            throw new IllegalArgumentException("experiment does not exist: " + name);
         RoutingConfig current = routing.get();
         Map<String, String> routes = new LinkedHashMap<>();
-        current.getRoutes().forEach((value, target) -> { if (!name.equals(target)) routes.put(value, target); });
+        current.getRoutes().forEach((value, target) -> {
+            if (!name.equals(target))
+                routes.put(value, target);
+        });
         routing.set(new RoutingConfig(current.getParam(), current.getDefaultExperiment(), routes));
         return status();
     }
@@ -126,7 +135,8 @@ public class AbExperimentService {
         String name = normalize(experiment);
         ConcurrentMap<String, Experiment> values = experiments(targetType);
         Experiment item = values.get(name);
-        if (item == null) item = required(values, DEFAULT_EXPERIMENT);
+        if (item == null)
+            item = required(values, DEFAULT_EXPERIMENT);
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("experiment", name);
         result.put("version", item.version);
@@ -156,7 +166,8 @@ public class AbExperimentService {
     }
 
     public Map<String, Object> configureRouting(RoutingConfig requested) {
-        if (requested == null) throw new IllegalArgumentException("routing config is required");
+        if (requested == null)
+            throw new IllegalArgumentException("routing config is required");
         String param = StringUtils.defaultIfBlank(requested.getParam(), DEFAULT_ROUTE_PARAM).trim();
         String fallback = normalize(requested.getDefaultExperiment());
         if (!isRoutable(fallback)) {
@@ -181,7 +192,8 @@ public class AbExperimentService {
     }
 
     private boolean isRoutable(String experiment) {
-        if (experiment == null) return false;
+        if (experiment == null)
+            return false;
         Experiment item = experiments.get(experiment);
         return item != null && item.enabled;
     }
@@ -192,7 +204,8 @@ public class AbExperimentService {
 
     private Experiment required(ConcurrentMap<String, Experiment> values, String experiment) {
         Experiment item = values.get(normalize(experiment));
-        if (item == null) throw new IllegalArgumentException("experiment does not exist: " + experiment);
+        if (item == null)
+            throw new IllegalArgumentException("experiment does not exist: " + experiment);
         return item;
     }
 
@@ -240,17 +253,36 @@ public class AbExperimentService {
         private String defaultExperiment = DEFAULT_EXPERIMENT;
         private Map<String, String> routes = Collections.emptyMap();
 
-        public RoutingConfig() { }
+        public RoutingConfig() {}
+
         private RoutingConfig(String param, String defaultExperiment, Map<String, String> routes) {
             this.param = param;
             this.defaultExperiment = defaultExperiment;
             this.routes = Collections.unmodifiableMap(new LinkedHashMap<>(routes));
         }
-        public String getParam() { return param; }
-        public void setParam(String param) { this.param = param; }
-        public String getDefaultExperiment() { return defaultExperiment; }
-        public void setDefaultExperiment(String defaultExperiment) { this.defaultExperiment = defaultExperiment; }
-        public Map<String, String> getRoutes() { return routes; }
-        public void setRoutes(Map<String, String> routes) { this.routes = routes; }
+
+        public String getParam() {
+            return param;
+        }
+
+        public void setParam(String param) {
+            this.param = param;
+        }
+
+        public String getDefaultExperiment() {
+            return defaultExperiment;
+        }
+
+        public void setDefaultExperiment(String defaultExperiment) {
+            this.defaultExperiment = defaultExperiment;
+        }
+
+        public Map<String, String> getRoutes() {
+            return routes;
+        }
+
+        public void setRoutes(Map<String, String> routes) {
+            this.routes = routes;
+        }
     }
 }

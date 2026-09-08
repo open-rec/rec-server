@@ -42,8 +42,7 @@ final class ChannelMixSupport {
     }
 
     static Map<String, List<ScoreResult>> buckets(List<ScoreResult> input) {
-        Map<String, List<ScoreResult>> buckets = input.stream()
-            .filter(item -> item.getRecallFrom() != null)
+        Map<String, List<ScoreResult>> buckets = input.stream().filter(item -> item.getRecallFrom() != null)
             .collect(Collectors.groupingBy(ScoreResult::getRecallFrom, LinkedHashMap::new, Collectors.toList()));
         buckets.values().forEach(items -> items.sort(SCORE_DESC));
         return buckets;
@@ -87,8 +86,7 @@ final class ChannelMixSupport {
         return quotas;
     }
 
-    static List<ScoreResult> selectReserved(Map<String, Integer> quotas,
-        Map<String, List<ScoreResult>> buckets) {
+    static List<ScoreResult> selectReserved(Map<String, Integer> quotas, Map<String, List<ScoreResult>> buckets) {
         List<ScoreResult> selected = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : quotas.entrySet()) {
             List<ScoreResult> bucket = buckets.getOrDefault(entry.getKey(), Collections.emptyList());
@@ -98,8 +96,8 @@ final class ChannelMixSupport {
     }
 
     static List<ScoreResult> fillHighest(List<ScoreResult> input, List<ScoreResult> selected, int size) {
-        Set<String> selectedIds = selected.stream().map(ScoreResult::getId)
-            .collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<String> selectedIds =
+            selected.stream().map(ScoreResult::getId).collect(Collectors.toCollection(LinkedHashSet::new));
         for (ScoreResult item : sorted(input)) {
             if (selected.size() >= size) {
                 break;
@@ -120,8 +118,7 @@ final class ChannelMixSupport {
         return counts;
     }
 
-    static Map<String, Integer> quotaShortages(Map<String, Integer> quotas,
-        Map<String, List<ScoreResult>> buckets) {
+    static Map<String, Integer> quotaShortages(Map<String, Integer> quotas, Map<String, List<ScoreResult>> buckets) {
         Map<String, Integer> shortages = new LinkedHashMap<>();
         quotas.forEach((channel, quota) -> {
             int available = buckets.getOrDefault(channel, Collections.emptyList()).size();

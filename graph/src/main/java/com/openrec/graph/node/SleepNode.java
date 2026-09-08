@@ -8,7 +8,7 @@ import com.openrec.graph.config.NodeConfig;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class SleepNode extends SyncNode {
+public class SleepNode extends AbstractSyncNode {
 
     private static final long DEFAULT_SLEEP_TIME = TimeUnit.SECONDS.toMillis(1);
 

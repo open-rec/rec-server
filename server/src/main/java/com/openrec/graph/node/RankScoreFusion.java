@@ -15,11 +15,11 @@ import com.openrec.graph.node.item.RankNode;
 /** Calculates the final online score while keeping score policy out of {@link RankNode}. */
 public final class RankScoreFusion {
 
-    private static final List<RankChannelWeightConfig> DEFAULT_CHANNELS = Arrays.asList(
-        new RankChannelWeightConfig(CombineNode.CHANNEL_I2I, 1d),
-        new RankChannelWeightConfig(CombineNode.CHANNEL_EMBEDDING, 1d),
-        new RankChannelWeightConfig(CombineNode.CHANNEL_HOT, 1d),
-        new RankChannelWeightConfig(CombineNode.CHANNEL_NEW, 1d));
+    private static final List<RankChannelWeightConfig> DEFAULT_CHANNELS =
+        Arrays.asList(new RankChannelWeightConfig(CombineNode.CHANNEL_I2I, 1d),
+            new RankChannelWeightConfig(CombineNode.CHANNEL_EMBEDDING, 1d),
+            new RankChannelWeightConfig(CombineNode.CHANNEL_HOT, 1d),
+            new RankChannelWeightConfig(CombineNode.CHANNEL_NEW, 1d));
 
     private RankScoreFusion() {}
 
@@ -82,13 +82,12 @@ public final class RankScoreFusion {
     }
 
     private static List<RankChannelWeightConfig> channels(RankScoreStrategyConfig strategy) {
-        return strategy.getChannels() == null || strategy.getChannels().isEmpty()
-            ? DEFAULT_CHANNELS : strategy.getChannels();
+        return strategy.getChannels() == null || strategy.getChannels().isEmpty() ? DEFAULT_CHANNELS
+            : strategy.getChannels();
     }
 
     private static String normalizedAggregation(RankScoreStrategyConfig strategy) {
-        return strategy.getRecallAggregation() == null
-            ? "first" : strategy.getRecallAggregation().trim().toLowerCase();
+        return strategy.getRecallAggregation() == null ? "first" : strategy.getRecallAggregation().trim().toLowerCase();
     }
 
     private static void requireNonNegativeFinite(String name, double value) {

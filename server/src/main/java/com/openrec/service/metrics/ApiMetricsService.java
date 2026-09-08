@@ -55,25 +55,18 @@ public class ApiMetricsService {
 
     private <T> T record(String api, String type, String experiment, Supplier<T> action) {
         experiment = experimentTag(experiment);
-        Counter.builder("openrec_api_requests")
-            .description("Total OpenRec API requests")
-            .tags("api", api, "type", type, "ab", experiment)
-            .register(meterRegistry).increment();
+        Counter.builder("openrec_api_requests").description("Total OpenRec API requests")
+            .tags("api", api, "type", type, "ab", experiment).register(meterRegistry).increment();
         long started = System.nanoTime();
         try {
             return action.get();
         } catch (RuntimeException | Error error) {
-            Counter.builder("openrec_api_errors")
-                .description("Total failed OpenRec API requests")
-                .tags("api", api, "type", type, "ab", experiment)
-                .register(meterRegistry).increment();
+            Counter.builder("openrec_api_errors").description("Total failed OpenRec API requests")
+                .tags("api", api, "type", type, "ab", experiment).register(meterRegistry).increment();
             throw error;
         } finally {
-            Timer.builder("openrec_api_latency")
-                .description("OpenRec API processing latency")
-                .tags("api", api, "type", type, "ab", experiment)
-                .publishPercentileHistogram()
-                .register(meterRegistry)
+            Timer.builder("openrec_api_latency").description("OpenRec API processing latency")
+                .tags("api", api, "type", type, "ab", experiment).publishPercentileHistogram().register(meterRegistry)
                 .record(System.nanoTime() - started, TimeUnit.NANOSECONDS);
         }
     }
@@ -83,9 +76,8 @@ public class ApiMetricsService {
     }
 
     private DistributionSummary summary(String name, String type, String experiment) {
-        DistributionSummary.Builder builder = DistributionSummary.builder(name)
-            .tags("api", name.startsWith("openrec_push") ? "push" : "recommend", "type", type,
-                "ab", experimentTag(experiment));
+        DistributionSummary.Builder builder = DistributionSummary.builder(name).tags("api",
+            name.startsWith("openrec_push") ? "push" : "recommend", "type", type, "ab", experimentTag(experiment));
         if ("openrec_recommend_result_items".equals(name)) {
             // Result sizes are integers, so the 0.5 bucket contains only empty (zero-item) responses.
             builder.publishPercentileHistogram().serviceLevelObjectives(0.5, 1, 5, 10, 20, 50, 100);

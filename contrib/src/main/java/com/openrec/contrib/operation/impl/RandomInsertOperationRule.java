@@ -40,18 +40,15 @@ public class RandomInsertOperationRule implements OperationRule {
             return inputItems;
         }
         int size = ChannelMixSupport.resultSize(context, inputItems);
-        Map<String, Integer> quotas =
-            ChannelMixSupport.minimumQuotas(config.getRandomInsertRatios(), size);
-        List<ScoreResult> reserved = ChannelMixSupport.selectReserved(
-            quotas, ChannelMixSupport.buckets(inputItems));
+        Map<String, Integer> quotas = ChannelMixSupport.minimumQuotas(config.getRandomInsertRatios(), size);
+        List<ScoreResult> reserved = ChannelMixSupport.selectReserved(quotas, ChannelMixSupport.buckets(inputItems));
 
         Set<String> reservedIds = reserved.stream().map(ScoreResult::getId).collect(Collectors.toSet());
         Set<String> configuredChannels = config.getRandomInsertRatios().keySet();
-        List<ScoreResult> base = ChannelMixSupport.sorted(inputItems).stream()
-            .filter(item -> !reservedIds.contains(item.getId()))
-            .filter(item -> !configuredChannels.contains(item.getRecallFrom()))
-            .limit(Math.max(size - reserved.size(), 0))
-            .collect(Collectors.toCollection(ArrayList::new));
+        List<ScoreResult> base =
+            ChannelMixSupport.sorted(inputItems).stream().filter(item -> !reservedIds.contains(item.getId()))
+                .filter(item -> !configuredChannels.contains(item.getRecallFrom()))
+                .limit(Math.max(size - reserved.size(), 0)).collect(Collectors.toCollection(ArrayList::new));
         // Keep the configured share exact when other channels can fill the result. Only exceed it
         // when the non-configured channels are themselves too short.
         if (base.size() + reserved.size() < size) {

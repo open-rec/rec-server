@@ -44,8 +44,8 @@ public class RecService {
 
     @TimeCost
     public RecommendRes execute(RecommendReq recommendReq) {
-        return execute(recommendReq, RecommendReq.TARGET_USER.equals(recommendReq.getTargetType())
-            ? userGraphPlan.get() : itemGraphPlan.get());
+        return execute(recommendReq,
+            RecommendReq.TARGET_USER.equals(recommendReq.getTargetType()) ? userGraphPlan.get() : itemGraphPlan.get());
     }
 
     public RecommendRes execute(RecommendReq recommendReq, GraphPlan selectedGraphPlan) {
@@ -60,8 +60,8 @@ public class RecService {
         recommendRes.setResults(results);
         if (recommendReq.isDebug()) {
             String entity = RecommendReq.TARGET_USER.equals(recommendReq.getTargetType()) ? "user" : "item";
-            recommendRes.setDetailInfos(redisService.getVs(results.stream()
-                .map(i -> String.format(entity + ":{%s}", i.getId())).collect(Collectors.toList())));
+            recommendRes.setDetailInfos(redisService.getVs(
+                results.stream().map(i -> String.format(entity + ":{%s}", i.getId())).collect(Collectors.toList())));
         }
         return recommendRes;
     }
@@ -69,9 +69,11 @@ public class RecService {
     public void replaceGraphConfig(String targetType, GraphConfig newGraphConfig) {
         GraphPlan newGraphPlan = GraphPlan.compile(newGraphConfig);
         if (RecommendReq.TARGET_USER.equals(targetType)) {
-            userGraphConfig.set(newGraphConfig); userGraphPlan.set(newGraphPlan);
+            userGraphConfig.set(newGraphConfig);
+            userGraphPlan.set(newGraphPlan);
         } else {
-            itemGraphConfig.set(newGraphConfig); itemGraphPlan.set(newGraphPlan);
+            itemGraphConfig.set(newGraphConfig);
+            itemGraphPlan.set(newGraphPlan);
         }
     }
 

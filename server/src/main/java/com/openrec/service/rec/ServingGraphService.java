@@ -29,7 +29,8 @@ public class ServingGraphService {
         return activate("item", experiment, graphJson, requestedVersion);
     }
 
-    public Map<String, Object> activate(String targetType, String experiment, String graphJson, String requestedVersion) {
+    public Map<String, Object> activate(String targetType, String experiment, String graphJson,
+        String requestedVersion) {
         GraphConfig parsed = RecTemplate.parse(graphJson);
         GraphConfig merged = mergeNodeConfigs(abExperimentService.graph(targetType, experiment), parsed);
         validate(merged);
@@ -86,15 +87,14 @@ public class ServingGraphService {
     private void ensureDefaultChecksum(String targetType) {
         Map<String, Object> current = abExperimentService.status(targetType, AbExperimentService.DEFAULT_EXPERIMENT);
         if (current.get("checksum") == null) {
-            GraphConfig graph = (GraphConfig) current.get("graph");
+            GraphConfig graph = (GraphConfig)current.get("graph");
             abExperimentService.activate(targetType, AbExperimentService.DEFAULT_EXPERIMENT, graph,
                 String.valueOf(current.get("version")), sha256(JsonUtil.objToJson(graph)));
         }
     }
 
     private void validate(GraphConfig graph) {
-        if (graph == null || graph.getNodes() == null || graph.getNodes().isEmpty()
-            || graph.getEdges() == null) {
+        if (graph == null || graph.getNodes() == null || graph.getNodes().isEmpty() || graph.getEdges() == null) {
             throw new IllegalArgumentException("graph must contain nodes and edges");
         }
         Map<String, NodeConfig> nodes = new LinkedHashMap<>();
@@ -112,29 +112,40 @@ public class ServingGraphService {
         }
         Map<String, Integer> indegree = new HashMap<>();
         Map<String, List<String>> children = new HashMap<>();
-        nodes.keySet().forEach(name -> { indegree.put(name, 0); children.put(name, new ArrayList<>()); });
+        nodes.keySet().forEach(name -> {
+            indegree.put(name, 0);
+            children.put(name, new ArrayList<>());
+        });
         Set<String> edges = new HashSet<>();
         for (GraphConfig.NodeEdge edge : graph.getEdges()) {
             if (edge == null || !nodes.containsKey(edge.getFrom()) || !nodes.containsKey(edge.getTo())) {
                 throw new IllegalArgumentException("edge references an unknown node");
             }
             if (edge.getFrom().equals(edge.getTo()) || !edges.add(edge.getFrom() + "->" + edge.getTo())) {
-                throw new IllegalArgumentException("invalid or duplicate edge: " + edge.getFrom() + "->" + edge.getTo());
+                throw new IllegalArgumentException(
+                    "invalid or duplicate edge: " + edge.getFrom() + "->" + edge.getTo());
             }
             children.get(edge.getFrom()).add(edge.getTo());
             indegree.put(edge.getTo(), indegree.get(edge.getTo()) + 1);
         }
         Queue<String> ready = new ArrayDeque<>();
-        indegree.forEach((name, degree) -> { if (degree == 0) ready.add(name); });
+        indegree.forEach((name, degree) -> {
+            if (degree == 0)
+                ready.add(name);
+        });
         int visited = 0;
         while (!ready.isEmpty()) {
-            String name = ready.remove(); visited++;
+            String name = ready.remove();
+            visited++;
             for (String child : children.get(name)) {
-                int degree = indegree.get(child) - 1; indegree.put(child, degree);
-                if (degree == 0) ready.add(child);
+                int degree = indegree.get(child) - 1;
+                indegree.put(child, degree);
+                if (degree == 0)
+                    ready.add(child);
             }
         }
-        if (visited != nodes.size()) throw new IllegalArgumentException("graph contains a cycle");
+        if (visited != nodes.size())
+            throw new IllegalArgumentException("graph contains a cycle");
     }
 
     private void validateNodeClass(NodeConfig config) {
@@ -148,7 +159,8 @@ public class ServingGraphService {
         } catch (IllegalArgumentException error) {
             throw error;
         } catch (Exception error) {
-            throw new IllegalArgumentException("cannot construct node " + config.getName() + ": " + error.getMessage(), error);
+            throw new IllegalArgumentException("cannot construct node " + config.getName() + ": " + error.getMessage(),
+                error);
         }
     }
 
@@ -156,7 +168,8 @@ public class ServingGraphService {
         try {
             byte[] bytes = MessageDigest.getInstance("SHA-256").digest(value.getBytes("UTF-8"));
             StringBuilder result = new StringBuilder("sha256:");
-            for (byte item : bytes) result.append(String.format("%02x", item));
+            for (byte item : bytes)
+                result.append(String.format("%02x", item));
             return result.toString();
         } catch (Exception error) {
             throw new IllegalStateException(error);

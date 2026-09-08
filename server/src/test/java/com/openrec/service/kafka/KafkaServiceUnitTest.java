@@ -12,16 +12,23 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.*;
 
 public class KafkaServiceUnitTest {
-    @Test public void serializesEachDomainObjectToItsTopic() {
+    @Test
+    public void serializesEachDomainObjectToItsTopic() {
         KafkaTemplate<String, String> template = mock(KafkaTemplate.class);
         KafkaService service = new KafkaService();
         ReflectionTestUtils.setField(service, "kafkaTemplate", template);
         ReflectionTestUtils.setField(service, "itemTopic", "items");
         ReflectionTestUtils.setField(service, "userTopic", "users");
         ReflectionTestUtils.setField(service, "eventTopic", "events");
-        Item item = new Item(); item.setId("i"); User user = new User(); user.setId("u");
-        Event event = new Event(); event.setUserId("u"); event.setItemId("i");
-        service.writeItem(PushCmd.DELETE, item); service.writeUser(PushCmd.UPDATE, user);
+        Item item = new Item();
+        item.setId("i");
+        User user = new User();
+        user.setId("u");
+        Event event = new Event();
+        event.setUserId("u");
+        event.setItemId("i");
+        service.writeItem(PushCmd.DELETE, item);
+        service.writeUser(PushCmd.UPDATE, user);
         service.writeEvent(PushCmd.INSERT, event);
         verify(template).send(eq("items"), eq("i"), contains("\"operation\":\"DELETE\""));
         verify(template).send(eq("users"), eq("u"), contains("\"operation\":\"UPDATE\""));

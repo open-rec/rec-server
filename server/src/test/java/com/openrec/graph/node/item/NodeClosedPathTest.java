@@ -17,9 +17,8 @@ import static org.junit.Assert.assertNotNull;
 public class NodeClosedPathTest {
     @Test
     public void everyRecommendationNodeCanBeDisabledWithoutDependencies() throws Exception {
-        for (Class<? extends com.openrec.graph.node.Node> type : Arrays.asList(
-            BlackNode.class, EmbeddingNode.class, FilterNode.class, HotNode.class,
-            NewNode.class, UserTriggerNode.class)) {
+        for (Class<? extends com.openrec.graph.node.Node> type : Arrays.asList(BlackNode.class, EmbeddingNode.class,
+            FilterNode.class, HotNode.class, NewNode.class, TriggerNode.class)) {
             NodeConfig<Object> config = new NodeConfig<>();
             config.setName(type.getSimpleName());
             config.setOpen(false);
