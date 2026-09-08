@@ -90,11 +90,13 @@ public class ControllerAndServiceUnitTest {
         assertSame(res, recommendController.recommendItem(new JsonReq<>(req)).block().getData());
 
         RecommendReq userReq = new RecommendReq();
-        com.openrec.proto.JsonRes<RecommendRes<User>> unsupported =
+        RecommendRes<User> userRes = new RecommendRes<>();
+        doReturn(userRes).when(experiments).execute(userReq);
+        com.openrec.proto.JsonRes<RecommendRes<User>> userResponse =
             recommendController.recommendUser(new JsonReq<>(userReq)).block();
-        assertEquals(com.openrec.proto.ProtoCode.NOT_IMPLEMENTED, unsupported.getCode());
-        assertFalse(unsupported.isStatus());
-        assertNull(unsupported.getData());
+        assertEquals(com.openrec.proto.ProtoCode.SUCCESS, userResponse.getCode());
+        assertTrue(userResponse.isStatus());
+        assertSame(userRes, userResponse.getData());
         assertEquals(RecommendReq.TARGET_USER, userReq.getTargetType());
         assertEquals(RecommendReq.TARGET_USER, userReq.getParams().get("targetType"));
     }

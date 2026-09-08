@@ -30,7 +30,7 @@ shared by all engine instances.
   "nodes": [
     {
       "name": "hot",
-      "clazz": "com.openrec.graph.node.HotNode",
+      "clazz": "com.openrec.graph.node.item.HotNode",
       "configClazz": "com.openrec.graph.config.HotConfig",
       "open": true,
       "timeout": 100,

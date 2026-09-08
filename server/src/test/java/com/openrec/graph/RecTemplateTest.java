@@ -16,7 +16,9 @@ public class RecTemplateTest {
         GraphConfig graphConfig = RecTemplate.toGraphConfig();
         Assert.assertNotNull(graphConfig);
         GraphConfig graphConfig2 = RecTemplate.toGraphConfig();
-        Assert.assertTrue(graphConfig == graphConfig2);
+        Assert.assertNotSame(graphConfig, graphConfig2);
+        Assert.assertEquals(graphConfig.getNodes().size(), graphConfig2.getNodes().size());
+        Assert.assertEquals(graphConfig.getEdges().size(), graphConfig2.getEdges().size());
     }
 
     @Test

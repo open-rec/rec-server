@@ -1,4 +1,9 @@
-package com.openrec.graph.node;
+package com.openrec.graph.node.item;
+
+import com.openrec.graph.node.*;
+
+import com.openrec.graph.node.item.*;
+import com.openrec.graph.node.user.*;
 
 import java.util.Arrays;
 import java.util.Collections;

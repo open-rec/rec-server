@@ -1,4 +1,6 @@
-package com.openrec.graph.node;
+package com.openrec.graph.node.item;
+
+import com.openrec.graph.node.*;
 
 import static com.openrec.graph.RecParams.SCENE;
 import static com.openrec.graph.RecParams.USER_ID;

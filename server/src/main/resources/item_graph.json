@@ -2,7 +2,7 @@
   "nodes": [
     {
       "name": "userTrigger",
-      "clazz": "com.openrec.graph.node.UserTriggerNode",
+      "clazz": "com.openrec.graph.node.item.UserTriggerNode",
       "configClazz": "com.openrec.graph.config.UserTriggerConfig",
       "open": true,
       "timeout": 50,
@@ -12,7 +12,7 @@
     },
     {
       "name": "userFeature",
-      "clazz": "com.openrec.graph.node.UserFeatureNode",
+      "clazz": "com.openrec.graph.node.item.UserFeatureNode",
       "configClazz": null,
       "open": true,
       "timeout": 20,
@@ -20,7 +20,7 @@
     },
     {
       "name": "new",
-      "clazz": "com.openrec.graph.node.NewNode",
+      "clazz": "com.openrec.graph.node.item.NewNode",
       "configClazz": "com.openrec.graph.config.NewConfig",
       "open": true,
       "timeout": 50,
@@ -33,7 +33,7 @@
     },
     {
       "name": "hot",
-      "clazz": "com.openrec.graph.node.HotNode",
+      "clazz": "com.openrec.graph.node.item.HotNode",
       "configClazz": "com.openrec.graph.config.HotConfig",
       "open": true,
       "timeout": 200,
@@ -45,7 +45,7 @@
     },
     {
       "name": "filter",
-      "clazz": "com.openrec.graph.node.FilterNode",
+      "clazz": "com.openrec.graph.node.item.FilterNode",
       "configClazz": "com.openrec.graph.config.FilterConfig",
       "open": true,
       "timeout": 50,
@@ -60,7 +60,7 @@
     },
     {
       "name": "black",
-      "clazz": "com.openrec.graph.node.BlackNode",
+      "clazz": "com.openrec.graph.node.item.BlackNode",
       "configClazz": "com.openrec.graph.config.FilterConfig",
       "open": true,
       "timeout": 20,
@@ -75,7 +75,7 @@
     },
     {
       "name": "item_cf_i2i",
-      "clazz": "com.openrec.graph.node.I2iNode",
+      "clazz": "com.openrec.graph.node.item.I2iNode",
       "configClazz": "com.openrec.graph.config.I2iConfig",
       "open": true,
       "timeout": 200,
@@ -87,7 +87,7 @@
     },
     {
       "name": "content_i2i",
-      "clazz": "com.openrec.graph.node.I2iNode",
+      "clazz": "com.openrec.graph.node.item.I2iNode",
       "configClazz": "com.openrec.graph.config.I2iConfig",
       "open": true,
       "timeout": 200,
@@ -99,7 +99,7 @@
     },
     {
       "name": "user_cf_u2i",
-      "clazz": "com.openrec.graph.node.U2iNode",
+      "clazz": "com.openrec.graph.node.item.U2iNode",
       "configClazz": "com.openrec.graph.config.U2iConfig",
       "open": true,
       "timeout": 200,
@@ -111,7 +111,7 @@
     },
     {
       "name": "item_seq_emb",
-      "clazz": "com.openrec.graph.node.EmbeddingNode",
+      "clazz": "com.openrec.graph.node.item.EmbeddingNode",
       "configClazz": "com.openrec.graph.config.EmbeddingConfig",
       "open": true,
       "timeout": 300,
@@ -125,7 +125,7 @@
     },
     {
       "name": "combine",
-      "clazz": "com.openrec.graph.node.CombineNode",
+      "clazz": "com.openrec.graph.node.item.CombineNode",
       "configClazz": "com.openrec.graph.config.CombineConfig",
       "open": true,
       "timeout": 50,
@@ -144,7 +144,7 @@
     },
     {
       "name": "rank",
-      "clazz": "com.openrec.graph.node.RankNode",
+      "clazz": "com.openrec.graph.node.item.RankNode",
       "configClazz": "com.openrec.graph.config.RankConfig",
       "open": true,
       "timeout": 200,
@@ -167,7 +167,7 @@
     },
     {
       "name": "itemFeature",
-      "clazz": "com.openrec.graph.node.ItemFeatureNode",
+      "clazz": "com.openrec.graph.node.item.ItemFeatureNode",
       "configClazz": null,
       "open": true,
       "timeout": 50,
@@ -175,7 +175,7 @@
     },
     {
       "name": "operation",
-      "clazz": "com.openrec.graph.node.OperationNode",
+      "clazz": "com.openrec.graph.node.item.OperationNode",
       "configClazz": "com.openrec.graph.config.OperationConfig",
       "open": true,
       "timeout": 20,
@@ -200,7 +200,7 @@
     },
     {
       "name": "collector",
-      "clazz": "com.openrec.graph.node.CollectorNode",
+      "clazz": "com.openrec.graph.node.item.CollectorNode",
       "configClazz": null,
       "open": true,
       "timeout": 100,

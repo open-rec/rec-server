@@ -1,4 +1,6 @@
-package com.openrec.graph.node;
+package com.openrec.graph.node.item;
+
+import com.openrec.graph.node.*;
 
 import static com.openrec.graph.RecParams.SCENE;
 
@@ -39,10 +41,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CombineNode extends AbstractCombineNode {
 
-    static final String CHANNEL_I2I = "item_cf_i2i";
-    static final String CHANNEL_EMBEDDING = "item_seq_emb";
-    static final String CHANNEL_HOT = "hot";
-    static final String CHANNEL_NEW = "new";
+    public static final String CHANNEL_I2I = "item_cf_i2i";
+    public static final String CHANNEL_EMBEDDING = "item_seq_emb";
+    public static final String CHANNEL_HOT = "hot";
+    public static final String CHANNEL_NEW = "new";
 
     private RedisService redisService = BeanUtil.getBean(RedisService.class);
     private ObjectMapper objectMapper = BeanUtil.getBean(ObjectMapper.class);

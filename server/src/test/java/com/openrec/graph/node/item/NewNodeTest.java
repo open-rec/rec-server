@@ -1,4 +1,9 @@
-package com.openrec.graph.node;
+package com.openrec.graph.node.item;
+
+import com.openrec.graph.node.*;
+
+import com.openrec.graph.node.item.*;
+import com.openrec.graph.node.user.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;

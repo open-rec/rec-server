@@ -9,9 +9,11 @@ import java.util.Set;
 import com.openrec.graph.config.RankChannelWeightConfig;
 import com.openrec.graph.config.RankScoreStrategyConfig;
 import com.openrec.proto.model.ScoreResult;
+import com.openrec.graph.node.item.CombineNode;
+import com.openrec.graph.node.item.RankNode;
 
 /** Calculates the final online score while keeping score policy out of {@link RankNode}. */
-final class RankScoreFusion {
+public final class RankScoreFusion {
 
     private static final List<RankChannelWeightConfig> DEFAULT_CHANNELS = Arrays.asList(
         new RankChannelWeightConfig(CombineNode.CHANNEL_I2I, 1d),
@@ -21,7 +23,7 @@ final class RankScoreFusion {
 
     private RankScoreFusion() {}
 
-    static double calculate(ScoreResult item, double rankScore, RankScoreStrategyConfig strategy) {
+    public static double calculate(ScoreResult item, double rankScore, RankScoreStrategyConfig strategy) {
         if (strategy == null) {
             return item.getRecallScore() + rankScore;
         }
@@ -30,7 +32,7 @@ final class RankScoreFusion {
         return recallFusionScore * strategy.getRecallWeight() + rankScore * strategy.getRankWeight();
     }
 
-    static void validate(RankScoreStrategyConfig strategy) {
+    public static void validate(RankScoreStrategyConfig strategy) {
         if (strategy == null) {
             return;
         }

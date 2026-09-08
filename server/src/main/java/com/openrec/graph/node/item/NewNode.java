@@ -1,4 +1,6 @@
-package com.openrec.graph.node;
+package com.openrec.graph.node.item;
+
+import com.openrec.graph.node.*;
 
 import static com.openrec.graph.RecParams.SCENE;
 
@@ -7,24 +9,26 @@ import java.util.List;
 import org.assertj.core.util.Lists;
 
 import com.openrec.graph.GraphContext;
-import com.openrec.graph.config.HotConfig;
+import com.openrec.graph.config.NewConfig;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.recall.RecallStore;
 import com.openrec.util.BeanUtil;
+import com.openrec.util.TimeUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class HotNode extends RecallNode<HotConfig> {
-    private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
-    @Export("hotItems")
-    private List<ScoreResult> hotItems;
+public class NewNode extends RecallNode<NewConfig> {
 
-    public HotNode(NodeConfig nodeConfig) {
+    private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
+    @Export("newItems")
+    private List<ScoreResult> newItems;
+
+    public NewNode(NodeConfig nodeConfig) {
         super(nodeConfig);
-        this.hotItems = Lists.newArrayList();
+        this.newItems = Lists.newArrayList();
     }
 
     @Override
@@ -38,11 +42,13 @@ public class HotNode extends RecallNode<HotConfig> {
             return;
         }
 
+        int duration = config.getContent().getDuration();
         int size = config.getContent().getSize();
+        long nowSecs = TimeUtil.nowSecs();
 
-        hotItems = recallStore.hot(tableName(), scene, size);
-        exportChannel(context, hotItems);
-        log.info("{} type:{} table:{} with hot item size:{}",
-            getName(), recallType(), tableName(), hotItems.size());
+        newItems = recallStore.newest(tableName(), scene, nowSecs - duration, nowSecs, size);
+        exportChannel(context, newItems);
+        log.info("{} type:{} table:{} with new item size:{}",
+            getName(), recallType(), tableName(), newItems.size());
     }
 }

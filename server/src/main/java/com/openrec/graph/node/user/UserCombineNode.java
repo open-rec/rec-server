@@ -1,4 +1,6 @@
-package com.openrec.graph.node;
+package com.openrec.graph.node.user;
+
+import com.openrec.graph.node.AbstractCombineNode;
 
 import static com.openrec.graph.RecParams.USER_ID;
 import java.util.ArrayList;

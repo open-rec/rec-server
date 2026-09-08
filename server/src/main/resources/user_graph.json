@@ -1,33 +1,55 @@
 {
   "nodes": [
     {
-      "name": "behavior_u2u",
-      "clazz": "com.openrec.graph.node.U2uNode",
+      "name": "user_cf_u2u",
+      "clazz": "com.openrec.graph.node.user.U2uNode",
       "configClazz": "com.openrec.graph.config.U2uConfig",
       "open": true,
       "timeout": 200,
-      "content": {"size": 1000, "tableName": "behavior-u2u", "recallType": "behavior_u2u"}
+      "content": {"size": 1000, "tableName": "user-cf-u2u", "recallType": "user_cf_u2u"}
     },
     {
-      "name": "attribute_u2u",
-      "clazz": "com.openrec.graph.node.U2uNode",
+      "name": "content_u2u",
+      "clazz": "com.openrec.graph.node.user.U2uNode",
       "configClazz": "com.openrec.graph.config.U2uConfig",
       "open": true,
       "timeout": 200,
-      "content": {"size": 1000, "tableName": "attribute-u2u", "recallType": "attribute_u2u"}
+      "content": {"size": 1000, "tableName": "content-u2u", "recallType": "content_u2u"}
+    },
+    {
+      "name": "user_emb_u2u",
+      "clazz": "com.openrec.graph.node.user.U2uNode",
+      "configClazz": "com.openrec.graph.config.U2uConfig",
+      "open": true,
+      "timeout": 200,
+      "content": {"size": 1000, "tableName": "user-emb-u2u", "recallType": "user_emb_u2u"}
     },
     {
       "name": "combine",
-      "clazz": "com.openrec.graph.node.UserCombineNode",
+      "clazz": "com.openrec.graph.node.user.UserCombineNode",
       "configClazz": "com.openrec.graph.config.CombineConfig",
       "open": true,
       "timeout": 50,
       "content": {"size": 1000, "checkExpireTime": false,
-        "recallTypes": ["behavior_u2u", "attribute_u2u"]}
+        "recallTypes": ["user_cf_u2u", "content_u2u", "user_emb_u2u"]}
+    },
+    {
+      "name": "rank",
+      "clazz": "com.openrec.graph.node.user.UserRankNode",
+      "configClazz": "com.openrec.graph.config.RankConfig",
+      "open": true,
+      "timeout": 200,
+      "content": {"size": 1000, "scoreStrategy": {
+        "recallAggregation": "sum", "recallWeight": 0.2, "rankWeight": 0.9,
+        "channels": [
+          {"name": "user_cf_u2u", "weight": 1.0},
+          {"name": "content_u2u", "weight": 1.0},
+          {"name": "user_emb_u2u", "weight": 1.0}
+        ]}}
     },
     {
       "name": "collector",
-      "clazz": "com.openrec.graph.node.UserCollectorNode",
+      "clazz": "com.openrec.graph.node.user.UserCollectorNode",
       "configClazz": null,
       "open": true,
       "timeout": 50,
@@ -35,8 +57,10 @@
     }
   ],
   "edges": [
-    {"from": "behavior_u2u", "to": "combine"},
-    {"from": "attribute_u2u", "to": "combine"},
-    {"from": "combine", "to": "collector"}
+    {"from": "user_cf_u2u", "to": "combine"},
+    {"from": "content_u2u", "to": "combine"},
+    {"from": "user_emb_u2u", "to": "combine"},
+    {"from": "combine", "to": "rank"},
+    {"from": "rank", "to": "collector"}
   ]
 }

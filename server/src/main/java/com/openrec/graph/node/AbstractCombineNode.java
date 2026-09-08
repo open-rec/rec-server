@@ -64,9 +64,9 @@ public abstract class AbstractCombineNode extends SyncNode<CombineConfig> {
         private MergeResult(Map<String, ScoreResult> candidates, int[] counters) {
             this.candidates = candidates; this.counters = counters;
         }
-        protected Map<String, ScoreResult> candidates() { return candidates; }
-        protected int filtered() { return counters[0]; }
-        protected int blacklisted() { return counters[1]; }
-        protected int triggered() { return counters[2]; }
+        public Map<String, ScoreResult> candidates() { return candidates; }
+        public int filtered() { return counters[0]; }
+        public int blacklisted() { return counters[1]; }
+        public int triggered() { return counters[2]; }
     }
 }

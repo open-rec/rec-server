@@ -49,9 +49,24 @@ public class RankService {
         @JsonProperty("item_ids")
         private List<String> itemIds;
 
+        @JsonProperty("candidate_ids")
+        private List<String> candidateIds;
+
+        @JsonProperty("target_type")
+        private String targetType;
+
         public RankUserItems(String userId, List<String> itemIds) {
             this.userId = userId;
             this.itemIds = itemIds;
+            this.candidateIds = itemIds;
+            this.targetType = "item";
+        }
+
+        public RankUserItems(String userId, List<String> candidateIds, String targetType) {
+            this.userId = userId;
+            this.candidateIds = candidateIds;
+            this.itemIds = "item".equals(targetType) ? candidateIds : Lists.newArrayList();
+            this.targetType = targetType;
         }
     }
 
@@ -64,13 +79,17 @@ public class RankService {
     }
 
     public Map<String, Double> score(String userId, List<String> itemIds) {
+        return score(userId, itemIds, "item");
+    }
+
+    public Map<String, Double> score(String userId, List<String> candidateIds, String targetType) {
         // @Value on this older Spring stack does not reliably apply relaxed RANK_HOST/RANK_PORT
         // environment binding. Resolve the exact Compose keys at call time before falling back to
         // application properties; otherwise a container silently calls its own 127.0.0.1.
         String effectiveHost = environment.getProperty("RANK_HOST", rankHost);
         String effectivePort = environment.getProperty("RANK_PORT", rankPort);
         String scoreUrl = String.format("http://%s:%s%s", effectiveHost, effectivePort, SCORE_PATH);
-        RankUserItems rUserItems = new RankUserItems(userId, itemIds);
+        RankUserItems rUserItems = new RankUserItems(userId, candidateIds, targetType);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Lists.list(MediaType.APPLICATION_JSON));
