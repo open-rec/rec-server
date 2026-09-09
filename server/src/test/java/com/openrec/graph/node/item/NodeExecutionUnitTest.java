@@ -247,7 +247,7 @@ public class NodeExecutionUnitTest {
         user.run(context);
         context.exportNodeData(user);
         assertEquals("u", ((Map<?, ?>)context.getData("userFeatureMap")).get("userId"));
-        new ItemFeatureNode(config("itemFeature", null, true)).run(context);
+        new ItemFeatureNode(config("item_feature", null, true)).run(context);
         new SearchNode(config("search", null, true)).run(context);
 
         RedisService redis = mock(RedisService.class);

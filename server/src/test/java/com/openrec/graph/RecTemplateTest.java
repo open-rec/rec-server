@@ -28,9 +28,9 @@ public class RecTemplateTest {
             .collect(Collectors.toSet());
 
         Assert.assertTrue(edges.contains("combine->rank"));
-        Assert.assertTrue(edges.contains("itemFeature->rank"));
-        Assert.assertFalse(edges.contains("combine->itemFeature"));
-        Assert.assertFalse(graphConfig.getEdges().stream().anyMatch(edge -> "itemFeature".equals(edge.getTo())));
+        Assert.assertTrue(edges.contains("item_feature->rank"));
+        Assert.assertFalse(edges.contains("combine->item_feature"));
+        Assert.assertFalse(graphConfig.getEdges().stream().anyMatch(edge -> "item_feature".equals(edge.getTo())));
 
         NodeConfig combineNode =
             graphConfig.getNodes().stream().filter(node -> "combine".equals(node.getName())).findFirst().orElse(null);
@@ -41,12 +41,14 @@ public class RecTemplateTest {
     @Test
     public void userGraphReferencesLoadableNodeClassesAndValidEdges() {
         GraphConfig graphConfig = RecTemplate.toGraphConfig("user_graph.json");
-        Assert.assertEquals(13, graphConfig.getNodes().size());
+        Assert.assertEquals(11, graphConfig.getNodes().size());
         Assert.assertNotNull(GraphPlan.compile(graphConfig));
         Set<String> classes = graphConfig.getNodes().stream().map(NodeConfig::getClazz).collect(Collectors.toSet());
         Assert.assertTrue(classes.contains("com.openrec.graph.node.user.BlackNode"));
         Assert.assertTrue(classes.contains("com.openrec.graph.node.user.EmbeddingNode"));
         Assert.assertTrue(classes.contains("com.openrec.graph.node.user.OperationNode"));
-        Assert.assertFalse(classes.stream().anyMatch(name -> name.contains(".user.User")));
+        Assert.assertTrue(classes.contains("com.openrec.graph.node.user.UserFeatureNode"));
+        Assert.assertFalse(classes.contains("com.openrec.graph.node.user.HotNode"));
+        Assert.assertFalse(classes.contains("com.openrec.graph.node.user.NewNode"));
     }
 }
