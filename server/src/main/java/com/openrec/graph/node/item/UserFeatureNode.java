@@ -1,7 +1,5 @@
 package com.openrec.graph.node.item;
 
-import com.openrec.graph.node.*;
-
 import static com.openrec.graph.RecParams.USER_ID;
 
 import java.util.Map;
@@ -9,17 +7,18 @@ import java.util.Map;
 import com.google.common.collect.Maps;
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.NodeConfig;
+import com.openrec.graph.node.AbstractSyncNode;
 import com.openrec.graph.tools.anno.Export;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class FeatureNode extends AbstractSyncNode<Void> {
+public class UserFeatureNode extends AbstractSyncNode<Void> {
 
     @Export("userFeatureMap")
     private Map<String, String> userFeatureMap;
 
-    public FeatureNode(NodeConfig nodeConfig) {
+    public UserFeatureNode(NodeConfig nodeConfig) {
         super(nodeConfig);
         this.userFeatureMap = Maps.newHashMap();
     }

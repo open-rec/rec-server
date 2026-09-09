@@ -11,11 +11,11 @@ import com.openrec.graph.node.AbstractSyncNode;
 import com.openrec.graph.tools.anno.Export;
 
 /** Exposes request-user features consumed by user ranking. */
-public class FeatureNode extends AbstractSyncNode<Void> {
+public class UserFeatureNode extends AbstractSyncNode<Void> {
     @Export("userFeatureMap")
     private Map<String, String> userFeatureMap = new LinkedHashMap<>();
 
-    public FeatureNode(NodeConfig nodeConfig) {
+    public UserFeatureNode(NodeConfig nodeConfig) {
         super(nodeConfig);
     }
 

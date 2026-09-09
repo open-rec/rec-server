@@ -1,7 +1,7 @@
 {
   "nodes": [
     {
-      "name": "trigger",
+      "name": "user_trigger",
       "clazz": "com.openrec.graph.node.user.TriggerNode",
       "configClazz": "com.openrec.graph.config.UserTriggerConfig",
       "open": true,
@@ -9,8 +9,8 @@
       "content": {"size": 1}
     },
     {
-      "name": "feature",
-      "clazz": "com.openrec.graph.node.user.FeatureNode",
+      "name": "user_feature",
+      "clazz": "com.openrec.graph.node.user.UserFeatureNode",
       "configClazz": null,
       "open": true,
       "timeout": 20,
@@ -33,22 +33,6 @@
       "content": {"filterMap": {}}
     },
     {
-      "name": "hot",
-      "clazz": "com.openrec.graph.node.user.HotNode",
-      "configClazz": "com.openrec.graph.config.HotConfig",
-      "open": false,
-      "timeout": 200,
-      "content": {"size": 1000, "tableName": "user-hot", "recallType": "hot"}
-    },
-    {
-      "name": "new",
-      "clazz": "com.openrec.graph.node.user.NewNode",
-      "configClazz": "com.openrec.graph.config.NewConfig",
-      "open": false,
-      "timeout": 50,
-      "content": {"size": 100, "tableName": "user-new", "recallType": "new", "duration": 86400}
-    },
-    {
       "name": "user_cf_u2u",
       "clazz": "com.openrec.graph.node.user.U2uNode",
       "configClazz": "com.openrec.graph.config.U2uConfig",
@@ -65,12 +49,12 @@
       "content": {"size": 1000, "tableName": "content-u2u", "recallType": "content_u2u"}
     },
     {
-      "name": "user_emb_u2u",
+      "name": "user_als_emb",
       "clazz": "com.openrec.graph.node.user.EmbeddingNode",
       "configClazz": "com.openrec.graph.config.EmbeddingConfig",
       "open": true,
       "timeout": 300,
-      "content": {"size": 1000, "tableName": "user-emb-u2u", "recallType": "user_emb_u2u",
+      "content": {"size": 1000, "tableName": "user-als-emb", "recallType": "user_als_emb",
         "vectorField": "vector", "idField": "id"}
     },
     {
@@ -80,7 +64,7 @@
       "open": true,
       "timeout": 50,
       "content": {"size": 1000, "checkExpireTime": false,
-        "recallTypes": ["user_cf_u2u", "content_u2u", "user_emb_u2u", "hot", "new"]}
+        "recallTypes": ["user_cf_u2u", "content_u2u", "user_als_emb"]}
     },
     {
       "name": "rank",
@@ -93,7 +77,7 @@
         "channels": [
           {"name": "user_cf_u2u", "weight": 1.0},
           {"name": "content_u2u", "weight": 1.0},
-          {"name": "user_emb_u2u", "weight": 1.0}
+          {"name": "user_als_emb", "weight": 1.0}
         ]}}
     },
     {
@@ -114,17 +98,16 @@
     }
   ],
   "edges": [
-    {"from": "trigger", "to": "user_emb_u2u"},
+    {"from": "user_trigger", "to": "user_cf_u2u"},
+    {"from": "user_trigger", "to": "content_u2u"},
+    {"from": "user_trigger", "to": "user_als_emb"},
     {"from": "filter", "to": "combine"},
     {"from": "black", "to": "combine"},
-    {"from": "trigger", "to": "combine"},
-    {"from": "hot", "to": "combine"},
-    {"from": "new", "to": "combine"},
     {"from": "user_cf_u2u", "to": "combine"},
     {"from": "content_u2u", "to": "combine"},
-    {"from": "user_emb_u2u", "to": "combine"},
+    {"from": "user_als_emb", "to": "combine"},
     {"from": "combine", "to": "rank"},
-    {"from": "feature", "to": "rank"},
+    {"from": "user_feature", "to": "rank"},
     {"from": "rank", "to": "operation"},
     {"from": "operation", "to": "collector"}
   ]

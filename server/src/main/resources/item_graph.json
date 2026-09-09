@@ -1,7 +1,7 @@
 {
   "nodes": [
     {
-      "name": "userTrigger",
+      "name": "user_trigger",
       "clazz": "com.openrec.graph.node.item.TriggerNode",
       "configClazz": "com.openrec.graph.config.UserTriggerConfig",
       "open": true,
@@ -11,8 +11,8 @@
       }
     },
     {
-      "name": "userFeature",
-      "clazz": "com.openrec.graph.node.item.FeatureNode",
+      "name": "user_feature",
+      "clazz": "com.openrec.graph.node.item.UserFeatureNode",
       "configClazz": null,
       "open": true,
       "timeout": 20,
@@ -166,7 +166,7 @@
       }
     },
     {
-      "name": "itemFeature",
+      "name": "item_feature",
       "clazz": "com.openrec.graph.node.item.ItemFeatureNode",
       "configClazz": null,
       "open": true,
@@ -209,15 +209,15 @@
   ],
   "edges": [
     {
-      "from": "userTrigger",
+      "from": "user_trigger",
       "to": "item_cf_i2i"
     },
     {
-      "from": "userTrigger",
+      "from": "user_trigger",
       "to": "content_i2i"
     },
     {
-      "from": "userTrigger",
+      "from": "user_trigger",
       "to": "item_seq_emb"
     },
     {
@@ -257,11 +257,11 @@
       "to": "rank"
     },
     {
-      "from": "userFeature",
+      "from": "user_feature",
       "to": "rank"
     },
     {
-      "from": "itemFeature",
+      "from": "item_feature",
       "to": "rank"
     },
     {

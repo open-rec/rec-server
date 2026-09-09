@@ -213,14 +213,14 @@ public class NodeExecutionUnitTest {
     public void userNodesReuseMergeAndCollectionWithoutItemSideEffects() {
         CombineConfig content = new CombineConfig();
         content.setSize(10);
-        content.setRecallTypes(Arrays.asList("user_cf_u2u", "content_u2u", "user_emb_u2u"));
+        content.setRecallTypes(Arrays.asList("user_cf_u2u", "content_u2u", "user_als_emb"));
         com.openrec.graph.node.user.CombineNode combine =
             new com.openrec.graph.node.user.CombineNode(config("combine", content, true));
         GraphContext context = new GraphContext();
         context.addParam("userId", "self");
         context.addData("recall:user_cf_u2u", Arrays.asList(new ScoreResult("self", 9), new ScoreResult("u2", 0.7)));
         context.addData("recall:content_u2u", Arrays.asList(new ScoreResult("u2", 0.2), new ScoreResult("u3", 0.4)));
-        context.addData("recall:user_emb_u2u", Collections.singletonList(new ScoreResult("u3", 0.1)));
+        context.addData("recall:user_als_emb", Collections.singletonList(new ScoreResult("u3", 0.1)));
         combine.run(context);
         context.exportNodeData(combine);
 
@@ -243,7 +243,7 @@ public class NodeExecutionUnitTest {
     public void simpleFeatureBlackSearchAndOperationNodesWork() {
         GraphContext context = new GraphContext();
         context.addParam("userId", "u");
-        FeatureNode user = new FeatureNode(config("userFeature", null, true));
+        UserFeatureNode user = new UserFeatureNode(config("user_feature", null, true));
         user.run(context);
         context.exportNodeData(user);
         assertEquals("u", ((Map<?, ?>)context.getData("userFeatureMap")).get("userId"));
