@@ -86,9 +86,9 @@ class RecommendRes<T> {
 }
 ```
 
-`debug=true` asks the item endpoint to attach entity details. `targetType` is assigned by the
-endpoint. The item endpoint is implemented; the reserved user-recommendation endpoint currently
-returns `NOT_IMPLEMENTED`.
+`debug=true` asks the selected endpoint to attach item or user entity details. `targetType` is
+assigned by `/api/recommend/item` or `/api/recommend/user`; both endpoints execute their respective
+serving graph.
 
 `GraphEngine.prepare()` exposes `RecommendReq` fields to nodes by field name. Renaming one is
 therefore a serving-graph contract change, not a cosmetic refactor.

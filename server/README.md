@@ -12,7 +12,7 @@ Entry point: `com.openrec.RecServer`. Default port: `13579`.
 |---|---|
 | `controller` | Recommend, push, query, operation, health, and serving-graph APIs |
 | `graph/node` | Recall, filter, combine, rank, operation, and collector nodes |
-| `graph/config` | Typed node configuration deserialized from `graph.json` |
+| `graph/config` | Typed node configuration deserialized from item/user graph JSON |
 | `graph` | Graph loading, request parameter constants, and event types |
 | `service/recall` | Redis and Elasticsearch recall-store implementations |
 | `service` | Entity, event, rank, Kafka, and runtime serving services |
@@ -27,7 +27,7 @@ For every recommendation request, the active graph plan is selected, a request-s
 level. The collector returns ordered `ScoreResult` values and optionally loads item details for
 debug responses.
 
-The default graph combines six recall strategies:
+The default item graph combines six recall strategies:
 
 | `recallType` / node name | Node | Lookup |
 |---|---|---|
@@ -44,6 +44,10 @@ Recall configs separate strategy identity from storage routing:
 - `tableName` selects the Redis key namespace or Elasticsearch alias/index family.
 - `name` identifies the graph node and currently matches `recallType` for recall nodes.
 
+The default user graph is separate: `user_cf_u2u`, `content_u2u`, and the ALS-backed
+`user_als_emb` feed `combine`, then the User Rank model scores candidate users. It deliberately has
+no hot/new channels.
+
 Recall nodes publish `recall:<recallType>` dynamically. Fixed annotation exports remain for older
 graphs, while the default `CombineNode.recallTypes` configuration consumes dynamic channels. This
 allows several instances of the same node class to coexist without overwriting the data actually
@@ -53,8 +57,9 @@ used by the current graph.
 
 - Nodes are reflectively constructed, not managed by Spring. They access services through
   `BeanUtil`.
-- `graph.json` is the packaged default. Runtime graph APIs validate and activate versioned graph
-  definitions without mutating that resource file.
+- `item_graph.json` and `user_graph.json` are the packaged defaults selected by request
+  `targetType`. Runtime graph APIs validate and activate versioned graph definitions independently
+  without mutating those resource files.
 - `redisTemplate` stores string/sorted-set data; `redisJsonTemplate` stores JSON entity values.
 - The active profile chooses the push path: standalone writes serving state directly, while cluster
   publishes versioned Kafka mutations for downstream processors.

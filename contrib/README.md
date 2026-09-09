@@ -63,7 +63,8 @@ fewer results.
 1. Implement `OperationRule` under `com.openrec.contrib.operation.impl`.
 2. Annotate the class with `@Extension`.
 3. Build the plugin with `mvn -pl contrib package`.
-4. Set `operationName` in `graph.json` to the implementation's simple class name.
+4. Set `operationName` in `item_graph.json` or `user_graph.json` to the implementation's simple
+   class name.
 
 `OperationRuleManager` indexes extensions by simple class name, so a fully qualified name will not
 match. Keep rule execution within the operation node's timeout.
