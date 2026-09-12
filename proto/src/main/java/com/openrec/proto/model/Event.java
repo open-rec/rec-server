@@ -7,6 +7,8 @@ import lombok.Data;
 @Data
 public class Event implements Serializable {
 
+    /** Stable identity of this action. traceId identifies a recommendation/impression context. */
+    private String eventId;
     private String userId;
     private String deviceId;
     private String itemId;
