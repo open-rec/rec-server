@@ -9,4 +9,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Import {
     String value();
+
+    /** Whether the node must receive a non-null value before it can run. */
+    boolean required() default true;
 }

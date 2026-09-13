@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.node.FailurePolicy;
 import com.openrec.graph.node.Node;
+import com.openrec.graph.node.NodeContract;
 import com.openrec.graph.node.NodeStatus;
 import com.openrec.graph.node.TypedNode;
 import com.openrec.graph.data.NodeInput;
@@ -140,7 +141,7 @@ public class GraphEngine {
                     }
                     execution.bind(latch);
                     long remaining = remainingMillis(deadlineNanos);
-                    submit(execution, Math.min(nodes[index].getTimeout(), remaining),
+                    submit(execution, plan.getNodeContract(index), Math.min(nodes[index].getTimeout(), remaining),
                         remaining <= nodes[index].getTimeout());
                 }
                 await(latch, executions);
@@ -177,7 +178,7 @@ public class GraphEngine {
         }
     }
 
-    private void submit(NodeExecution execution, long timeoutMillis, boolean requestDeadline) {
+    private void submit(NodeExecution execution, NodeContract contract, long timeoutMillis, boolean requestDeadline) {
         if (timeoutMillis <= 0L) {
             execution.timeout();
             return;
@@ -197,9 +198,9 @@ public class GraphEngine {
                         execution.succeed(() -> context.commit(output), input.size(), valueCount(output.values()));
                     } else {
                         GraphContext localContext = context.forkExecution();
-                        int inputCount = localContext.importNodeData(execution.node);
+                        int inputCount = localContext.importNodeData(execution.node, contract);
                         execution.node.run(localContext);
-                        Map<String, Object> output = localContext.extractNodeData(execution.node);
+                        Map<String, Object> output = localContext.extractNodeData(execution.node, contract);
                         execution.succeed(() -> context.commitExecution(localContext, output), inputCount,
                             valueCount(output));
                     }

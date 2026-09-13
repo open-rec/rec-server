@@ -1,6 +1,5 @@
 package com.openrec.graph;
 
-import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
@@ -13,12 +12,8 @@ import com.openrec.graph.data.DataKey;
 import com.openrec.graph.data.NodeInput;
 import com.openrec.graph.data.NodeOutput;
 import com.openrec.graph.node.Node;
-import com.openrec.graph.tools.anno.Export;
-import com.openrec.graph.tools.anno.Import;
+import com.openrec.graph.node.NodeContract;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class GraphContext {
 
     private GraphParams params;
@@ -48,26 +43,19 @@ public class GraphContext {
     }
 
     public void exportNodeData(Node node) {
-        commitNodeData(extractNodeData(node));
+        commitNodeData(extractNodeData(node, NodeContract.inspect(node.getClass())));
     }
 
     public Map<String, Object> extractNodeData(Node node) {
+        return extractNodeData(node, NodeContract.inspect(node.getClass()));
+    }
+
+    public Map<String, Object> extractNodeData(Node node, NodeContract contract) {
         Map<String, Object> exported = new HashMap<>();
-        for (Field field : node.getClass().getDeclaredFields()) {
-            if (field.isAnnotationPresent(Export.class)) {
-                Export export = field.getAnnotation(Export.class);
-                String key = export.value();
-                Object data = null;
-                try {
-                    field.setAccessible(true);
-                    data = field.get(node);
-                } catch (Exception e) {
-                    log.error("node: {} export field: {} failed", node.getName(), field.getName());
-                }
-                if (data != null) {
-                    exported.put(key, data);
-                }
-            }
+        for (NodeContract.Port port : contract.exports()) {
+            Object data = port.read(node);
+            if (data != null)
+                exported.put(port.name(), data);
         }
         return exported;
     }
@@ -77,25 +65,22 @@ public class GraphContext {
     }
 
     public int importNodeData(Node node) {
+        return importNodeData(node, NodeContract.inspect(node.getClass()));
+    }
+
+    public int importNodeData(Node node, NodeContract contract) {
         int imported = 0;
-        for (Field field : node.getClass().getDeclaredFields()) {
-            if (field.isAnnotationPresent(Import.class)) {
-                Import export = field.getAnnotation(Import.class);
-                String key = export.value();
-                Object data = getData(key);
-                try {
-                    field.setAccessible(true);
-                    field.set(node, data);
-                    if (data instanceof java.util.Collection)
-                        imported += ((java.util.Collection<?>)data).size();
-                    else if (data instanceof Map)
-                        imported += ((Map<?, ?>)data).size();
-                    else if (data != null)
-                        imported++;
-                } catch (Exception e) {
-                    log.error("node: {} import field: {} failed", node.getName(), field.getName());
-                }
-            }
+        for (NodeContract.Port port : contract.imports()) {
+            Object data = getData(port.name());
+            if (data == null && port.required())
+                throw new IllegalStateException("node " + node.getName() + " requires graph input " + port.name());
+            port.write(node, data);
+            if (data instanceof java.util.Collection)
+                imported += ((java.util.Collection<?>)data).size();
+            else if (data instanceof Map)
+                imported += ((Map<?, ?>)data).size();
+            else if (data != null)
+                imported++;
         }
         return imported;
     }

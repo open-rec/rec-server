@@ -8,11 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.node.Node;
 import com.openrec.graph.node.NodeFactory;
 import com.openrec.graph.node.NodeRegistry;
+import com.openrec.graph.node.NodeContract;
 import com.openrec.graph.node.ReflectiveNodeFactory;
 import com.openrec.graph.node.TypedNode;
 import com.openrec.graph.data.DataKey;
@@ -66,7 +69,7 @@ public final class GraphPlan {
                 Node probe = factory.create(nodeConfig);
                 if (probe == null)
                     throw new IllegalArgumentException("node factory returned null: " + nodeConfig.getName());
-                factories.add(new CompiledNode(nodeConfig, factory, probe));
+                factories.add(new CompiledNode(nodeConfig, factory, probe, NodeContract.inspect(probe.getClass())));
                 indexes.put(nodeConfig.getName(), index);
             }
         } catch (IllegalArgumentException error) {
@@ -113,8 +116,78 @@ public final class GraphPlan {
         for (int[] edge : edges)
             children[edge[0]][childIndexes[edge[0]]++] = edge[1];
         validateAcyclic(children, indegree, roots);
+        validateAnnotatedContracts(factories, edges);
         validateTypedContracts(factories, edges);
         return new GraphPlan(config, factories, edges, roots, children, indegree);
+    }
+
+    private static void validateAnnotatedContracts(List<CompiledNode> nodes, int[][] edges) {
+        List<Set<Integer>> ancestors = ancestors(nodes.size(), edges);
+        for (int consumerIndex = 0; consumerIndex < nodes.size(); consumerIndex++) {
+            CompiledNode consumer = nodes.get(consumerIndex);
+            for (NodeContract.Port input : consumer.contract.imports()) {
+                List<Producer> producers = new ArrayList<>();
+                for (int producerIndex : ancestors.get(consumerIndex)) {
+                    CompiledNode producer = nodes.get(producerIndex);
+                    for (NodeContract.Port output : producer.contract.exports()) {
+                        if (input.name().equals(output.name()))
+                            producers.add(new Producer(producer.config.getName(), output));
+                    }
+                }
+                if (producers.isEmpty()) {
+                    if (input.required())
+                        throw new IllegalArgumentException("node " + consumer.config.getName() + " requires input "
+                            + input.name() + " (" + input.type().getTypeName() + ") but no upstream node exports it");
+                    continue;
+                }
+                for (Producer producer : producers) {
+                    if (!isAssignable(input.type(), input.rawType(), producer.port.type(), producer.port.rawType()))
+                        throw new IllegalArgumentException("node " + consumer.config.getName() + " imports "
+                            + input.name() + " as " + input.type().getTypeName() + " but upstream node "
+                            + producer.nodeName + " exports it as " + producer.port.type().getTypeName());
+                }
+            }
+        }
+    }
+
+    private static List<Set<Integer>> ancestors(int nodeCount, int[][] edges) {
+        List<Set<Integer>> result = new ArrayList<>();
+        int[] remaining = new int[nodeCount];
+        List<List<Integer>> parents = new ArrayList<>();
+        List<List<Integer>> children = new ArrayList<>();
+        for (int index = 0; index < nodeCount; index++) {
+            result.add(new HashSet<>());
+            parents.add(new ArrayList<>());
+            children.add(new ArrayList<>());
+        }
+        for (int[] edge : edges) {
+            remaining[edge[1]]++;
+            parents.get(edge[1]).add(edge[0]);
+            children.get(edge[0]).add(edge[1]);
+        }
+        Queue<Integer> ready = new ArrayDeque<>();
+        for (int index = 0; index < nodeCount; index++)
+            if (remaining[index] == 0)
+                ready.add(index);
+        while (!ready.isEmpty()) {
+            int current = ready.remove();
+            for (int parent : parents.get(current)) {
+                result.get(current).add(parent);
+                result.get(current).addAll(result.get(parent));
+            }
+            for (int child : children.get(current))
+                if (--remaining[child] == 0)
+                    ready.add(child);
+        }
+        return result;
+    }
+
+    private static boolean isAssignable(Type consumer, Class<?> consumerRaw, Type producer, Class<?> producerRaw) {
+        if (!consumerRaw.isAssignableFrom(producerRaw))
+            return false;
+        if (consumer instanceof ParameterizedType && producer instanceof ParameterizedType)
+            return consumer.equals(producer);
+        return !(consumer instanceof ParameterizedType) && !(producer instanceof ParameterizedType);
     }
 
     private static void validateTypedContracts(List<CompiledNode> nodes, int[][] edges) {
@@ -217,6 +290,10 @@ public final class GraphPlan {
         return factories.get(index).config;
     }
 
+    NodeContract getNodeContract(int index) {
+        return factories.get(index).contract;
+    }
+
     Node newNode(int index) {
         try {
             CompiledNode factory = factories.get(index);
@@ -234,11 +311,23 @@ public final class GraphPlan {
         private final NodeConfig config;
         private final NodeFactory factory;
         private final Node probe;
+        private final NodeContract contract;
 
-        private CompiledNode(NodeConfig config, NodeFactory factory, Node probe) {
+        private CompiledNode(NodeConfig config, NodeFactory factory, Node probe, NodeContract contract) {
             this.config = config;
             this.factory = factory;
             this.probe = probe;
+            this.contract = contract;
+        }
+    }
+
+    private static final class Producer {
+        private final String nodeName;
+        private final NodeContract.Port port;
+
+        private Producer(String nodeName, NodeContract.Port port) {
+            this.nodeName = nodeName;
+            this.port = port;
         }
     }
 }

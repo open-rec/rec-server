@@ -59,8 +59,8 @@ and shared by all engine instances.
 `GraphPlan.compile(...)` validates registered node types and edges, resolves each node's
 factory, and precomputes dependency metadata. Unknown types and invalid edge references
 fail before request execution. In an acyclic definition, nodes with no incoming edges are roots.
-Cycle, duplicate-node, duplicate-edge, endpoint, timeout, node-factory, and typed data-contract
-validation all happen in `GraphPlan.compile(...)`.
+Cycle, duplicate-node, duplicate-edge, endpoint, timeout, node-factory, annotated-field, and typed
+data-contract validation all happen in `GraphPlan.compile(...)`.
 
 ## Write a node
 
@@ -96,23 +96,29 @@ graphs containing `clazz` remain supported through registered class-name aliases
 
 ### Data exchange
 
-New nodes should implement `TypedNode`, declare `DataKey<T>` inputs and outputs, and return an
-immutable `NodeOutput`. The engine gives each invocation an immutable `NodeInput` snapshot and
-commits the complete output only after the node reaches `SUCCESS`. `GraphPlan.compile(...)` rejects
-missing inputs and duplicate typed outputs when the path is fully typed.
+The field annotation API is the primary concise contract for server nodes. Before a node runs,
+fields annotated with `@Import("key")` are populated from `GraphContext`. After it finishes,
+`@Export("key")` fields are published. `GraphPlan.compile(...)` reflects these fields once and
+validates that every required import has a reachable upstream export with a compatible Java type,
+including generic arguments such as `List<ScoreResult>`. Duplicate or blank ports are rejected.
+The compiled contract is reused for request execution, so fields are not rescanned for every node
+invocation.
 
-The annotation API remains as a migration adapter for existing nodes:
+Imports are required by default. Use `@Import(value = "key", required = false)` only when a node
+explicitly handles a missing value. A missing required value at runtime fails that node instead of
+silently injecting `null`.
 
-Before a node runs, fields annotated with `@Import("key")` are populated from `GraphContext`.
-After it finishes, `@Export("key")` fields are published. The key is the contract, so producers and
-consumers must use exactly the same value.
+`TypedNode` remains available for nodes that benefit from immutable `NodeInput`/`NodeOutput`
+snapshots. Such nodes declare `DataKey<T>` inputs and outputs, and the engine commits their complete
+output only after the node reaches `SUCCESS`.
 
 Nodes may also call `context.addData(key, value)` and `context.getData(key)` for keys chosen at
 runtime. `rec-server` uses this for configurable recall channels while retaining fixed annotation
 exports for backward compatibility. A later write to the same key replaces the earlier value.
 
-Initialize exported collections even when a node can be disabled or time out. Otherwise consumers
-may receive `null`.
+Initialize exported collections when an open node can legitimately produce no values. A failed,
+skipped, or timed-out producer does not publish output, so a required downstream import fails
+explicitly according to the graph's failure policy.
 
 ### Request parameters and result
 
