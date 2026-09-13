@@ -16,7 +16,7 @@ import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Import;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.redis.RedisService;
-import com.openrec.util.BeanUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,9 +26,11 @@ public class CollectorNode extends AbstractCollectorNode {
     @Import("operationItems")
     private List<ScoreResult> finalItems;
 
-    private RedisService redisService = BeanUtil.getBean(RedisService.class);
+    @Autowired
+    private RedisService redisService;
 
-    private Environment environment = BeanUtil.getBean(Environment.class);
+    @Autowired
+    private Environment environment;
 
     public CollectorNode(NodeConfig nodeConfig) {
         super(nodeConfig);

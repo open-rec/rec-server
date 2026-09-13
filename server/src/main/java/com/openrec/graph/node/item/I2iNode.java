@@ -15,14 +15,15 @@ import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.recall.RecallStore;
-import com.openrec.util.BeanUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class I2iNode extends AbstractRecallNode<I2iConfig> {
 
-    private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
+    @Autowired
+    private RecallStore recallStore;
 
     @Import("triggerItems")
     private List<ScoreResult> triggerItems;

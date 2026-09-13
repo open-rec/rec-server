@@ -21,7 +21,7 @@ import com.openrec.graph.tools.anno.Import;
 import com.openrec.proto.model.Item;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.redis.RedisService;
-import com.openrec.util.BeanUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.openrec.util.TimeUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -46,8 +46,10 @@ public class CombineNode extends AbstractCombineNode {
     public static final String CHANNEL_HOT = "hot";
     public static final String CHANNEL_NEW = "new";
 
-    private RedisService redisService = BeanUtil.getBean(RedisService.class);
-    private ObjectMapper objectMapper = BeanUtil.getBean(ObjectMapper.class);
+    @Autowired
+    private RedisService redisService;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Import("i2iItems")
     private List<ScoreResult> i2iItems;

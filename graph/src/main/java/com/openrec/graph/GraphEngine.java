@@ -21,6 +21,9 @@ import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.node.FailurePolicy;
 import com.openrec.graph.node.Node;
 import com.openrec.graph.node.NodeStatus;
+import com.openrec.graph.node.TypedNode;
+import com.openrec.graph.data.NodeInput;
+import com.openrec.graph.data.NodeOutput;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -155,11 +158,20 @@ public class GraphEngine {
             Future<?> future = threadPool.submit(() -> {
                 long start = System.currentTimeMillis();
                 try {
-                    GraphContext localContext = context.forkExecution();
-                    localContext.importNodeData(execution.node);
-                    execution.node.run(localContext);
-                    Map<String, Object> output = localContext.extractNodeData(execution.node);
-                    execution.succeed(() -> context.commitExecution(localContext, output));
+                    if (execution.node instanceof TypedNode) {
+                        TypedNode typed = (TypedNode)execution.node;
+                        NodeInput input = context.snapshot(typed.requiredInputs());
+                        NodeOutput output = typed.execute(input);
+                        if (output == null)
+                            throw new IllegalStateException("typed node returned null output");
+                        execution.succeed(() -> context.commit(output));
+                    } else {
+                        GraphContext localContext = context.forkExecution();
+                        localContext.importNodeData(execution.node);
+                        execution.node.run(localContext);
+                        Map<String, Object> output = localContext.extractNodeData(execution.node);
+                        execution.succeed(() -> context.commitExecution(localContext, output));
+                    }
                 } catch (Throwable error) {
                     log.error("node:{} exec with exception:{}", execution.node.getName(),
                         ExceptionUtils.getStackTrace(error));
@@ -222,6 +234,10 @@ public class GraphEngine {
     }
 
     public Object getData(String key) {
+        return context.getData(key);
+    }
+
+    public <T> T getData(com.openrec.graph.data.DataKey<T> key) {
         return context.getData(key);
     }
 

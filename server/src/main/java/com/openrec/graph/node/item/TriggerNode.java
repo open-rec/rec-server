@@ -15,14 +15,15 @@ import com.openrec.graph.config.UserTriggerConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.redis.RedisService;
-import com.openrec.util.BeanUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.openrec.util.TimeUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TriggerNode extends AbstractSyncNode<UserTriggerConfig> {
-    private RedisService redisService = BeanUtil.getBean(RedisService.class);
+    @Autowired
+    private RedisService redisService;
     private String bizType = "event";
     private String filterType = "click";
     private String FILTER_KEY_FORMAT = "%s:{%s}:%s:%s";

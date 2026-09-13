@@ -14,7 +14,7 @@ import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.recall.RecallStore;
-import com.openrec.util.BeanUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.openrec.util.TimeUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NewNode extends AbstractRecallNode<NewConfig> {
 
-    private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
+    @Autowired
+    private RecallStore recallStore;
     @Export("newItems")
     private List<ScoreResult> newItems;
 

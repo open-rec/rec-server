@@ -18,7 +18,7 @@ import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.rank.RankService;
-import com.openrec.util.BeanUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
@@ -26,7 +26,8 @@ import org.springframework.util.CollectionUtils;
 @Slf4j
 public class RankNode extends AbstractSyncNode<RankConfig> {
 
-    private RankService rankService = BeanUtil.getBean(RankService.class);
+    @Autowired
+    private RankService rankService;
 
     private String bizType = "rank";
 

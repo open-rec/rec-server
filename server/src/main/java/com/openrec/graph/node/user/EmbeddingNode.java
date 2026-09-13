@@ -17,10 +17,11 @@ import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.recall.RecallStore;
-import com.openrec.util.BeanUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class EmbeddingNode extends AbstractRecallNode<EmbeddingConfig> {
-    private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
+    @Autowired
+    private RecallStore recallStore;
     @Import("triggerUsers")
     private List<ScoreResult> triggerUsers;
     @Export("embeddingUsers")

@@ -19,14 +19,15 @@ import com.openrec.graph.node.RankScoreFusion;
 import com.openrec.graph.node.AbstractSyncNode;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.rank.RankService;
-import com.openrec.util.BeanUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import lombok.extern.slf4j.Slf4j;
 
 /** Scores candidate users with the user-target rank model. */
 @Slf4j
 public class RankNode extends AbstractSyncNode<RankConfig> {
-    private RankService rankService = BeanUtil.getBean(RankService.class);
+    @Autowired
+    private RankService rankService;
 
     @Import("userCandidates")
     private List<ScoreResult> userCandidates;

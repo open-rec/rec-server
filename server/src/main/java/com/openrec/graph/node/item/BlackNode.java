@@ -14,7 +14,7 @@ import com.openrec.graph.config.FilterConfig;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.service.redis.RedisService;
-import com.openrec.util.BeanUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.openrec.util.TimeUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BlackNode extends AbstractSyncNode<FilterConfig> {
 
-    private RedisService redisService = BeanUtil.getBean(RedisService.class);
+    @Autowired
+    private RedisService redisService;
     private String bizType = "black";
     private String BLACK_KEY_FORMAT = "%s";
     private String DISLIKE_KEY_FORMAT = "event:{%s}:%s:dislike";

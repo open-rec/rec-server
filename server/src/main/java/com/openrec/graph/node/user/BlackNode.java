@@ -9,13 +9,14 @@ import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.node.AbstractSyncNode;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.service.redis.RedisService;
-import com.openrec.util.BeanUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /** Reads user identifiers from the dedicated global user blacklist. */
 public class BlackNode extends AbstractSyncNode<FilterConfig> {
     @Export("blackUserSet")
     private Set<String> blackUserSet = Sets.newHashSet();
-    private RedisService redisService = BeanUtil.getBean(RedisService.class);
+    @Autowired
+    private RedisService redisService;
 
     public BlackNode(NodeConfig nodeConfig) {
         super(nodeConfig);

@@ -1,6 +1,5 @@
 package com.openrec.graph;
 
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -12,18 +11,23 @@ import java.util.Set;
 
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.node.Node;
+import com.openrec.graph.node.NodeFactory;
+import com.openrec.graph.node.NodeRegistry;
+import com.openrec.graph.node.ReflectiveNodeFactory;
+import com.openrec.graph.node.TypedNode;
+import com.openrec.graph.data.DataKey;
 
 /** Immutable, precompiled graph metadata shared by all executions of one deployment. */
 public final class GraphPlan {
 
     private final GraphConfig config;
-    private final List<NodeFactory> factories;
+    private final List<CompiledNode> factories;
     private final int[][] edges;
     private final int[] roots;
     private final int[][] children;
     private final int[] indegree;
 
-    private GraphPlan(GraphConfig config, List<NodeFactory> factories, int[][] edges, int[] roots, int[][] children,
+    private GraphPlan(GraphConfig config, List<CompiledNode> factories, int[][] edges, int[] roots, int[][] children,
         int[] indegree) {
         this.config = config;
         this.factories = factories;
@@ -34,16 +38,23 @@ public final class GraphPlan {
     }
 
     public static GraphPlan compile(GraphConfig config) {
+        return compile(config, NodeRegistry.builder().fallback(new ReflectiveNodeFactory()).build());
+    }
+
+    public static GraphPlan compile(GraphConfig config, NodeRegistry registry) {
         if (config == null || config.getNodes() == null || config.getNodes().isEmpty() || config.getEdges() == null) {
             throw new IllegalArgumentException("graph config is incomplete");
         }
-        List<NodeFactory> factories = new ArrayList<>();
+        if (registry == null)
+            throw new IllegalArgumentException("node registry is required");
+        List<CompiledNode> factories = new ArrayList<>();
         Map<String, Integer> indexes = new HashMap<>();
         try {
             for (int index = 0; index < config.getNodes().size(); index++) {
                 NodeConfig nodeConfig = config.getNodes().get(index);
-                if (nodeConfig == null || isBlank(nodeConfig.getName()) || isBlank(nodeConfig.getClazz())) {
-                    throw new IllegalArgumentException("every graph node requires a name and class");
+                if (nodeConfig == null || isBlank(nodeConfig.getName())
+                    || isBlank(nodeConfig.getType()) && isBlank(nodeConfig.getClazz())) {
+                    throw new IllegalArgumentException("every graph node requires a name and type or legacy class");
                 }
                 if (nodeConfig.getTimeout() <= 0) {
                     throw new IllegalArgumentException("node timeout must be positive: " + nodeConfig.getName());
@@ -51,16 +62,11 @@ public final class GraphPlan {
                 if (indexes.containsKey(nodeConfig.getName())) {
                     throw new IllegalArgumentException("duplicate node: " + nodeConfig.getName());
                 }
-                Class<?> nodeClass = Class.forName(nodeConfig.getClazz());
-                if (!Node.class.isAssignableFrom(nodeClass)) {
-                    throw new IllegalArgumentException("node class does not implement Node: " + nodeConfig.getClazz());
-                }
-                @SuppressWarnings("unchecked")
-                Constructor<? extends Node> constructor =
-                    (Constructor<? extends Node>)nodeClass.getDeclaredConstructor(NodeConfig.class);
-                constructor.setAccessible(true);
-                constructor.newInstance(nodeConfig);
-                factories.add(new NodeFactory(nodeConfig, constructor));
+                NodeFactory factory = registry.resolve(nodeConfig);
+                Node probe = factory.create(nodeConfig);
+                if (probe == null)
+                    throw new IllegalArgumentException("node factory returned null: " + nodeConfig.getName());
+                factories.add(new CompiledNode(nodeConfig, factory, probe));
                 indexes.put(nodeConfig.getName(), index);
             }
         } catch (IllegalArgumentException error) {
@@ -107,7 +113,58 @@ public final class GraphPlan {
         for (int[] edge : edges)
             children[edge[0]][childIndexes[edge[0]]++] = edge[1];
         validateAcyclic(children, indegree, roots);
+        validateTypedContracts(factories, edges);
         return new GraphPlan(config, factories, edges, roots, children, indegree);
+    }
+
+    private static void validateTypedContracts(List<CompiledNode> nodes, int[][] edges) {
+        Map<String, DataKey<?>> producers = new HashMap<>();
+        for (CompiledNode compiled : nodes) {
+            if (!(compiled.probe instanceof TypedNode))
+                continue;
+            for (DataKey<?> output : ((TypedNode)compiled.probe).outputs()) {
+                DataKey<?> previous = producers.put(output.getName(), output);
+                if (previous != null)
+                    throw new IllegalArgumentException("duplicate typed output: " + output.getName());
+            }
+        }
+        List<Set<DataKey<?>>> available = new ArrayList<>();
+        boolean[] hasLegacyAncestor = new boolean[nodes.size()];
+        for (int index = 0; index < nodes.size(); index++)
+            available.add(new HashSet<>());
+        int[] remaining = new int[nodes.size()];
+        List<List<Integer>> parents = new ArrayList<>();
+        for (int index = 0; index < nodes.size(); index++)
+            parents.add(new ArrayList<>());
+        for (int[] edge : edges) {
+            remaining[edge[1]]++;
+            parents.get(edge[1]).add(edge[0]);
+        }
+        Queue<Integer> queue = new ArrayDeque<>();
+        for (int index = 0; index < remaining.length; index++)
+            if (remaining[index] == 0)
+                queue.add(index);
+        while (!queue.isEmpty()) {
+            int current = queue.remove();
+            for (int parent : parents.get(current)) {
+                available.get(current).addAll(available.get(parent));
+                if (nodes.get(parent).probe instanceof TypedNode)
+                    available.get(current).addAll(((TypedNode)nodes.get(parent).probe).outputs());
+                else
+                    hasLegacyAncestor[current] = true;
+                hasLegacyAncestor[current] |= hasLegacyAncestor[parent];
+            }
+            if (nodes.get(current).probe instanceof TypedNode && !hasLegacyAncestor[current]) {
+                Set<DataKey<?>> missing = new HashSet<>(((TypedNode)nodes.get(current).probe).requiredInputs());
+                missing.removeAll(available.get(current));
+                if (!missing.isEmpty())
+                    throw new IllegalArgumentException(
+                        "typed node " + nodes.get(current).config.getName() + " has missing inputs: " + missing);
+            }
+            for (int[] edge : edges)
+                if (edge[0] == current && --remaining[edge[1]] == 0)
+                    queue.add(edge[1]);
+        }
     }
 
     private static void validateAcyclic(int[][] children, int[] indegree, int[] roots) {
@@ -162,8 +219,10 @@ public final class GraphPlan {
 
     Node newNode(int index) {
         try {
-            NodeFactory factory = factories.get(index);
-            Node node = factory.constructor.newInstance(factory.config);
+            CompiledNode factory = factories.get(index);
+            Node node = factory.factory.create(factory.config);
+            if (node == null)
+                throw new IllegalStateException("node factory returned null: " + factory.config.getName());
             node.setConfig(factory.config);
             return node;
         } catch (Exception error) {
@@ -171,13 +230,15 @@ public final class GraphPlan {
         }
     }
 
-    private static final class NodeFactory {
+    private static final class CompiledNode {
         private final NodeConfig config;
-        private final Constructor<? extends Node> constructor;
+        private final NodeFactory factory;
+        private final Node probe;
 
-        private NodeFactory(NodeConfig config, Constructor<? extends Node> constructor) {
+        private CompiledNode(NodeConfig config, NodeFactory factory, Node probe) {
             this.config = config;
-            this.constructor = constructor;
+            this.factory = factory;
+            this.probe = probe;
         }
     }
 }

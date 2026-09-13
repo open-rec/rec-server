@@ -9,7 +9,10 @@ through a request-scoped context. Recommendation-specific nodes live in `rec-ser
 Compile reusable graph metadata once, then create one engine per request:
 
 ```java
-GraphPlan plan = GraphPlan.compile(graphConfig);
+NodeRegistry registry = NodeRegistry.builder()
+    .register(new SimpleNodeFactory("recall", RecallNode::new))
+    .build();
+GraphPlan plan = GraphPlan.compile(graphConfig, registry);
 
 GraphEngine engine = GraphEngine.getSessionGraphEngine();
 engine.prepare(requestObject);       // declared fields become graph parameters
@@ -30,7 +33,7 @@ shared by all engine instances.
   "nodes": [
     {
       "name": "hot",
-      "clazz": "com.openrec.graph.node.item.HotNode",
+      "type": "item.hot",
       "configClazz": "com.openrec.graph.config.HotConfig",
       "open": true,
       "timeout": 100,
@@ -46,14 +49,15 @@ shared by all engine instances.
 | Field | Purpose |
 |---|---|
 | `name` | Unique node ID used by edges and the context config map |
-| `clazz` | Node implementation class |
+| `type` | Stable node type registered by the application |
+| `clazz` | Deprecated implementation-class alias for existing graphs |
 | `configClazz` | Type used to deserialize `content`; may be `null` |
 | `open` | Node-level feature switch interpreted by the node |
 | `timeout` | Execution timeout in milliseconds |
 | `content` | Node-specific configuration |
 
-`GraphPlan.compile(...)` validates node classes and edges, resolves each node's
-`NodeConfig` constructor, and precomputes dependency metadata. Invalid classes and edge references
+`GraphPlan.compile(...)` validates registered node types and edges, resolves each node's
+factory, and precomputes dependency metadata. Unknown types and invalid edge references
 fail before request execution. In an acyclic definition, nodes with no incoming edges are roots.
 Applications accepting runtime graph updates should also validate cycles, as `rec-server` does.
 
@@ -85,11 +89,18 @@ public class HotNode extends AbstractSyncNode<HotConfig> {
 }
 ```
 
-Nodes are instantiated reflectively, so each implementation needs a constructor accepting one
-`NodeConfig`. They are not Spring beans; server nodes obtain application services through the
-server's `BeanUtil` bridge.
+Nodes are created by their registered factory. In `rec-server`, the registry uses explicit
+constructors and Spring autowiring, so node dependencies use normal `@Autowired` injection. Legacy
+graphs containing `clazz` remain supported through registered class-name aliases.
 
 ### Data exchange
+
+New nodes should implement `TypedNode`, declare `DataKey<T>` inputs and outputs, and return an
+immutable `NodeOutput`. The engine gives each invocation an immutable `NodeInput` snapshot and
+commits the complete output only after the node reaches `SUCCESS`. `GraphPlan.compile(...)` rejects
+missing inputs and duplicate typed outputs when the path is fully typed.
+
+The annotation API remains as a migration adapter for existing nodes:
 
 Before a node runs, fields annotated with `@Import("key")` are populated from `GraphContext`.
 After it finishes, `@Export("key")` fields are published. The key is the contract, so producers and

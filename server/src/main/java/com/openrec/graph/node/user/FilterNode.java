@@ -15,14 +15,15 @@ import com.openrec.graph.node.AbstractSyncNode;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.redis.RedisService;
-import com.openrec.util.BeanUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.openrec.util.TimeUtil;
 
 /** Filters users already exposed by a user-recommendation scene. */
 public class FilterNode extends AbstractSyncNode<FilterConfig> {
     @Export("filterUserSet")
     private Set<String> filterUserSet = Sets.newHashSet();
-    private RedisService redisService = BeanUtil.getBean(RedisService.class);
+    @Autowired
+    private RedisService redisService;
 
     public FilterNode(NodeConfig nodeConfig) {
         super(nodeConfig);

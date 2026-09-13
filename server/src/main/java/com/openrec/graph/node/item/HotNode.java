@@ -14,13 +14,14 @@ import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.recall.RecallStore;
-import com.openrec.util.BeanUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class HotNode extends AbstractRecallNode<HotConfig> {
-    private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
+    @Autowired
+    private RecallStore recallStore;
     @Export("hotItems")
     private List<ScoreResult> hotItems;
 

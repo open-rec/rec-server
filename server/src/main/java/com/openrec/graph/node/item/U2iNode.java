@@ -15,7 +15,7 @@ import com.openrec.graph.config.U2iConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.recall.RecallStore;
-import com.openrec.util.BeanUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,7 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class U2iNode extends AbstractRecallNode<U2iConfig> {
 
-    private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
+    @Autowired
+    private RecallStore recallStore;
 
     @Export("u2iItems")
     private List<ScoreResult> u2iItems;

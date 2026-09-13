@@ -93,7 +93,7 @@ public class ServingGraphService {
     }
 
     private void validate(GraphConfig graph) {
-        GraphPlan.compile(graph);
+        abExperimentService.validate(graph);
     }
 
     private static String sha256(String value) {

@@ -11,11 +11,12 @@ import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.config.U2uConfig;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.recall.RecallStore;
-import com.openrec.util.BeanUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /** Reads one behaviour- or profile-based user similarity channel. */
 public class U2uNode extends AbstractRecallNode<U2uConfig> {
-    private RecallStore recallStore = BeanUtil.getBean(RecallStore.class);
+    @Autowired
+    private RecallStore recallStore;
 
     public U2uNode(NodeConfig nodeConfig) {
         super(nodeConfig);

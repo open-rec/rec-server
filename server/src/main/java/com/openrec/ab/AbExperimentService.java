@@ -35,15 +35,20 @@ public class AbExperimentService {
     @Autowired
     public AbExperimentService(RecService recService) {
         this.recService = recService;
-        experiments.put(DEFAULT_EXPERIMENT, new Experiment(recService.getGraphConfig(),
-            GraphPlan.compile(recService.getGraphConfig()), "classpath-default", null, Instant.now().toString(), true));
+        experiments.put(DEFAULT_EXPERIMENT,
+            new Experiment(recService.getGraphConfig(), recService.compileGraph(recService.getGraphConfig()),
+                "classpath-default", null, Instant.now().toString(), true));
         GraphConfig userGraph = recService.getGraphConfig(RecommendReq.TARGET_USER);
-        userExperiments.put(DEFAULT_EXPERIMENT, new Experiment(userGraph, GraphPlan.compile(userGraph),
+        userExperiments.put(DEFAULT_EXPERIMENT, new Experiment(userGraph, recService.compileGraph(userGraph),
             "classpath-default", null, Instant.now().toString(), true));
     }
 
     public <T> RecommendRes<T> execute(RecommendReq request) {
         return recService.execute(request, select(request).plan);
+    }
+
+    public void validate(GraphConfig graph) {
+        recService.compileGraph(graph);
     }
 
     public String resolve(RecommendReq request) {
@@ -73,7 +78,7 @@ public class AbExperimentService {
 
     public void activate(String targetType, String experiment, GraphConfig graph, String version, String checksum) {
         String name = normalize(experiment);
-        GraphPlan plan = GraphPlan.compile(graph);
+        GraphPlan plan = recService.compileGraph(graph);
         ConcurrentMap<String, Experiment> values = experiments(targetType);
         Experiment previous = values.get(name);
         boolean enabled = DEFAULT_EXPERIMENT.equals(name) || previous != null && previous.enabled;

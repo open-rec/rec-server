@@ -13,6 +13,8 @@ import com.openrec.graph.GraphConfig;
 import com.openrec.graph.GraphEngine;
 import com.openrec.graph.GraphPlan;
 import com.openrec.graph.RecTemplate;
+import com.openrec.graph.node.NodeRegistry;
+import com.openrec.graph.node.ReflectiveNodeFactory;
 import com.openrec.proto.biz.recommend.RecommendReq;
 import com.openrec.proto.biz.recommend.RecommendRes;
 import com.openrec.proto.model.ScoreResult;
@@ -25,6 +27,7 @@ public class RecService {
     private final AtomicReference<GraphConfig> userGraphConfig;
     private final AtomicReference<GraphPlan> itemGraphPlan;
     private final AtomicReference<GraphPlan> userGraphPlan;
+    private final NodeRegistry nodeRegistry;
 
     @Autowired
     private RedisService redisService;
@@ -33,16 +36,18 @@ public class RecService {
     private long recommendDeadlineMillis = 1000L;
 
     public RecService() {
-        this("item_graph.json", "user_graph.json");
+        this("item_graph.json", "user_graph.json",
+            NodeRegistry.builder().fallback(new ReflectiveNodeFactory()).build());
     }
 
     @Autowired
     public RecService(@Value("${serving.graph.item-file:item_graph.json}") String itemGraphFile,
-        @Value("${serving.graph.user-file:user_graph.json}") String userGraphFile) {
+        @Value("${serving.graph.user-file:user_graph.json}") String userGraphFile, NodeRegistry nodeRegistry) {
+        this.nodeRegistry = nodeRegistry;
         this.itemGraphConfig = new AtomicReference<>(RecTemplate.toGraphConfig(itemGraphFile));
         this.userGraphConfig = new AtomicReference<>(RecTemplate.toGraphConfig(userGraphFile));
-        this.itemGraphPlan = new AtomicReference<>(GraphPlan.compile(itemGraphConfig.get()));
-        this.userGraphPlan = new AtomicReference<>(GraphPlan.compile(userGraphConfig.get()));
+        this.itemGraphPlan = new AtomicReference<>(compileGraph(itemGraphConfig.get()));
+        this.userGraphPlan = new AtomicReference<>(compileGraph(userGraphConfig.get()));
     }
 
     @TimeCost
@@ -70,7 +75,7 @@ public class RecService {
     }
 
     public void replaceGraphConfig(String targetType, GraphConfig newGraphConfig) {
-        GraphPlan newGraphPlan = GraphPlan.compile(newGraphConfig);
+        GraphPlan newGraphPlan = compileGraph(newGraphConfig);
         if (RecommendReq.TARGET_USER.equals(targetType)) {
             userGraphConfig.set(newGraphConfig);
             userGraphPlan.set(newGraphPlan);
@@ -78,6 +83,10 @@ public class RecService {
             itemGraphConfig.set(newGraphConfig);
             itemGraphPlan.set(newGraphPlan);
         }
+    }
+
+    public GraphPlan compileGraph(GraphConfig graphConfig) {
+        return GraphPlan.compile(graphConfig, nodeRegistry);
     }
 
     public GraphConfig getGraphConfig(String targetType) {

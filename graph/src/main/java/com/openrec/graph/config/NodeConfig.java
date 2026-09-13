@@ -7,6 +7,7 @@ import com.openrec.graph.node.FailurePolicy;
 public class NodeConfig<T> {
 
     protected String name;
+    protected String type;
     protected boolean open;
     protected int timeout;
     protected String clazz;

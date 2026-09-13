@@ -3,9 +3,15 @@ package com.openrec.graph;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Set;
 
 import com.google.common.collect.Maps;
 import com.openrec.graph.config.NodeConfig;
+import com.openrec.graph.data.DataKey;
+import com.openrec.graph.data.NodeInput;
+import com.openrec.graph.data.NodeOutput;
 import com.openrec.graph.node.Node;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
@@ -18,6 +24,7 @@ public class GraphContext {
     private GraphParams params;
     private Map<String, NodeConfig> configMap;
     private Map<String, Object> dataMap;
+    private Map<DataKey<?>, Object> typedDataMap;
     private Object result;
     private GraphContext parent;
 
@@ -25,12 +32,14 @@ public class GraphContext {
         this.params = new GraphParams();
         this.configMap = Maps.newHashMap();
         this.dataMap = Maps.newConcurrentMap();
+        this.typedDataMap = Maps.newConcurrentMap();
     }
 
     private GraphContext(GraphContext parent) {
         this.params = parent.params;
         this.configMap = parent.configMap;
         this.dataMap = Maps.newHashMap();
+        this.typedDataMap = Maps.newHashMap();
         this.parent = parent;
     }
 
@@ -123,9 +132,31 @@ public class GraphContext {
             result = execution.result;
     }
 
+    public synchronized NodeInput snapshot(Set<DataKey<?>> keys) {
+        Map<DataKey<?>, Object> values = new LinkedHashMap<>();
+        for (DataKey<?> key : keys) {
+            Object value = typedDataMap.get(key);
+            if (value != null)
+                values.put(key, value);
+        }
+        return new NodeInput(Collections.unmodifiableMap(values));
+    }
+
+    public synchronized void commit(NodeOutput output) {
+        typedDataMap.putAll(output.values());
+        if (output.hasResult())
+            result = output.result();
+    }
+
+    public <T> T getData(DataKey<T> key) {
+        Object value = typedDataMap.get(key);
+        return value == null ? null : key.getType().cast(value);
+    }
+
     public void clean() {
         params.clear();
         configMap.clear();
         dataMap.clear();
+        typedDataMap.clear();
     }
 }
