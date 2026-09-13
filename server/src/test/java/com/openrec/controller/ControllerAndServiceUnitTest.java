@@ -104,14 +104,14 @@ public class ControllerAndServiceUnitTest {
         RecommendReq req = new RecommendReq();
         RecommendRes<Item> res = new RecommendRes<>();
         when(experiments.resolve(req)).thenReturn("default");
-        doReturn(res).when(experiments).execute(req);
+        doReturn(res).when(experiments).execute(eq(req), anyString());
         assertSame(res, recommendController.recommend(new JsonReq<>(req)).block().getData());
         assertEquals(RecommendReq.TARGET_ITEM, req.getTargetType());
         assertSame(res, recommendController.recommendItem(new JsonReq<>(req)).block().getData());
 
         RecommendReq userReq = new RecommendReq();
         RecommendRes<User> userRes = new RecommendRes<>();
-        doReturn(userRes).when(experiments).execute(userReq);
+        doReturn(userRes).when(experiments).execute(eq(userReq), anyString());
         com.openrec.proto.JsonRes<RecommendRes<User>> userResponse =
             recommendController.recommendUser(new JsonReq<>(userReq)).block();
         assertEquals(com.openrec.proto.ProtoCode.SUCCESS, userResponse.getCode());

@@ -24,6 +24,10 @@ import com.openrec.graph.node.NodeStatus;
 import com.openrec.graph.node.TypedNode;
 import com.openrec.graph.data.NodeInput;
 import com.openrec.graph.data.NodeOutput;
+import com.openrec.graph.trace.GraphExecutionTrace;
+import com.openrec.graph.trace.GraphTraceContext;
+import com.openrec.graph.trace.GraphTraceObserver;
+import com.openrec.graph.trace.NodeExecutionTrace;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,12 +48,22 @@ public class GraphEngine {
 
     private final GraphContext context = new GraphContext();
     private final Map<String, NodeStatus> nodeStatuses = new LinkedHashMap<>();
+    private final GraphTraceContext traceContext;
+    private final GraphTraceObserver traceObserver;
+    private GraphExecutionTrace trace;
     private GraphPlan preparedPlan;
 
-    private GraphEngine() {}
+    private GraphEngine(GraphTraceContext traceContext, GraphTraceObserver traceObserver) {
+        this.traceContext = traceContext;
+        this.traceObserver = traceObserver == null ? GraphTraceObserver.NOOP : traceObserver;
+    }
 
     public static GraphEngine getSessionGraphEngine() {
-        return new GraphEngine();
+        return new GraphEngine(GraphTraceContext.create(null, null, null, null, null), GraphTraceObserver.NOOP);
+    }
+
+    public static GraphEngine getSessionGraphEngine(GraphTraceContext context, GraphTraceObserver observer) {
+        return new GraphEngine(context, observer);
     }
 
     public void prepare(Object paramsObj) {
@@ -94,6 +108,7 @@ public class GraphEngine {
 
     /** Executes a precompiled plan within a request-wide deadline. */
     public void execGraph(GraphPlan plan, long deadlineMillis) {
+        long graphStartedNanos = System.nanoTime();
         long deadlineNanos = deadlineMillis == Long.MAX_VALUE ? Long.MAX_VALUE
             : System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(Math.max(0L, deadlineMillis));
         Node[] nodes = new Node[plan.size()];
@@ -105,57 +120,72 @@ public class GraphEngine {
             executions[index] = new NodeExecution(nodes[index]);
         }
 
-        int[] dependencies = plan.newDependencyCounts();
-        boolean[] blocked = new boolean[plan.size()];
-        List<Integer> ready = indexes(plan.getRoots());
-        while (!ready.isEmpty()) {
-            if (remainingMillis(deadlineNanos) <= 0L) {
-                cancelUnfinished(executions);
-                break;
-            }
-
-            CountDownLatch latch = new CountDownLatch(countRunnable(ready, blocked));
-            for (int index : ready) {
-                NodeExecution execution = executions[index];
-                if (blocked[index]) {
-                    execution.skip();
-                    continue;
-                }
-                execution.bind(latch);
-                submit(execution, Math.min(nodes[index].getTimeout(), remainingMillis(deadlineNanos)));
-            }
-            await(latch, executions);
-
-            List<Integer> next = new ArrayList<>();
-            for (int index : ready) {
-                NodeExecution execution = executions[index];
-                nodeStatuses.put(execution.node.getName(), execution.status());
-                FailurePolicy policy = policy(execution.node.getConfig());
-                if (!execution.succeeded() && policy == FailurePolicy.FAIL_GRAPH) {
+        try {
+            int[] dependencies = plan.newDependencyCounts();
+            boolean[] blocked = new boolean[plan.size()];
+            List<Integer> ready = indexes(plan.getRoots());
+            while (!ready.isEmpty()) {
+                if (remainingMillis(deadlineNanos) <= 0L) {
                     cancelUnfinished(executions);
-                    throw new GraphExecutionException(execution.node.getName(), execution.status(), execution.error());
+                    break;
                 }
-                boolean blocksChildren =
-                    blocked[index] || !execution.succeeded() && policy == FailurePolicy.SKIP_DESCENDANTS;
-                for (int child : plan.getChildren(index)) {
-                    blocked[child] |= blocksChildren;
-                    if (--dependencies[child] == 0)
-                        next.add(child);
+
+                CountDownLatch latch = new CountDownLatch(countRunnable(ready, blocked));
+                for (int index : ready) {
+                    NodeExecution execution = executions[index];
+                    execution.queued();
+                    if (blocked[index]) {
+                        execution.skip();
+                        continue;
+                    }
+                    execution.bind(latch);
+                    long remaining = remainingMillis(deadlineNanos);
+                    submit(execution, Math.min(nodes[index].getTimeout(), remaining),
+                        remaining <= nodes[index].getTimeout());
                 }
+                await(latch, executions);
+
+                List<Integer> next = new ArrayList<>();
+                for (int index : ready) {
+                    NodeExecution execution = executions[index];
+                    nodeStatuses.put(execution.node.getName(), execution.status());
+                    FailurePolicy policy = policy(execution.node.getConfig());
+                    if (!execution.succeeded() && policy == FailurePolicy.FAIL_GRAPH) {
+                        cancelUnfinished(executions);
+                        throw new GraphExecutionException(execution.node.getName(), execution.status(),
+                            execution.error());
+                    }
+                    boolean blocksChildren =
+                        blocked[index] || !execution.succeeded() && policy == FailurePolicy.SKIP_DESCENDANTS;
+                    for (int child : plan.getChildren(index)) {
+                        blocked[child] |= blocksChildren;
+                        if (--dependencies[child] == 0)
+                            next.add(child);
+                    }
+                }
+                ready = next;
             }
-            ready = next;
+        } finally {
+            for (NodeExecution execution : executions)
+                nodeStatuses.put(execution.node.getName(), execution.status());
+            trace = buildTrace(executions, graphStartedNanos);
+            try {
+                traceObserver.onComplete(trace);
+            } catch (RuntimeException observerError) {
+                log.warn("graph trace observer failed", observerError);
+            }
         }
-        for (NodeExecution execution : executions)
-            nodeStatuses.put(execution.node.getName(), execution.status());
     }
 
-    private void submit(NodeExecution execution, long timeoutMillis) {
+    private void submit(NodeExecution execution, long timeoutMillis, boolean requestDeadline) {
         if (timeoutMillis <= 0L) {
             execution.timeout();
             return;
         }
         try {
+            execution.setRequestDeadline(requestDeadline);
             Future<?> future = threadPool.submit(() -> {
+                execution.started();
                 long start = System.currentTimeMillis();
                 try {
                     if (execution.node instanceof TypedNode) {
@@ -164,13 +194,14 @@ public class GraphEngine {
                         NodeOutput output = typed.execute(input);
                         if (output == null)
                             throw new IllegalStateException("typed node returned null output");
-                        execution.succeed(() -> context.commit(output));
+                        execution.succeed(() -> context.commit(output), input.size(), valueCount(output.values()));
                     } else {
                         GraphContext localContext = context.forkExecution();
-                        localContext.importNodeData(execution.node);
+                        int inputCount = localContext.importNodeData(execution.node);
                         execution.node.run(localContext);
                         Map<String, Object> output = localContext.extractNodeData(execution.node);
-                        execution.succeed(() -> context.commitExecution(localContext, output));
+                        execution.succeed(() -> context.commitExecution(localContext, output), inputCount,
+                            valueCount(output));
                     }
                 } catch (Throwable error) {
                     log.error("node:{} exec with exception:{}", execution.node.getName(),
@@ -241,6 +272,34 @@ public class GraphEngine {
         return context.getData(key);
     }
 
+    public GraphExecutionTrace getTrace() {
+        return trace;
+    }
+
+    private GraphExecutionTrace buildTrace(NodeExecution[] executions, long graphStartedNanos) {
+        List<NodeExecutionTrace> nodes = new ArrayList<>(executions.length);
+        boolean deadlineExceeded = false;
+        for (NodeExecution execution : executions) {
+            nodes.add(execution.trace());
+            deadlineExceeded |= execution.deadlineExceeded();
+        }
+        return new GraphExecutionTrace(traceContext,
+            TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - graphStartedNanos), deadlineExceeded, nodes);
+    }
+
+    private static int valueCount(Map<?, ?> values) {
+        int count = 0;
+        for (Object value : values.values()) {
+            if (value instanceof java.util.Collection)
+                count += ((java.util.Collection<?>)value).size();
+            else if (value instanceof Map)
+                count += ((Map<?, ?>)value).size();
+            else if (value != null)
+                count++;
+        }
+        return count;
+    }
+
     public <T> T getResult() {
         return (T)context.getResult();
     }
@@ -261,9 +320,23 @@ public class GraphEngine {
         private Throwable error;
         private Future<?> future;
         private CountDownLatch latch;
+        private long queuedNanos;
+        private long startedNanos;
+        private long finishedNanos;
+        private int inputCount;
+        private int outputCount;
+        private boolean requestDeadline;
 
         private NodeExecution(Node node) {
             this.node = node;
+        }
+
+        private synchronized void queued() {
+            queuedNanos = System.nanoTime();
+        }
+
+        private synchronized void started() {
+            startedNanos = System.nanoTime();
         }
 
         private synchronized void bind(CountDownLatch value) {
@@ -278,10 +351,16 @@ public class GraphEngine {
                 future.cancel(true);
         }
 
-        private synchronized void succeed(Runnable commit) {
+        private synchronized void setRequestDeadline(boolean value) {
+            requestDeadline = value;
+        }
+
+        private synchronized void succeed(Runnable commit, int inputs, int outputs) {
             if (terminal())
                 return;
             commit.run();
+            inputCount = inputs;
+            outputCount = outputs;
             complete(NodeStatus.SUCCESS, null);
         }
 
@@ -316,6 +395,7 @@ public class GraphEngine {
         private void complete(NodeStatus value, Throwable cause) {
             status = value;
             error = cause;
+            finishedNanos = System.nanoTime();
             node.complete(value);
             if (latch != null)
                 latch.countDown();
@@ -335,6 +415,23 @@ public class GraphEngine {
 
         private synchronized Throwable error() {
             return error;
+        }
+
+        private synchronized boolean deadlineExceeded() {
+            return requestDeadline && (status == NodeStatus.TIMED_OUT || status == NodeStatus.CANCELLED);
+        }
+
+        private synchronized NodeExecutionTrace trace() {
+            long effectiveStart = startedNanos == 0L ? finishedNanos : startedNanos;
+            long effectiveQueued = queuedNanos == 0L ? effectiveStart : queuedNanos;
+            long effectiveFinish = finishedNanos == 0L ? System.nanoTime() : finishedNanos;
+            String type = node.getConfig().getType();
+            if (type == null || type.trim().isEmpty())
+                type = node.getConfig().getClazz();
+            return new NodeExecutionTrace(node.getName(), type, status,
+                TimeUnit.NANOSECONDS.toMillis(Math.max(0L, effectiveStart - effectiveQueued)),
+                TimeUnit.NANOSECONDS.toMillis(Math.max(0L, effectiveFinish - effectiveStart)), inputCount, outputCount,
+                error == null ? null : error.getClass().getSimpleName());
         }
     }
 }

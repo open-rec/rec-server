@@ -182,7 +182,7 @@ store is primarily a local/debug compatibility path and does not provide atomic 
 versioned recall indexes.
 
 `rec-console` may publish complete item and user serving graphs through protected internal APIs.
-The server validates node construction, edge references, and cycles, then atomically switches new
+The server validates registered node creation, typed contracts, edge references, and cycles, then atomically switches new
 requests of the corresponding target type to the compiled plan. In-flight requests continue with
 their existing snapshot.
 
@@ -209,6 +209,12 @@ Common properties:
 | `rank.host` / `rank.port` | `127.0.0.1` / `8123` |
 | `serving.graph.item-file` | `item_graph.json` |
 | `serving.graph.user-file` | `user_graph.json` |
+| `recommend.deadline-ms` | `1000` |
+
+Recommendation graph executions emit a structured `graph_trace` log containing request/experiment/
+graph-version metadata and per-node status, queue time, execution time, input/output counts, and
+failure class. Aggregate graph and node latency/outcome/volume metrics are available from
+`/actuator/prometheus` under the `openrec_graph_*` prefix.
 
 `collector.fake-expose.enabled` is enabled by default in standalone mode, treating returned items
 as exposed. It is disabled in cluster mode, where clients report `expose` events after display.

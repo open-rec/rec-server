@@ -76,7 +76,8 @@ public class GraphContext {
         dataMap.putAll(exported);
     }
 
-    public void importNodeData(Node node) {
+    public int importNodeData(Node node) {
+        int imported = 0;
         for (Field field : node.getClass().getDeclaredFields()) {
             if (field.isAnnotationPresent(Import.class)) {
                 Import export = field.getAnnotation(Import.class);
@@ -85,11 +86,18 @@ public class GraphContext {
                 try {
                     field.setAccessible(true);
                     field.set(node, data);
+                    if (data instanceof java.util.Collection)
+                        imported += ((java.util.Collection<?>)data).size();
+                    else if (data instanceof Map)
+                        imported += ((Map<?, ?>)data).size();
+                    else if (data != null)
+                        imported++;
                 } catch (Exception e) {
                     log.error("node: {} import field: {} failed", node.getName(), field.getName());
                 }
             }
         }
+        return imported;
     }
 
     public void addData(String key, Object data) {

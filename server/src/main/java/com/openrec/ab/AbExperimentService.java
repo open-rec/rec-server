@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import com.openrec.graph.GraphConfig;
 import com.openrec.graph.GraphPlan;
+import com.openrec.graph.trace.GraphTraceContext;
 import com.openrec.proto.biz.recommend.RecommendReq;
 import com.openrec.proto.biz.recommend.RecommendRes;
 import com.openrec.service.rec.RecService;
@@ -44,7 +45,17 @@ public class AbExperimentService {
     }
 
     public <T> RecommendRes<T> execute(RecommendReq request) {
-        return recService.execute(request, select(request).plan);
+        return execute(request, null);
+    }
+
+    public <T> RecommendRes<T> execute(RecommendReq request, String requestId) {
+        String experimentName = resolve(request);
+        String targetType = request == null ? RecommendReq.TARGET_ITEM : request.getTargetType();
+        String scene = request == null ? null : request.getScene();
+        Experiment experiment = required(experiments(targetType), experimentName);
+        GraphTraceContext trace =
+            GraphTraceContext.create(requestId, targetType, scene, experimentName, experiment.version);
+        return recService.execute(request, experiment.plan, trace);
     }
 
     public void validate(GraphConfig graph) {

@@ -23,4 +23,8 @@ public final class NodeInput {
         Object value = values.get(key);
         return value == null ? null : key.getType().cast(value);
     }
+
+    public int size() {
+        return values.size();
+    }
 }

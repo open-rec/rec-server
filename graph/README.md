@@ -23,8 +23,8 @@ List<MyResult> result = engine.getResult();
 `GraphEngine` is stateful and must not be shared between requests. `GraphPlan` is immutable and may
 be reused. The older `buildGraph(...)` followed by `execGraph()` API remains available.
 
-Do not call `destroy()` during normal request handling: it shuts down the static executor pools
-shared by all engine instances.
+`destroy()` clears only request-scoped state. Worker and timeout executors are bounded, daemonized,
+and shared by all engine instances.
 
 ## Graph definition
 
@@ -59,7 +59,8 @@ shared by all engine instances.
 `GraphPlan.compile(...)` validates registered node types and edges, resolves each node's
 factory, and precomputes dependency metadata. Unknown types and invalid edge references
 fail before request execution. In an acyclic definition, nodes with no incoming edges are roots.
-Applications accepting runtime graph updates should also validate cycles, as `rec-server` does.
+Cycle, duplicate-node, duplicate-edge, endpoint, timeout, node-factory, and typed data-contract
+validation all happen in `GraphPlan.compile(...)`.
 
 ## Write a node
 
@@ -129,9 +130,26 @@ The terminal node calls `context.setResult(value)`; the caller retrieves it with
 ## Execution and timeout behavior
 
 The runtime executes one dependency level at a time. All ready nodes in a level run concurrently,
-then the next level starts after the batch completes. A timeout interrupts the node task and graph
-execution continues, so nodes should tolerate interruption and publish safe empty output when they
-cannot complete.
+then the next level starts after the batch completes. Every node has a timeout and the whole request
+may have an earlier deadline. A timed-out or cancelled invocation is interrupted and its late output
+is never committed. `failurePolicy` controls whether failure continues, skips descendants, or fails
+the graph.
+
+## Execution trace
+
+Callers may supply a `GraphTraceContext` and `GraphTraceObserver` when creating an engine. The
+observer receives one immutable `GraphExecutionTrace` when execution finishes, including request,
+target, scene, experiment and graph-version metadata. Every node entry contains its name, type,
+terminal status, queue and execution durations, input/output counts, and a sanitized failure class.
+
+```java
+GraphEngine engine = GraphEngine.getSessionGraphEngine(traceContext, observer);
+engine.execGraph(plan, 1000L);
+GraphExecutionTrace trace = engine.getTrace();
+```
+
+Trace context is passed explicitly instead of relying on thread-local state, so it remains correct
+when WebFlux dispatches work to the blocking and graph worker pools.
 
 ## Test
 

@@ -15,6 +15,8 @@ import com.openrec.graph.GraphPlan;
 import com.openrec.graph.RecTemplate;
 import com.openrec.graph.node.NodeRegistry;
 import com.openrec.graph.node.ReflectiveNodeFactory;
+import com.openrec.graph.trace.GraphTraceContext;
+import com.openrec.graph.trace.GraphTraceObserver;
 import com.openrec.proto.biz.recommend.RecommendReq;
 import com.openrec.proto.biz.recommend.RecommendRes;
 import com.openrec.proto.model.ScoreResult;
@@ -28,6 +30,7 @@ public class RecService {
     private final AtomicReference<GraphPlan> itemGraphPlan;
     private final AtomicReference<GraphPlan> userGraphPlan;
     private final NodeRegistry nodeRegistry;
+    private final GraphTraceObserver graphTraceObserver;
 
     @Autowired
     private RedisService redisService;
@@ -36,14 +39,21 @@ public class RecService {
     private long recommendDeadlineMillis = 1000L;
 
     public RecService() {
-        this("item_graph.json", "user_graph.json",
-            NodeRegistry.builder().fallback(new ReflectiveNodeFactory()).build());
+        this("item_graph.json", "user_graph.json", NodeRegistry.builder().fallback(new ReflectiveNodeFactory()).build(),
+            GraphTraceObserver.NOOP);
+    }
+
+    public RecService(@Value("${serving.graph.item-file:item_graph.json}") String itemGraphFile,
+        @Value("${serving.graph.user-file:user_graph.json}") String userGraphFile, NodeRegistry nodeRegistry) {
+        this(itemGraphFile, userGraphFile, nodeRegistry, GraphTraceObserver.NOOP);
     }
 
     @Autowired
     public RecService(@Value("${serving.graph.item-file:item_graph.json}") String itemGraphFile,
-        @Value("${serving.graph.user-file:user_graph.json}") String userGraphFile, NodeRegistry nodeRegistry) {
+        @Value("${serving.graph.user-file:user_graph.json}") String userGraphFile, NodeRegistry nodeRegistry,
+        GraphTraceObserver graphTraceObserver) {
         this.nodeRegistry = nodeRegistry;
+        this.graphTraceObserver = graphTraceObserver;
         this.itemGraphConfig = new AtomicReference<>(RecTemplate.toGraphConfig(itemGraphFile));
         this.userGraphConfig = new AtomicReference<>(RecTemplate.toGraphConfig(userGraphFile));
         this.itemGraphPlan = new AtomicReference<>(compileGraph(itemGraphConfig.get()));
@@ -57,8 +67,14 @@ public class RecService {
     }
 
     public RecommendRes execute(RecommendReq recommendReq, GraphPlan selectedGraphPlan) {
+        return execute(recommendReq, selectedGraphPlan, GraphTraceContext.create(null, recommendReq.getTargetType(),
+            recommendReq.getScene(), "default", "unknown"));
+    }
+
+    public RecommendRes execute(RecommendReq recommendReq, GraphPlan selectedGraphPlan,
+        GraphTraceContext traceContext) {
         RecommendRes recommendRes = new RecommendRes();
-        GraphEngine graphEngine = GraphEngine.getSessionGraphEngine();
+        GraphEngine graphEngine = GraphEngine.getSessionGraphEngine(traceContext, graphTraceObserver);
         graphEngine.prepare(recommendReq);
         if (recommendReq != null && recommendReq.getParams() != null) {
             recommendReq.getParams().forEach(graphEngine::addParam);

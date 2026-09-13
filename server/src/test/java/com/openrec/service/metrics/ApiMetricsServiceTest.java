@@ -12,6 +12,11 @@ import com.openrec.proto.model.Item;
 import com.openrec.proto.model.ScoreResult;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import com.openrec.graph.node.NodeStatus;
+import com.openrec.graph.trace.GraphExecutionTrace;
+import com.openrec.graph.trace.GraphTraceContext;
+import com.openrec.graph.trace.NodeExecutionTrace;
+import java.util.Collections;
 
 public class ApiMetricsServiceTest {
 
@@ -68,5 +73,19 @@ public class ApiMetricsServiceTest {
         Assert.assertEquals(0.0,
             registry.get("openrec_recommend_result_items").tag("ab", "default").summary().totalAmount(), 0);
         Assert.assertEquals(1L, registry.get("openrec_recommend_result_items").tag("ab", "default").summary().count());
+    }
+
+    @Test
+    public void recordsGraphAndNodeTraceMetrics() {
+        GraphTraceService graphMetrics = new GraphTraceService(registry);
+        NodeExecutionTrace node = new NodeExecutionTrace("rank", "item.rank", NodeStatus.SUCCESS, 2L, 7L, 10, 5, null);
+        graphMetrics
+            .onComplete(new GraphExecutionTrace(GraphTraceContext.create("request-1", "item", "home", "test1", "v1"),
+                12L, false, Collections.singletonList(node)));
+
+        Assert.assertEquals(1.0, registry.get("openrec_graph_executions").tag("target", "item").counter().count(), 0);
+        Assert.assertEquals(1L, registry.get("openrec_graph_node_latency").tag("node", "item.rank").timer().count());
+        Assert.assertEquals(5.0,
+            registry.get("openrec_graph_node_output_items").tag("node", "item.rank").summary().totalAmount(), 0);
     }
 }

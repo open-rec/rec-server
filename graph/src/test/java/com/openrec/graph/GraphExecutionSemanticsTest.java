@@ -24,6 +24,7 @@ public class GraphExecutionSemanticsTest {
         engine.execGraph(GraphPlan.compile(graph(node("slow", SlowExportNode.class, FailurePolicy.CONTINUE))), 25L);
 
         assertEquals(NodeStatus.TIMED_OUT, engine.getNodeStatuses().get("slow"));
+        assertTrue(engine.getTrace().isDeadlineExceeded());
         Thread.sleep(150L);
         assertNull(engine.getData("late"));
     }

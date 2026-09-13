@@ -15,7 +15,7 @@ Entry point: `com.openrec.RecServer`. Default port: `13579`.
 | `graph/config` | Typed node configuration deserialized from item/user graph JSON |
 | `graph` | Graph loading, request parameter constants, and event types |
 | `service/recall` | Redis and Elasticsearch recall-store implementations |
-| `service` | Entity, event, rank, Kafka, and runtime serving services |
+| `service` | Entity, event, rank, Kafka, runtime serving, trace, and metrics services |
 | `plugin` | PF4J operation-rule loader |
 | `config` | Spring configuration for storage, messaging, HTTP clients, and WebFlux |
 | `aop` | API logging, MDC correlation, and timing |
@@ -55,8 +55,9 @@ used by the current graph.
 
 ## Runtime conventions
 
-- Nodes are reflectively constructed, not managed by Spring. They access services through
-  `BeanUtil`.
+- Nodes are created through the explicit `NodeRegistry`. The serving registry supports stable
+  logical types and registered legacy class-name aliases, then applies normal Spring dependency
+  injection. There is no `BeanUtil` bridge.
 - `item_graph.json` and `user_graph.json` are the packaged defaults selected by request
   `targetType`. Runtime graph APIs validate and activate versioned graph definitions independently
   without mutating those resource files.
@@ -64,7 +65,29 @@ used by the current graph.
 - The active profile chooses the push path: standalone writes serving state directly, while cluster
   publishes versioned Kafka mutations for downstream processors.
 - `ApiDecorator` logs controller requests, responses, elapsed time, and the request ID in MDC.
+- Recommendation requests explicitly propagate request ID, target, scene, experiment, and graph
+  version into `GraphTraceContext`; this does not depend on MDC surviving thread switches.
 - Operation rules require the PF4J jar described in [`rec-contrib`](../contrib).
+
+## Graph trace and metrics
+
+Each recommendation writes one structured `graph_trace` log. It includes graph metadata and every
+node's status, queue/execution time, input/output count, and sanitized failure type. Raw request
+payloads, feature values, and exception messages are not included.
+
+The Prometheus actuator exposes these graph metrics:
+
+- `openrec_graph_executions`
+- `openrec_graph_latency`
+- `openrec_graph_node_executions`
+- `openrec_graph_node_latency`
+- `openrec_graph_node_queue_latency`
+- `openrec_graph_node_input_items`
+- `openrec_graph_node_output_items`
+
+Metric labels are bounded to target type, experiment, registered node type, status, and deadline
+outcome. Request IDs, scenes, graph versions, and entity IDs are trace fields rather than metric
+labels.
 
 ## Run and inspect
 
