@@ -10,6 +10,7 @@ import com.openrec.proto.model.Item;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.proto.model.User;
 import com.openrec.service.query.QueryService;
+import com.openrec.config.BlockingTaskExecutor;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -23,18 +24,21 @@ public class QueryController {
     @Autowired
     private QueryService queryService;
 
+    @Autowired
+    private BlockingTaskExecutor blockingTaskExecutor;
+
     @ApiOperation("查询用户")
     @RequestMapping(value = {"/user/{userId}"}, method = RequestMethod.GET)
     @ResponseBody
     public Mono<JsonRes<User>> getUser(@PathVariable String userId) {
-        return Mono.just(new JsonRes<>(queryService.queryUser(userId)));
+        return blockingTaskExecutor.submit(() -> new JsonRes<>(queryService.queryUser(userId)));
     }
 
     @ApiOperation("查询物品")
     @RequestMapping(value = {"/item/{itemId}"}, method = RequestMethod.GET)
     @ResponseBody
     public Mono<JsonRes<Item>> getItem(@PathVariable String itemId) {
-        return Mono.just(new JsonRes<>(queryService.queryItem(itemId)));
+        return blockingTaskExecutor.submit(() -> new JsonRes<>(queryService.queryItem(itemId)));
     }
 
     @ApiOperation("查询用户事件列表")
@@ -42,6 +46,6 @@ public class QueryController {
     @ResponseBody
     public Mono<JsonRes<List<ScoreResult>>> getEvents(@PathVariable String userId, @PathVariable String scene,
         @PathVariable String type) {
-        return Mono.just(new JsonRes<>(queryService.queryEvent(userId, scene, type)));
+        return blockingTaskExecutor.submit(() -> new JsonRes<>(queryService.queryEvent(userId, scene, type)));
     }
 }

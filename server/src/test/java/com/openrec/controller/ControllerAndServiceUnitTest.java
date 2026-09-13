@@ -5,6 +5,7 @@ import com.openrec.controller.sys.OperateController;
 import com.openrec.controller.api.PushController;
 import com.openrec.controller.api.QueryController;
 import com.openrec.controller.api.RecommendController;
+import com.openrec.config.BlockingTaskExecutor;
 import com.openrec.proto.JsonReq;
 import com.openrec.proto.biz.push.EventReq;
 import com.openrec.proto.biz.push.ItemReq;
@@ -22,6 +23,7 @@ import com.openrec.service.rank.RankService;
 import com.openrec.service.rec.RecService;
 import com.openrec.service.redis.RedisService;
 import org.junit.Test;
+import org.junit.After;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.web.client.RestTemplate;
@@ -38,6 +40,13 @@ import static org.mockito.Mockito.*;
 import com.openrec.ab.AbExperimentService;
 
 public class ControllerAndServiceUnitTest {
+    private final BlockingTaskExecutor blockingTaskExecutor = new BlockingTaskExecutor(2, 16);
+
+    @After
+    public void shutdownExecutor() {
+        blockingTaskExecutor.shutdown();
+    }
+
     @Test
     public void defaultControllerReturnsReadyResponses() {
         DefaultController controller = new DefaultController();
@@ -51,6 +60,7 @@ public class ControllerAndServiceUnitTest {
         PushController controller = new PushController();
         ReflectionTestUtils.setField(controller, "pushService", push);
         ReflectionTestUtils.setField(controller, "apiMetricsService", new ApiMetricsService(new SimpleMeterRegistry()));
+        ReflectionTestUtils.setField(controller, "blockingTaskExecutor", blockingTaskExecutor);
         UserReq users = new UserReq();
         ItemReq items = new ItemReq();
         EventReq events = new EventReq();
@@ -64,6 +74,7 @@ public class ControllerAndServiceUnitTest {
         OperateService operate = mock(OperateService.class);
         OperateController operateController = new OperateController();
         ReflectionTestUtils.setField(operateController, "operateService", operate);
+        ReflectionTestUtils.setField(operateController, "blockingTaskExecutor", blockingTaskExecutor);
         java.util.Set<String> blacklist = Collections.singleton("i");
         assertTrue(operateController.set(new JsonReq<>(blacklist)).block().isStatus());
         verify(operate).setBlacklist(blacklist);
@@ -74,6 +85,7 @@ public class ControllerAndServiceUnitTest {
         QueryService query = mock(QueryService.class);
         QueryController controller = new QueryController();
         ReflectionTestUtils.setField(controller, "queryService", query);
+        ReflectionTestUtils.setField(controller, "blockingTaskExecutor", blockingTaskExecutor);
         User user = new User();
         Item item = new Item();
         when(query.queryUser("u")).thenReturn(user);
@@ -88,6 +100,7 @@ public class ControllerAndServiceUnitTest {
         ReflectionTestUtils.setField(recommendController, "abExperimentService", experiments);
         ReflectionTestUtils.setField(recommendController, "apiMetricsService",
             new ApiMetricsService(new SimpleMeterRegistry()));
+        ReflectionTestUtils.setField(recommendController, "blockingTaskExecutor", blockingTaskExecutor);
         RecommendReq req = new RecommendReq();
         RecommendRes<Item> res = new RecommendRes<>();
         when(experiments.resolve(req)).thenReturn("default");

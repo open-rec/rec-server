@@ -11,6 +11,7 @@ import com.openrec.proto.biz.push.ItemReq;
 import com.openrec.proto.biz.push.UserReq;
 import com.openrec.service.push.PushService;
 import com.openrec.service.metrics.ApiMetricsService;
+import com.openrec.config.BlockingTaskExecutor;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -30,27 +31,36 @@ public class PushController {
     @Autowired
     private ApiMetricsService apiMetricsService;
 
+    @Autowired
+    private BlockingTaskExecutor blockingTaskExecutor;
+
     @ApiOperation("用户表推送")
     @RequestMapping(value = {"/user"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<String>> pushUser(@RequestBody JsonReq<UserReq> userReq) {
-        apiMetricsService.recordPush("user", userReq.getBody(), () -> pushService.pushUser(userReq.getBody()));
-        return Mono.just(new JsonRes<>());
+        return blockingTaskExecutor.submit(() -> {
+            apiMetricsService.recordPush("user", userReq.getBody(), () -> pushService.pushUser(userReq.getBody()));
+            return new JsonRes<>();
+        });
     }
 
     @ApiOperation("物品表推送")
     @RequestMapping(value = {"/item"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<String>> pushItem(@RequestBody JsonReq<ItemReq> itemReq) {
-        apiMetricsService.recordPush("item", itemReq.getBody(), () -> pushService.pushItem(itemReq.getBody()));
-        return Mono.just(new JsonRes<>());
+        return blockingTaskExecutor.submit(() -> {
+            apiMetricsService.recordPush("item", itemReq.getBody(), () -> pushService.pushItem(itemReq.getBody()));
+            return new JsonRes<>();
+        });
     }
 
     @ApiOperation("事件推送表")
     @RequestMapping(value = {"/event"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<String>> pushEvent(@RequestBody JsonReq<EventReq> eventReq) {
-        apiMetricsService.recordPush("event", eventReq.getBody(), () -> pushService.pushEvent(eventReq.getBody()));
-        return Mono.just(new JsonRes<>());
+        return blockingTaskExecutor.submit(() -> {
+            apiMetricsService.recordPush("event", eventReq.getBody(), () -> pushService.pushEvent(eventReq.getBody()));
+            return new JsonRes<>();
+        });
     }
 }

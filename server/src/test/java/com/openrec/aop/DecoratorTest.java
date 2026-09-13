@@ -5,6 +5,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.junit.Test;
 import org.slf4j.MDC;
+import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Method;
 
@@ -41,5 +42,24 @@ public class DecoratorTest {
         when(signature.getName()).thenReturn("method");
         when(point.proceed()).thenReturn("value");
         assertEquals("value", new MethodTimeCost().around(point));
+    }
+
+    @Test
+    public void apiDecoratorDefersReactiveResultLoggingUntilCompletion() throws Throwable {
+        ProceedingJoinPoint point = mock(ProceedingJoinPoint.class);
+        MethodSignature signature = mock(MethodSignature.class);
+        JsonReq<String> request = new JsonReq<>("body");
+        request.setRequestId("reactive-rid");
+        Method method = getClass().getMethod("endpoint", JsonReq.class);
+        when(point.getTarget()).thenReturn(this);
+        when(point.getSignature()).thenReturn(signature);
+        when(signature.getMethod()).thenReturn(method);
+        when(point.getArgs()).thenReturn(new Object[] {request});
+        when(point.proceed(any(Object[].class))).thenReturn(Mono.just("result"));
+
+        Object decorated = new ApiDecorator().apiAccessDecorator(point);
+
+        assertTrue(decorated instanceof Mono);
+        assertEquals("result", ((Mono<?>)decorated).block());
     }
 }

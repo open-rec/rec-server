@@ -18,13 +18,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GraphEngine {
 
-    private static ExecutorService threadPool =
-        new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
-            new SynchronousQueue<>(), new ThreadFactoryBuilder().setNameFormat("graph-engine-pool").build());
+    private static final int WORKER_THREADS =
+        Integer.getInteger("openrec.graph.worker.threads", Math.max(8, Runtime.getRuntime().availableProcessors() * 4));
+    private static final int WORKER_QUEUE_CAPACITY = Integer.getInteger("openrec.graph.worker.queue-capacity", 1024);
 
-    private static ExecutorService timeoutThreadPool =
-        new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
-            new SynchronousQueue<>(), new ThreadFactoryBuilder().setNameFormat("graph-timeout-pool").build());
+    private static final ThreadPoolExecutor threadPool = new ThreadPoolExecutor(WORKER_THREADS, WORKER_THREADS, 0L,
+        TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(WORKER_QUEUE_CAPACITY),
+        new ThreadFactoryBuilder().setNameFormat("graph-engine-pool-%d").setDaemon(true).build(),
+        new ThreadPoolExecutor.AbortPolicy());
+
+    private static final ScheduledExecutorService timeoutThreadPool = Executors.newSingleThreadScheduledExecutor(
+        new ThreadFactoryBuilder().setNameFormat("graph-timeout-pool-%d").setDaemon(true).build());
 
     private GraphContext context;
     private Queue<Node> queue;
@@ -118,7 +122,7 @@ public class GraphEngine {
                 CountDownLatch latch = new CountDownLatch(batch);
                 for (Node node : readyNodes) {
                     node.start();
-                    Future future = threadPool.submit(() -> {
+                    Future<?> future = threadPool.submit(() -> {
                         long start = System.currentTimeMillis();
                         try {
                             context.importNodeData(node);
@@ -133,7 +137,8 @@ public class GraphEngine {
                                 System.currentTimeMillis() - start);
                         }
                     });
-                    timeoutThreadPool.submit(new TimeoutTask(node, future, latch));
+                    timeoutThreadPool.schedule(new TimeoutTask(node, future, latch), node.getTimeout(),
+                        TimeUnit.MILLISECONDS);
                 }
                 try {
                     latch.await();
@@ -163,7 +168,7 @@ public class GraphEngine {
             for (int index : ready) {
                 Node node = nodes[index];
                 node.start();
-                Future future = threadPool.submit(() -> {
+                Future<?> future = threadPool.submit(() -> {
                     long start = System.currentTimeMillis();
                     try {
                         context.importNodeData(node);
@@ -178,7 +183,8 @@ public class GraphEngine {
                         log.info("node:{} exec cost time: {}ms", node.getName(), System.currentTimeMillis() - start);
                     }
                 });
-                timeoutThreadPool.submit(new TimeoutTask(node, future, latch));
+                timeoutThreadPool.schedule(new TimeoutTask(node, future, latch), node.getTimeout(),
+                    TimeUnit.MILLISECONDS);
             }
             try {
                 latch.await();
@@ -209,7 +215,6 @@ public class GraphEngine {
     }
 
     public void destroy() {
-        this.threadPool.shutdownNow();
         this.queue.clear();
         this.nodeSet.clear();
         this.context.clean();
@@ -217,10 +222,10 @@ public class GraphEngine {
 
     class TimeoutTask implements Callable<Void> {
         private Node node;
-        private Future future;
+        private Future<?> future;
         private CountDownLatch latch;
 
-        public TimeoutTask(Node node, Future future, CountDownLatch latch) {
+        public TimeoutTask(Node node, Future<?> future, CountDownLatch latch) {
             this.node = node;
             this.future = future;
             this.latch = latch;
@@ -229,9 +234,7 @@ public class GraphEngine {
         @Override
         public Void call() throws Exception {
             if (future != null) {
-                try {
-                    future.get(node.getTimeout(), TimeUnit.MILLISECONDS);
-                } catch (TimeoutException e) {
+                if (!future.isDone()) {
                     if (future.cancel(true)) {
                         // A Future cancelled before its worker starts never enters the
                         // worker's finally block. Complete the lifecycle here so the
@@ -240,13 +243,6 @@ public class GraphEngine {
                         latch.countDown();
                     }
                     log.error("graph node:{} exec timeout, canceled by engine", node.getName());
-                } catch (CancellationException e) {
-                    node.stop();
-                    latch.countDown();
-                } catch (ExecutionException e) {
-                    log.error("graph node:{} exec failed: {}", node.getName(), ExceptionUtils.getStackTrace(e));
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
                 }
             }
             return null;

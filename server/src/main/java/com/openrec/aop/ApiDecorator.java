@@ -15,6 +15,7 @@ import com.openrec.proto.JsonReq;
 import com.openrec.util.JsonUtil;
 
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Aspect
@@ -47,8 +48,38 @@ public class ApiDecorator {
         setRequestIdByParams(args);
 
         Object res = joinPoint.proceed(args);
-        log.info("API-{}:{} access with request:{}, response:{}, cost time:{}", clazz, methodName,
-            JsonUtil.objToJson(args), JsonUtil.objToJson(res), System.currentTimeMillis() - start);
+        String requestId = MDC.get(REQUEST_ID);
+        String request = JsonUtil.objToJson(args);
+        if (res instanceof Mono) {
+            MDC.remove(REQUEST_ID);
+            return ((Mono<?>)res)
+                .doOnSuccess(response -> logReactive(clazz, methodName, request, response, requestId, start))
+                .doOnError(error -> logReactiveError(clazz, methodName, request, error, requestId, start));
+        }
+        log.info("API-{}:{} access with request:{}, response:{}, cost time:{}", clazz, methodName, request,
+            JsonUtil.objToJson(res), System.currentTimeMillis() - start);
         return res;
+    }
+
+    private void logReactive(String clazz, String methodName, String request, Object response, String requestId,
+        long start) {
+        try {
+            MDC.put(REQUEST_ID, requestId);
+            log.info("API-{}:{} access with request:{}, response:{}, cost time:{}", clazz, methodName, request,
+                JsonUtil.objToJson(response), System.currentTimeMillis() - start);
+        } finally {
+            MDC.remove(REQUEST_ID);
+        }
+    }
+
+    private void logReactiveError(String clazz, String methodName, String request, Throwable error, String requestId,
+        long start) {
+        try {
+            MDC.put(REQUEST_ID, requestId);
+            log.warn("API-{}:{} access with request:{} failed, cost time:{}", clazz, methodName, request,
+                System.currentTimeMillis() - start, error);
+        } finally {
+            MDC.remove(REQUEST_ID);
+        }
     }
 }

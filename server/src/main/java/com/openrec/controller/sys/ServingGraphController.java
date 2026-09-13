@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.openrec.proto.JsonRes;
 import com.openrec.service.rec.ServingGraphService;
 import com.openrec.ab.AbExperimentService;
+import com.openrec.config.BlockingTaskExecutor;
 
 import reactor.core.publisher.Mono;
 
@@ -24,6 +25,9 @@ public class ServingGraphController {
     @Autowired
     private AbExperimentService abExperimentService;
 
+    @Autowired
+    private BlockingTaskExecutor blockingTaskExecutor;
+
     @Value("${serving.graph.token:openrec-serving-graph-token-change-me}")
     private String token;
 
@@ -35,11 +39,10 @@ public class ServingGraphController {
         @RequestHeader(value = "X-Ab-Experiment", defaultValue = "default") String experiment,
         @RequestBody String graphJson) {
         authorize(requestToken);
-        try {
-            return Mono.just(new JsonRes<>(servingGraphService.activate(targetType, experiment, graphJson, version)));
-        } catch (IllegalArgumentException error) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, error.getMessage(), error);
-        }
+        return blockingTaskExecutor
+            .submit(() -> new JsonRes<>(servingGraphService.activate(targetType, experiment, graphJson, version)))
+            .onErrorMap(IllegalArgumentException.class,
+                error -> new ResponseStatusException(HttpStatus.BAD_REQUEST, error.getMessage(), error));
     }
 
     @GetMapping
@@ -48,7 +51,7 @@ public class ServingGraphController {
         @RequestParam(value = "target", defaultValue = "item") String targetType,
         @RequestParam(value = "experiment", required = false) String experiment) {
         authorize(requestToken);
-        return Mono.just(new JsonRes<>(servingGraphService.status(targetType,
+        return blockingTaskExecutor.submit(() -> new JsonRes<>(servingGraphService.status(targetType,
             experiment == null ? AbExperimentService.DEFAULT_EXPERIMENT : experiment)));
     }
 
@@ -57,11 +60,7 @@ public class ServingGraphController {
         @RequestHeader(value = "X-OpenRec-Token", required = false) String requestToken,
         @RequestBody AbExperimentService.RoutingConfig routing) {
         authorize(requestToken);
-        try {
-            return Mono.just(new JsonRes<>(abExperimentService.configureRouting(routing)));
-        } catch (IllegalArgumentException error) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, error.getMessage(), error);
-        }
+        return lifecycle(() -> abExperimentService.configureRouting(routing));
     }
 
     @PostMapping("/experiments")
@@ -89,11 +88,8 @@ public class ServingGraphController {
     }
 
     private Mono<JsonRes<Map<String, Object>>> lifecycle(java.util.function.Supplier<Map<String, Object>> action) {
-        try {
-            return Mono.just(new JsonRes<>(action.get()));
-        } catch (IllegalArgumentException error) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, error.getMessage(), error);
-        }
+        return blockingTaskExecutor.submit(() -> new JsonRes<>(action.get())).onErrorMap(IllegalArgumentException.class,
+            error -> new ResponseStatusException(HttpStatus.BAD_REQUEST, error.getMessage(), error));
     }
 
     public static class ExperimentRequest {

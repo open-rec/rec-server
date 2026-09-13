@@ -11,6 +11,7 @@ import com.openrec.proto.model.Item;
 import com.openrec.proto.model.User;
 import com.openrec.service.metrics.ApiMetricsService;
 import com.openrec.ab.AbExperimentService;
+import com.openrec.config.BlockingTaskExecutor;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -26,6 +27,9 @@ public class RecommendController {
     @Autowired
     private ApiMetricsService apiMetricsService;
 
+    @Autowired
+    private BlockingTaskExecutor blockingTaskExecutor;
+
     @ApiOperation("物品推荐接口（兼容路径）")
     @RequestMapping(value = {"/api/recommend"}, method = RequestMethod.POST)
     @ResponseBody
@@ -39,7 +43,7 @@ public class RecommendController {
     public Mono<JsonRes<RecommendRes<Item>>> recommendItem(@RequestBody JsonReq<RecommendReq> recommendReq) {
         prepareTarget(recommendReq.getBody(), RecommendReq.TARGET_ITEM);
         String experiment = abExperimentService.resolve(recommendReq.getBody());
-        return Mono.just(new JsonRes<>(
+        return blockingTaskExecutor.submit(() -> new JsonRes<>(
             apiMetricsService.recordRecommend(experiment, () -> abExperimentService.execute(recommendReq.getBody()))));
     }
 
@@ -49,7 +53,7 @@ public class RecommendController {
     public Mono<JsonRes<RecommendRes<User>>> recommendUser(@RequestBody JsonReq<RecommendReq> recommendReq) {
         prepareTarget(recommendReq.getBody(), RecommendReq.TARGET_USER);
         String experiment = abExperimentService.resolve(recommendReq.getBody());
-        return Mono.just(new JsonRes<>(
+        return blockingTaskExecutor.submit(() -> new JsonRes<>(
             apiMetricsService.recordRecommend(experiment, () -> abExperimentService.execute(recommendReq.getBody()))));
     }
 
