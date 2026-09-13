@@ -1,17 +1,26 @@
 package com.openrec.graph;
 
 import java.lang.reflect.Field;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.openrec.graph.config.NodeConfig;
+import com.openrec.graph.node.FailurePolicy;
 import com.openrec.graph.node.Node;
-import com.openrec.graph.node.RootNode;
+import com.openrec.graph.node.NodeStatus;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,15 +39,11 @@ public class GraphEngine {
     private static final ScheduledExecutorService timeoutThreadPool = Executors.newSingleThreadScheduledExecutor(
         new ThreadFactoryBuilder().setNameFormat("graph-timeout-pool-%d").setDaemon(true).build());
 
-    private GraphContext context;
-    private Queue<Node> queue;
-    private Set<String> nodeSet;
+    private final GraphContext context = new GraphContext();
+    private final Map<String, NodeStatus> nodeStatuses = new LinkedHashMap<>();
+    private GraphPlan preparedPlan;
 
-    private GraphEngine() {
-        this.queue = Lists.newLinkedList();
-        this.nodeSet = Sets.newHashSet();
-        this.context = new GraphContext();
-    }
+    private GraphEngine() {}
 
     public static GraphEngine getSessionGraphEngine() {
         return new GraphEngine();
@@ -50,8 +55,8 @@ public class GraphEngine {
                 try {
                     field.setAccessible(true);
                     context.addParam(field.getName(), field.get(paramsObj));
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
+                } catch (IllegalAccessException error) {
+                    throw new IllegalStateException(error);
                 }
             }
         }
@@ -61,149 +66,163 @@ public class GraphEngine {
         context.addParam(key, value);
     }
 
+    /** Retained for callers using the original build-then-execute API. */
     public void buildGraph(GraphConfig graphConfig) {
         try {
             buildGraph(GraphPlan.compile(graphConfig));
         } catch (IllegalArgumentException error) {
             log.error("compile graph failed: {}", ExceptionUtils.getStackTrace(error));
-            queue.add(new RootNode());
+            preparedPlan = null;
         }
     }
 
     public void buildGraph(GraphPlan plan) {
-        RootNode rootNode = new RootNode();
-        Node[] nodes = new Node[plan.size()];
-        for (int index = 0; index < nodes.length; index++) {
-            NodeConfig nodeConfig = plan.getNodeConfig(index);
-            context.addConfig(nodeConfig.getName(), nodeConfig);
-            nodes[index] = plan.newNode(index);
-        }
-
-        for (int[] edge : plan.getEdges()) {
-            Node from = nodes[edge[0]];
-            Node to = nodes[edge[1]];
-            from.addChild(to);
-            to.addParent(from);
-        }
-        for (int root : plan.getRoots())
-            rootNode.addChild(nodes[root]);
-
-        queue.add(rootNode);
-        log.info("build graph finished");
+        preparedPlan = plan;
     }
 
     public void execGraph() {
-        while (!queue.isEmpty()) {
-            Iterator<Node> iterator = queue.iterator();
-            List<Node> readyNodes = Lists.newLinkedList();
-            List<Node> nextNodes = Lists.newLinkedList();
-            while (iterator.hasNext()) {
-                Node curNode = iterator.next();
-                if (curNode == null) {
-                    continue;
-                }
-                if (curNode.finished()) {
-                    iterator.remove();
-                    for (Node nextNode : curNode.getChildren()) {
-                        if (nextNode.isReady() && !nodeSet.contains(nextNode.getName())) {
-                            nextNodes.add(nextNode);
-                            nodeSet.add(nextNode.getName());
-                        }
-                    }
-                    curNode.destroy();
-                } else if (curNode.isReady()) {
-                    readyNodes.add(curNode);
-                }
-            }
-            queue.addAll(nextNodes);
-
-            int batch = readyNodes.size();
-            if (batch > 0) {
-                CountDownLatch latch = new CountDownLatch(batch);
-                for (Node node : readyNodes) {
-                    node.start();
-                    Future<?> future = threadPool.submit(() -> {
-                        long start = System.currentTimeMillis();
-                        try {
-                            context.importNodeData(node);
-                            node.run(context);
-                            context.exportNodeData(node);
-                        } catch (Exception e) {
-                            log.error("node:{} exec with exception:{}", ExceptionUtils.getStackTrace(e));
-                        } finally {
-                            node.stop();
-                            latch.countDown();
-                            log.info("node:{} exec cost time: {}ms", node.getName(),
-                                System.currentTimeMillis() - start);
-                        }
-                    });
-                    timeoutThreadPool.schedule(new TimeoutTask(node, future, latch), node.getTimeout(),
-                        TimeUnit.MILLISECONDS);
-                }
-                try {
-                    latch.await();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-        log.info("graph execute finished, total node count:{}", nodeSet.size());
+        if (preparedPlan != null)
+            execGraph(preparedPlan);
     }
 
-    /** Executes a precompiled plan without rebuilding Node parent/child relationships. */
     public void execGraph(GraphPlan plan) {
+        execGraph(plan, Long.MAX_VALUE);
+    }
+
+    /** Executes a precompiled plan within a request-wide deadline. */
+    public void execGraph(GraphPlan plan, long deadlineMillis) {
+        long deadlineNanos = deadlineMillis == Long.MAX_VALUE ? Long.MAX_VALUE
+            : System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(Math.max(0L, deadlineMillis));
         Node[] nodes = new Node[plan.size()];
+        NodeExecution[] executions = new NodeExecution[plan.size()];
         for (int index = 0; index < nodes.length; index++) {
             NodeConfig config = plan.getNodeConfig(index);
             context.addConfig(config.getName(), config);
             nodes[index] = plan.newNode(index);
+            executions[index] = new NodeExecution(nodes[index]);
         }
+
         int[] dependencies = plan.newDependencyCounts();
-        List<Integer> ready = new ArrayList<>();
-        for (int root : plan.getRoots())
-            ready.add(root);
-        int executed = 0;
+        boolean[] blocked = new boolean[plan.size()];
+        List<Integer> ready = indexes(plan.getRoots());
         while (!ready.isEmpty()) {
-            CountDownLatch latch = new CountDownLatch(ready.size());
+            if (remainingMillis(deadlineNanos) <= 0L) {
+                cancelUnfinished(executions);
+                break;
+            }
+
+            CountDownLatch latch = new CountDownLatch(countRunnable(ready, blocked));
             for (int index : ready) {
-                Node node = nodes[index];
-                node.start();
-                Future<?> future = threadPool.submit(() -> {
-                    long start = System.currentTimeMillis();
-                    try {
-                        context.importNodeData(node);
-                        node.run(context);
-                        context.exportNodeData(node);
-                    } catch (Exception error) {
-                        log.error("node:{} exec with exception:{}", node.getName(),
-                            ExceptionUtils.getStackTrace(error));
-                    } finally {
-                        node.stop();
-                        latch.countDown();
-                        log.info("node:{} exec cost time: {}ms", node.getName(), System.currentTimeMillis() - start);
-                    }
-                });
-                timeoutThreadPool.schedule(new TimeoutTask(node, future, latch), node.getTimeout(),
-                    TimeUnit.MILLISECONDS);
+                NodeExecution execution = executions[index];
+                if (blocked[index]) {
+                    execution.skip();
+                    continue;
+                }
+                execution.bind(latch);
+                submit(execution, Math.min(nodes[index].getTimeout(), remainingMillis(deadlineNanos)));
             }
-            try {
-                latch.await();
-            } catch (InterruptedException error) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(error);
-            }
+            await(latch, executions);
+
             List<Integer> next = new ArrayList<>();
             for (int index : ready) {
-                executed++;
+                NodeExecution execution = executions[index];
+                nodeStatuses.put(execution.node.getName(), execution.status());
+                FailurePolicy policy = policy(execution.node.getConfig());
+                if (!execution.succeeded() && policy == FailurePolicy.FAIL_GRAPH) {
+                    cancelUnfinished(executions);
+                    throw new GraphExecutionException(execution.node.getName(), execution.status(), execution.error());
+                }
+                boolean blocksChildren =
+                    blocked[index] || !execution.succeeded() && policy == FailurePolicy.SKIP_DESCENDANTS;
                 for (int child : plan.getChildren(index)) {
+                    blocked[child] |= blocksChildren;
                     if (--dependencies[child] == 0)
                         next.add(child);
                 }
             }
             ready = next;
         }
-        if (executed != nodes.length)
-            throw new IllegalStateException("compiled graph contains unreachable nodes");
+        for (NodeExecution execution : executions)
+            nodeStatuses.put(execution.node.getName(), execution.status());
+    }
+
+    private void submit(NodeExecution execution, long timeoutMillis) {
+        if (timeoutMillis <= 0L) {
+            execution.timeout();
+            return;
+        }
+        try {
+            Future<?> future = threadPool.submit(() -> {
+                long start = System.currentTimeMillis();
+                try {
+                    GraphContext localContext = context.forkExecution();
+                    localContext.importNodeData(execution.node);
+                    execution.node.run(localContext);
+                    Map<String, Object> output = localContext.extractNodeData(execution.node);
+                    execution.succeed(() -> context.commitExecution(localContext, output));
+                } catch (Throwable error) {
+                    log.error("node:{} exec with exception:{}", execution.node.getName(),
+                        ExceptionUtils.getStackTrace(error));
+                    execution.fail(error);
+                } finally {
+                    log.info("node:{} exec cost time: {}ms", execution.node.getName(),
+                        System.currentTimeMillis() - start);
+                }
+            });
+            execution.setFuture(future);
+            timeoutThreadPool.schedule(execution::timeout, timeoutMillis, TimeUnit.MILLISECONDS);
+        } catch (RejectedExecutionException error) {
+            execution.fail(error);
+        }
+    }
+
+    private static void await(CountDownLatch latch, NodeExecution[] executions) {
+        try {
+            latch.await();
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+            cancelUnfinished(executions);
+            throw new GraphExecutionException("graph", NodeStatus.CANCELLED, error);
+        }
+    }
+
+    private static int countRunnable(List<Integer> ready, boolean[] blocked) {
+        int count = 0;
+        for (int index : ready)
+            if (!blocked[index])
+                count++;
+        return count;
+    }
+
+    private static List<Integer> indexes(int[] values) {
+        List<Integer> indexes = new ArrayList<>(values.length);
+        for (int value : values)
+            indexes.add(value);
+        return indexes;
+    }
+
+    private static long remainingMillis(long deadlineNanos) {
+        if (deadlineNanos == Long.MAX_VALUE)
+            return Long.MAX_VALUE;
+        long nanos = deadlineNanos - System.nanoTime();
+        return nanos <= 0L ? 0L : Math.max(1L, TimeUnit.NANOSECONDS.toMillis(nanos));
+    }
+
+    private static FailurePolicy policy(NodeConfig config) {
+        return config.getFailurePolicy() == null ? FailurePolicy.CONTINUE : config.getFailurePolicy();
+    }
+
+    private static void cancelUnfinished(NodeExecution[] executions) {
+        for (NodeExecution execution : executions)
+            execution.cancel();
+    }
+
+    public Map<String, NodeStatus> getNodeStatuses() {
+        return new LinkedHashMap<>(nodeStatuses);
+    }
+
+    public Object getData(String key) {
+        return context.getData(key);
     }
 
     public <T> T getResult() {
@@ -211,41 +230,95 @@ public class GraphEngine {
     }
 
     public void refresh() {
-        // TODO: 2022/11/3 reuse collections
+        // Session reuse remains intentionally disabled.
     }
 
     public void destroy() {
-        this.queue.clear();
-        this.nodeSet.clear();
-        this.context.clean();
+        preparedPlan = null;
+        nodeStatuses.clear();
+        context.clean();
     }
 
-    class TimeoutTask implements Callable<Void> {
-        private Node node;
+    private static final class NodeExecution {
+        private final Node node;
+        private NodeStatus status = NodeStatus.INIT;
+        private Throwable error;
         private Future<?> future;
         private CountDownLatch latch;
 
-        public TimeoutTask(Node node, Future<?> future, CountDownLatch latch) {
+        private NodeExecution(Node node) {
             this.node = node;
-            this.future = future;
-            this.latch = latch;
         }
 
-        @Override
-        public Void call() throws Exception {
-            if (future != null) {
-                if (!future.isDone()) {
-                    if (future.cancel(true)) {
-                        // A Future cancelled before its worker starts never enters the
-                        // worker's finally block. Complete the lifecycle here so the
-                        // graph cannot wait on the latch forever.
-                        node.stop();
-                        latch.countDown();
-                    }
-                    log.error("graph node:{} exec timeout, canceled by engine", node.getName());
-                }
-            }
-            return null;
+        private synchronized void bind(CountDownLatch value) {
+            latch = value;
+            status = NodeStatus.RUNNING;
+            node.start();
+        }
+
+        private synchronized void setFuture(Future<?> value) {
+            future = value;
+            if (status == NodeStatus.TIMED_OUT || status == NodeStatus.CANCELLED)
+                future.cancel(true);
+        }
+
+        private synchronized void succeed(Runnable commit) {
+            if (terminal())
+                return;
+            commit.run();
+            complete(NodeStatus.SUCCESS, null);
+        }
+
+        private synchronized void fail(Throwable value) {
+            if (!terminal())
+                complete(NodeStatus.FAILED, value);
+        }
+
+        private synchronized void timeout() {
+            if (terminal())
+                return;
+            complete(NodeStatus.TIMED_OUT, null);
+            log.warn("graph node:{} timed out", node.getName());
+            if (future != null)
+                future.cancel(true);
+        }
+
+        private synchronized void cancel() {
+            if (terminal())
+                return;
+            complete(NodeStatus.CANCELLED, null);
+            log.warn("graph node:{} cancelled by request deadline", node.getName());
+            if (future != null)
+                future.cancel(true);
+        }
+
+        private synchronized void skip() {
+            if (!terminal())
+                complete(NodeStatus.SKIPPED, null);
+        }
+
+        private void complete(NodeStatus value, Throwable cause) {
+            status = value;
+            error = cause;
+            node.complete(value);
+            if (latch != null)
+                latch.countDown();
+        }
+
+        private boolean terminal() {
+            return status.isTerminal();
+        }
+
+        private synchronized boolean succeeded() {
+            return status == NodeStatus.SUCCESS;
+        }
+
+        private synchronized NodeStatus status() {
+            return status;
+        }
+
+        private synchronized Throwable error() {
+            return error;
         }
     }
 }

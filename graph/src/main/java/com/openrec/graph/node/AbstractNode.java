@@ -39,7 +39,7 @@ public abstract class AbstractNode<C> implements Node {
     }
 
     public boolean finished() {
-        return NodeStatus.STOP == status;
+        return status.isTerminal();
     }
 
     public boolean isRunning() {
@@ -63,7 +63,12 @@ public abstract class AbstractNode<C> implements Node {
     }
 
     public void stop() {
-        this.status = NodeStatus.STOP;
+        this.status = NodeStatus.SUCCESS;
+    }
+
+    @Override
+    public void complete(NodeStatus status) {
+        this.status = status;
     }
 
     @Override

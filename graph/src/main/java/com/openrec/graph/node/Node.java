@@ -23,6 +23,10 @@ public interface Node {
 
     void stop();
 
+    default void complete(NodeStatus status) {
+        stop();
+    }
+
     void run(GraphContext context);
 
     void addChild(Node child);

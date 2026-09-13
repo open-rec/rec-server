@@ -2,9 +2,13 @@ package com.openrec.graph;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.node.Node;
@@ -30,7 +34,7 @@ public final class GraphPlan {
     }
 
     public static GraphPlan compile(GraphConfig config) {
-        if (config == null || config.getNodes() == null || config.getEdges() == null) {
+        if (config == null || config.getNodes() == null || config.getNodes().isEmpty() || config.getEdges() == null) {
             throw new IllegalArgumentException("graph config is incomplete");
         }
         List<NodeFactory> factories = new ArrayList<>();
@@ -38,6 +42,15 @@ public final class GraphPlan {
         try {
             for (int index = 0; index < config.getNodes().size(); index++) {
                 NodeConfig nodeConfig = config.getNodes().get(index);
+                if (nodeConfig == null || isBlank(nodeConfig.getName()) || isBlank(nodeConfig.getClazz())) {
+                    throw new IllegalArgumentException("every graph node requires a name and class");
+                }
+                if (nodeConfig.getTimeout() <= 0) {
+                    throw new IllegalArgumentException("node timeout must be positive: " + nodeConfig.getName());
+                }
+                if (indexes.containsKey(nodeConfig.getName())) {
+                    throw new IllegalArgumentException("duplicate node: " + nodeConfig.getName());
+                }
                 Class<?> nodeClass = Class.forName(nodeConfig.getClazz());
                 if (!Node.class.isAssignableFrom(nodeClass)) {
                     throw new IllegalArgumentException("node class does not implement Node: " + nodeConfig.getClazz());
@@ -46,6 +59,7 @@ public final class GraphPlan {
                 Constructor<? extends Node> constructor =
                     (Constructor<? extends Node>)nodeClass.getDeclaredConstructor(NodeConfig.class);
                 constructor.setAccessible(true);
+                constructor.newInstance(nodeConfig);
                 factories.add(new NodeFactory(nodeConfig, constructor));
                 indexes.put(nodeConfig.getName(), index);
             }
@@ -56,12 +70,20 @@ public final class GraphPlan {
         }
         int[][] edges = new int[config.getEdges().size()][2];
         int[] indegree = new int[factories.size()];
+        Set<String> uniqueEdges = new HashSet<>();
         for (int index = 0; index < config.getEdges().size(); index++) {
             GraphConfig.NodeEdge edge = config.getEdges().get(index);
+            if (edge == null || isBlank(edge.getFrom()) || isBlank(edge.getTo())) {
+                throw new IllegalArgumentException("every graph edge requires from and to");
+            }
             Integer from = indexes.get(edge.getFrom());
             Integer to = indexes.get(edge.getTo());
             if (from == null || to == null)
                 throw new IllegalArgumentException("edge references an unknown node");
+            String edgeKey = edge.getFrom() + "->" + edge.getTo();
+            if (from.equals(to) || !uniqueEdges.add(edgeKey)) {
+                throw new IllegalArgumentException("invalid or duplicate edge: " + edgeKey);
+            }
             edges[index][0] = from;
             edges[index][1] = to;
             indegree[to]++;
@@ -84,7 +106,30 @@ public final class GraphPlan {
         int[] childIndexes = new int[factories.size()];
         for (int[] edge : edges)
             children[edge[0]][childIndexes[edge[0]]++] = edge[1];
+        validateAcyclic(children, indegree, roots);
         return new GraphPlan(config, factories, edges, roots, children, indegree);
+    }
+
+    private static void validateAcyclic(int[][] children, int[] indegree, int[] roots) {
+        int[] remaining = indegree.clone();
+        Queue<Integer> ready = new ArrayDeque<>();
+        for (int root : roots)
+            ready.add(root);
+        int visited = 0;
+        while (!ready.isEmpty()) {
+            int current = ready.remove();
+            visited++;
+            for (int child : children[current]) {
+                if (--remaining[child] == 0)
+                    ready.add(child);
+            }
+        }
+        if (visited != children.length)
+            throw new IllegalArgumentException("graph contains a cycle");
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     public GraphConfig getConfig() {

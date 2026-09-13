@@ -2,6 +2,7 @@ package com.openrec.graph;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.HashMap;
 
 import com.google.common.collect.Maps;
 import com.openrec.graph.config.NodeConfig;
@@ -18,6 +19,7 @@ public class GraphContext {
     private Map<String, NodeConfig> configMap;
     private Map<String, Object> dataMap;
     private Object result;
+    private GraphContext parent;
 
     public GraphContext() {
         this.params = new GraphParams();
@@ -25,7 +27,23 @@ public class GraphContext {
         this.dataMap = Maps.newConcurrentMap();
     }
 
+    private GraphContext(GraphContext parent) {
+        this.params = parent.params;
+        this.configMap = parent.configMap;
+        this.dataMap = Maps.newHashMap();
+        this.parent = parent;
+    }
+
+    public GraphContext forkExecution() {
+        return new GraphContext(this);
+    }
+
     public void exportNodeData(Node node) {
+        commitNodeData(extractNodeData(node));
+    }
+
+    public Map<String, Object> extractNodeData(Node node) {
+        Map<String, Object> exported = new HashMap<>();
         for (Field field : node.getClass().getDeclaredFields()) {
             if (field.isAnnotationPresent(Export.class)) {
                 Export export = field.getAnnotation(Export.class);
@@ -37,9 +55,16 @@ public class GraphContext {
                 } catch (Exception e) {
                     log.error("node: {} export field: {} failed", node.getName(), field.getName());
                 }
-                dataMap.put(key, data);
+                if (data != null) {
+                    exported.put(key, data);
+                }
             }
         }
+        return exported;
+    }
+
+    public void commitNodeData(Map<String, Object> exported) {
+        dataMap.putAll(exported);
     }
 
     public void importNodeData(Node node) {
@@ -47,7 +72,7 @@ public class GraphContext {
             if (field.isAnnotationPresent(Import.class)) {
                 Import export = field.getAnnotation(Import.class);
                 String key = export.value();
-                Object data = dataMap.get(key);
+                Object data = getData(key);
                 try {
                     field.setAccessible(true);
                     field.set(node, data);
@@ -63,7 +88,8 @@ public class GraphContext {
     }
 
     public Object getData(String key) {
-        return dataMap.get(key);
+        Object value = dataMap.get(key);
+        return value != null || parent == null ? value : parent.getData(key);
     }
 
     public void addParam(String key, Object value) {
@@ -83,11 +109,18 @@ public class GraphContext {
     }
 
     public Object getResult() {
-        return result;
+        return result != null || parent == null ? result : parent.getResult();
     }
 
     public void setResult(Object result) {
         this.result = result;
+    }
+
+    public void commitExecution(GraphContext execution, Map<String, Object> exported) {
+        dataMap.putAll(execution.dataMap);
+        dataMap.putAll(exported);
+        if (execution.result != null)
+            result = execution.result;
     }
 
     public void clean() {

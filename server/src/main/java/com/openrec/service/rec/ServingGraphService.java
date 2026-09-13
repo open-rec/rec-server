@@ -1,6 +1,5 @@
 package com.openrec.service.rec;
 
-import java.lang.reflect.Constructor;
 import java.security.MessageDigest;
 import java.util.*;
 
@@ -9,9 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.openrec.graph.GraphConfig;
+import com.openrec.graph.GraphPlan;
 import com.openrec.graph.RecTemplate;
 import com.openrec.graph.config.NodeConfig;
-import com.openrec.graph.node.Node;
 import com.openrec.ab.AbExperimentService;
 import com.openrec.util.JsonUtil;
 
@@ -94,74 +93,7 @@ public class ServingGraphService {
     }
 
     private void validate(GraphConfig graph) {
-        if (graph == null || graph.getNodes() == null || graph.getNodes().isEmpty() || graph.getEdges() == null) {
-            throw new IllegalArgumentException("graph must contain nodes and edges");
-        }
-        Map<String, NodeConfig> nodes = new LinkedHashMap<>();
-        for (NodeConfig config : graph.getNodes()) {
-            if (config == null || StringUtils.isBlank(config.getName())) {
-                throw new IllegalArgumentException("every node requires a name");
-            }
-            if (nodes.put(config.getName(), config) != null) {
-                throw new IllegalArgumentException("duplicate node: " + config.getName());
-            }
-            if (config.getTimeout() <= 0) {
-                throw new IllegalArgumentException("node timeout must be positive: " + config.getName());
-            }
-            validateNodeClass(config);
-        }
-        Map<String, Integer> indegree = new HashMap<>();
-        Map<String, List<String>> children = new HashMap<>();
-        nodes.keySet().forEach(name -> {
-            indegree.put(name, 0);
-            children.put(name, new ArrayList<>());
-        });
-        Set<String> edges = new HashSet<>();
-        for (GraphConfig.NodeEdge edge : graph.getEdges()) {
-            if (edge == null || !nodes.containsKey(edge.getFrom()) || !nodes.containsKey(edge.getTo())) {
-                throw new IllegalArgumentException("edge references an unknown node");
-            }
-            if (edge.getFrom().equals(edge.getTo()) || !edges.add(edge.getFrom() + "->" + edge.getTo())) {
-                throw new IllegalArgumentException(
-                    "invalid or duplicate edge: " + edge.getFrom() + "->" + edge.getTo());
-            }
-            children.get(edge.getFrom()).add(edge.getTo());
-            indegree.put(edge.getTo(), indegree.get(edge.getTo()) + 1);
-        }
-        Queue<String> ready = new ArrayDeque<>();
-        indegree.forEach((name, degree) -> {
-            if (degree == 0)
-                ready.add(name);
-        });
-        int visited = 0;
-        while (!ready.isEmpty()) {
-            String name = ready.remove();
-            visited++;
-            for (String child : children.get(name)) {
-                int degree = indegree.get(child) - 1;
-                indegree.put(child, degree);
-                if (degree == 0)
-                    ready.add(child);
-            }
-        }
-        if (visited != nodes.size())
-            throw new IllegalArgumentException("graph contains a cycle");
-    }
-
-    private void validateNodeClass(NodeConfig config) {
-        try {
-            Class<?> clazz = Class.forName(config.getClazz());
-            if (!Node.class.isAssignableFrom(clazz)) {
-                throw new IllegalArgumentException("node class does not implement Node: " + config.getClazz());
-            }
-            Constructor<?> constructor = clazz.getDeclaredConstructor(NodeConfig.class);
-            constructor.newInstance(config);
-        } catch (IllegalArgumentException error) {
-            throw error;
-        } catch (Exception error) {
-            throw new IllegalArgumentException("cannot construct node " + config.getName() + ": " + error.getMessage(),
-                error);
-        }
+        GraphPlan.compile(graph);
     }
 
     private static String sha256(String value) {

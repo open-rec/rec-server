@@ -29,6 +29,9 @@ public class RecService {
     @Autowired
     private RedisService redisService;
 
+    @Value("${recommend.deadline-ms:1000}")
+    private long recommendDeadlineMillis = 1000L;
+
     public RecService() {
         this("item_graph.json", "user_graph.json");
     }
@@ -55,7 +58,7 @@ public class RecService {
         if (recommendReq != null && recommendReq.getParams() != null) {
             recommendReq.getParams().forEach(graphEngine::addParam);
         }
-        graphEngine.execGraph(selectedGraphPlan);
+        graphEngine.execGraph(selectedGraphPlan, recommendDeadlineMillis);
         List<ScoreResult> results = graphEngine.getResult();
         recommendRes.setResults(results);
         if (recommendReq.isDebug()) {

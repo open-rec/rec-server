@@ -1,16 +1,9 @@
 package com.openrec.graph;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.FutureTask;
-
 import org.junit.Assert;
 import org.junit.Test;
 
 import com.google.gson.Gson;
-import com.openrec.graph.config.NodeConfig;
-import com.openrec.graph.node.Node;
-import com.openrec.graph.node.NodeStatus;
-import com.openrec.graph.node.SleepNode;
 
 public class GraphEngineTest {
 
@@ -40,23 +33,5 @@ public class GraphEngineTest {
         GraphEngine secondExecution = GraphEngine.getSessionGraphEngine();
         secondExecution.execGraph(plan);
         Assert.assertSame(graphConfig, plan.getConfig());
-    }
-
-    @Test
-    public void timeoutBeforeWorkerStartsReleasesGraphWaiter() throws Exception {
-        NodeConfig<Object> config = new NodeConfig<>();
-        config.setName("not-started");
-        config.setTimeout(0);
-        Node node = new SleepNode(config);
-        node.start();
-        FutureTask<Void> future = new FutureTask<>(() -> null);
-        CountDownLatch latch = new CountDownLatch(1);
-
-        GraphEngine engine = GraphEngine.getSessionGraphEngine();
-        engine.new TimeoutTask(node, future, latch).call();
-
-        Assert.assertTrue(future.isCancelled());
-        Assert.assertEquals(NodeStatus.STOP, node.getStatus());
-        Assert.assertEquals(0, latch.getCount());
     }
 }
