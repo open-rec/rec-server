@@ -10,6 +10,7 @@ public class Item implements Serializable {
     private int weight;
     private String title;
     private String category;
+    private String subcategory;
     private String tags;
     private String scene;
     private String pubTime;
