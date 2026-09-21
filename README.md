@@ -251,3 +251,11 @@ require their backing services. Tests that construct the default graph also requ
 
 See [`server`](server) for implementation conventions, [`graph`](graph) for node development, and
 [`contrib`](contrib) for operation-rule development.
+
+Cluster push success means every message in the request has received a Kafka acknowledgement
+(`acks=all`); it does not mean the streaming projections have caught up. The acknowledgement wait
+is bounded by `push.kafka.ack-timeout-ms` (default 10000 ms) per message, with producer metadata/buffer
+wait bounded separately by `spring.kafka.producer.properties.max.block.ms` (default 10000 ms).
+A failed batch can have an acknowledged prefix; a timeout has an unknown delivery outcome.
+Clients must retain stable entity IDs and event IDs on retries. Batches are not atomic and the
+server does not silently retry an entire batch after a failure. Standalone Redis pushes are unchanged.

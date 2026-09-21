@@ -14,8 +14,32 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Arrays;
 
 import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
 
 public class PushKafkaServiceUnitTest {
+    @Test
+    public void failedAcknowledgementStopsBatchAndPropagatesFailure() {
+        KafkaService kafka = mock(KafkaService.class);
+        PushKafkaService service = new PushKafkaService();
+        ReflectionTestUtils.setField(service, "kafkaService", kafka);
+        Item first = new Item(), second = new Item(), third = new Item();
+        first.setId("first");
+        second.setId("second");
+        third.setId("third");
+        ItemReq request = new ItemReq();
+        request.setData(Arrays.asList(first, second, third));
+        IllegalStateException failure = new IllegalStateException("Kafka delivery failed");
+        doThrow(failure).when(kafka).writeItem(PushCmd.INSERT, second);
+        try {
+            service.pushItem(request);
+            fail("batch must not succeed after a failed delivery");
+        } catch (IllegalStateException error) {
+            assertSame(failure, error);
+        }
+        verify(kafka).writeItem(PushCmd.INSERT, first);
+        verify(kafka, never()).writeItem(PushCmd.INSERT, third);
+    }
+
     @Test
     public void delegatesEveryElementToKafka() {
         KafkaService kafka = mock(KafkaService.class);

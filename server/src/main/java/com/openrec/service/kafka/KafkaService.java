@@ -1,5 +1,9 @@
 package com.openrec.service.kafka;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -29,16 +33,32 @@ public class KafkaService {
     @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
 
+    @Value("${push.kafka.ack-timeout-ms:10000}")
+    private long ackTimeoutMs = 10000L;
+
     public void writeItem(PushCmd operation, Item item) {
-        kafkaTemplate.send(itemTopic, item.getId(), JsonUtil.objToJson(EntityMutation.of("item", operation, item)));
+        send(itemTopic, item.getId(), EntityMutation.of("item", operation, item));
     }
 
     public void writeUser(PushCmd operation, User user) {
-        kafkaTemplate.send(userTopic, user.getId(), JsonUtil.objToJson(EntityMutation.of("user", operation, user)));
+        send(userTopic, user.getId(), EntityMutation.of("user", operation, user));
     }
 
     public void writeEvent(PushCmd operation, Event event) {
-        kafkaTemplate.send(eventTopic, event.getUserId(),
-            JsonUtil.objToJson(EntityMutation.of("event", operation, event)));
+        send(eventTopic, event.getUserId(), EntityMutation.of("event", operation, event));
+    }
+
+    private void send(String topic, String key, EntityMutation<?> mutation) {
+        try {
+            kafkaTemplate.send(topic, key, JsonUtil.objToJson(mutation)).get(ackTimeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Kafka acknowledgement interrupted for " + topic, error);
+        } catch (ExecutionException error) {
+            throw new IllegalStateException("Kafka delivery failed for " + topic, error.getCause());
+        } catch (TimeoutException error) {
+            // A timeout is an unknown delivery outcome; it must never be reported as success.
+            throw new IllegalStateException("Kafka acknowledgement timed out for " + topic, error);
+        }
     }
 }
