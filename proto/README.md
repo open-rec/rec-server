@@ -46,6 +46,9 @@ Important compatibility details:
 - `Item.tags` is a comma-separated string, while `User.tags` is `List<String>`.
 - Event type values are free-form, but `click`, `expose`, and `dislike` have built-in serving
   behavior for triggers and filters.
+- In cluster mode rec-server reserves `Event.extFields._openrecItemContext` for the category,
+  subcategory, and non-negative price snapshot resolved before the event is published. Producers
+  may supply other `extFields`; the reserved entry is replaced by OpenRec.
 - Entity field names and serialized forms are shared contracts; update SDK and example consumers
   when changing them.
 

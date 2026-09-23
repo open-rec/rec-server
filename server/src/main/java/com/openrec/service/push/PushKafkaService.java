@@ -19,6 +19,9 @@ public class PushKafkaService implements PushService {
     @Autowired
     private KafkaService kafkaService;
 
+    @Autowired
+    private EventItemContextEnricher eventItemContextEnricher;
+
     @Override
     public void pushItem(ItemReq itemReq) {
         for (Item item : itemReq.getData()) {
@@ -44,6 +47,7 @@ public class PushKafkaService implements PushService {
             if ("dislike".equalsIgnoreCase(event.getType())) {
                 DislikeRules.parse(event.getValue());
             }
+            eventItemContextEnricher.enrich(event);
             kafkaService.writeEvent(eventReq.getCmd(), event);
         }
     }

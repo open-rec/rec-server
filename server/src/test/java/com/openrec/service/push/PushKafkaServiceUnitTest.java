@@ -22,6 +22,7 @@ public class PushKafkaServiceUnitTest {
         KafkaService kafka = mock(KafkaService.class);
         PushKafkaService service = new PushKafkaService();
         ReflectionTestUtils.setField(service, "kafkaService", kafka);
+        ReflectionTestUtils.setField(service, "eventItemContextEnricher", mock(EventItemContextEnricher.class));
         Item first = new Item(), second = new Item(), third = new Item();
         first.setId("first");
         second.setId("second");
@@ -45,6 +46,7 @@ public class PushKafkaServiceUnitTest {
         KafkaService kafka = mock(KafkaService.class);
         PushKafkaService service = new PushKafkaService();
         ReflectionTestUtils.setField(service, "kafkaService", kafka);
+        ReflectionTestUtils.setField(service, "eventItemContextEnricher", mock(EventItemContextEnricher.class));
         Item i1 = new Item(), i2 = new Item();
         i1.setId("i1");
         i2.setId("i2");
