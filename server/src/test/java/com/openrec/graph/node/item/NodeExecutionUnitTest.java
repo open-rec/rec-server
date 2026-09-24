@@ -105,7 +105,8 @@ public class NodeExecutionUnitTest {
             Arrays.asList(new ScoreResult("a", 2), new ScoreResult("b", 3), new ScoreResult("c", 4));
         ReflectionTestUtils.setField(node, "combineItems", recalled);
         ReflectionTestUtils.setField(node, "userFeatureMap", Collections.singletonMap("userId", "u"));
-        when(rank.score("u", Arrays.asList("a", "b"))).thenReturn(Collections.singletonMap("a", 5d));
+        when(rank.score(eq("u"), eq(Arrays.asList("a", "b")), eq("item"), anyString(), anyMap(), anyMap()))
+            .thenReturn(Collections.singletonMap("a", 5d));
         GraphContext context = new GraphContext();
         node.run(context);
         context.exportNodeData(node);
@@ -119,7 +120,8 @@ public class NodeExecutionUnitTest {
         ReflectionTestUtils.setField(failing, "rankService", rank);
         ReflectionTestUtils.setField(failing, "combineItems", Collections.singletonList(new ScoreResult("x", 1)));
         ReflectionTestUtils.setField(failing, "userFeatureMap", Collections.singletonMap("userId", "u"));
-        when(rank.score(eq("u"), eq(Collections.singletonList("x")))).thenThrow(new RuntimeException("down"));
+        when(rank.score(eq("u"), eq(Collections.singletonList("x")), eq("item"), anyString(), anyMap(), anyMap()))
+            .thenThrow(new RuntimeException("down"));
         failing.run(context);
 
         RankNode serviceClosed = new RankNode(config("rank", content, true));
@@ -153,7 +155,8 @@ public class NodeExecutionUnitTest {
         content.setScoreStrategy(strategy);
         RankService rank = mock(RankService.class);
         when(rank.isOpen()).thenReturn(true);
-        when(rank.score("u", Collections.singletonList("a"))).thenReturn(Collections.singletonMap("a", 0.5));
+        when(rank.score(eq("u"), eq(Collections.singletonList("a")), eq("item"), anyString(), anyMap(), anyMap()))
+            .thenReturn(Collections.singletonMap("a", 0.5));
         ScoreResult item = new ScoreResult("a", 0.4);
         item.addRecallScore("item_cf_i2i", 0.4);
         item.addRecallScore("hot", 0.3);

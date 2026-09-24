@@ -55,6 +55,14 @@ public class RankService {
         @JsonProperty("target_type")
         private String targetType;
 
+        @JsonProperty("session_id")
+        private String sessionId;
+
+        private Map<String, Object> context;
+
+        @JsonProperty("candidate_contexts")
+        private Map<String, Map<String, Object>> candidateContexts;
+
         public RankUserItems(String userId, List<String> itemIds) {
             this.userId = userId;
             this.itemIds = itemIds;
@@ -83,6 +91,11 @@ public class RankService {
     }
 
     public Map<String, Double> score(String userId, List<String> candidateIds, String targetType) {
+        return score(userId, candidateIds, targetType, "", Maps.newHashMap(), Maps.newHashMap());
+    }
+
+    public Map<String, Double> score(String userId, List<String> candidateIds, String targetType, String sessionId,
+        Map<String, Object> context, Map<String, Map<String, Object>> candidateContexts) {
         // @Value on this older Spring stack does not reliably apply relaxed RANK_HOST/RANK_PORT
         // environment binding. Resolve the exact Compose keys at call time before falling back to
         // application properties; otherwise a container silently calls its own 127.0.0.1.
@@ -90,6 +103,9 @@ public class RankService {
         String effectivePort = environment.getProperty("RANK_PORT", rankPort);
         String scoreUrl = String.format("http://%s:%s%s", effectiveHost, effectivePort, SCORE_PATH);
         RankUserItems rUserItems = new RankUserItems(userId, candidateIds, targetType);
+        rUserItems.setSessionId(sessionId);
+        rUserItems.setContext(context);
+        rUserItems.setCandidateContexts(candidateContexts);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Lists.list(MediaType.APPLICATION_JSON));

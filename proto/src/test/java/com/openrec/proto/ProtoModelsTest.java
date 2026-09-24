@@ -9,6 +9,7 @@ import com.openrec.proto.biz.recommend.RecommendRes;
 import com.openrec.proto.model.Event;
 import com.openrec.proto.model.Item;
 import com.openrec.proto.model.ScoreResult;
+import com.openrec.proto.model.Session;
 import com.openrec.proto.model.User;
 import com.openrec.proto.model.VectorResult;
 import org.junit.Test;
@@ -111,7 +112,7 @@ public class ProtoModelsTest {
         ScoreResult sourced = new ScoreResult("id", 4d, "new");
         assertEquals("new", sourced.getRecallFrom());
 
-        for (Object bean : Arrays.asList(new Event(), new Item(), new User())) {
+        for (Object bean : Arrays.asList(new Event(), new Item(), new User(), new Session())) {
             exerciseBean(bean);
             assertNotNull(bean.toString());
             assertEquals(bean, bean);

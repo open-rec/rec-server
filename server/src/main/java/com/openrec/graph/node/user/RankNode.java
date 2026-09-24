@@ -5,6 +5,7 @@ import static com.openrec.graph.RecParams.USER_ID;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.assertj.core.util.Lists;
@@ -55,7 +56,12 @@ public class RankNode extends AbstractSyncNode<RankConfig> {
         String userId = context.getParams().getValueToString(USER_ID);
         List<String> ids = rankUsers.stream().map(ScoreResult::getId).collect(Collectors.toList());
         try {
-            Map<String, Double> scores = rankService.score(userId, ids, "user");
+            Map<String, Object> requestContext = new HashMap<>();
+            requestContext.put("scene", context.getParams().getValueToString("scene"));
+            requestContext.put("request_time", System.currentTimeMillis() / 1000L);
+            Map<String, Double> scores =
+                rankService.score(userId, ids, "user", context.getParams().getValueToString("sessionId"),
+                    requestContext, new HashMap<String, Map<String, Object>>());
             for (ScoreResult candidate : rankUsers) {
                 double rankScore = scores.getOrDefault(candidate.getId(), 0d);
                 candidate.setRankScore(rankScore);

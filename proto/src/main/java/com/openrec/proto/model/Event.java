@@ -13,6 +13,11 @@ public class Event implements Serializable {
     private String deviceId;
     private String itemId;
     private String traceId;
+    private String sessionId;
+    private String requestId;
+    private String role;
+    private int position;
+    private String content;
     private String scene;
     private String type;
     private String value;

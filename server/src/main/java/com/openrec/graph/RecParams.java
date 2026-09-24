@@ -6,6 +6,7 @@ public interface RecParams {
     String SIZE = "size";
     String USER_ID = "userId";
     String DEVICE_ID = "deviceId";
+    String SESSION_ID = "sessionId";
     String ITEM_IDS = "itemIds";
     String TYPE = "type";
 }

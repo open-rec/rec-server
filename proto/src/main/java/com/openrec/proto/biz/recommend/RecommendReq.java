@@ -15,6 +15,7 @@ public class RecommendReq {
     private int size;
     private String userId;
     private String deviceId;
+    private String sessionId;
     private List<String> itemIds;
     private String type;
     private boolean debug;

@@ -7,6 +7,8 @@ import static com.openrec.graph.RecParams.USER_ID;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.LinkedHashMap;
+import java.util.HashMap;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.assertj.core.util.Lists;
@@ -72,7 +74,23 @@ public class RankNode extends AbstractSyncNode<RankConfig> {
         String userId = userFeatureMap.get(USER_ID);
         List<String> itemIds = rankItems.stream().map(ScoreResult::getId).collect(Collectors.toList());
         try {
-            Map<String, Double> rankResult = rankService.score(userId, itemIds);
+            Map<String, Object> requestContext = new HashMap<>();
+            requestContext.put("scene", context.getParams().getValueToString("scene"));
+            requestContext.put("device_id", context.getParams().getValueToString("deviceId"));
+            requestContext.put("request_time", System.currentTimeMillis() / 1000L);
+            Map<String, Map<String, Object>> candidateContexts = new LinkedHashMap<>();
+            for (int position = 0; position < rankItems.size(); position++) {
+                ScoreResult candidate = rankItems.get(position);
+                Map<String, Object> values = new HashMap<>();
+                values.put("candidate_position", position);
+                values.put("candidate_count", rankItems.size());
+                values.put("recall_from", candidate.getRecallFrom());
+                values.put("recall_score", candidate.getRecallScore());
+                values.put("recall_scores", candidate.getRecallScores());
+                candidateContexts.put(candidate.getId(), values);
+            }
+            Map<String, Double> rankResult = rankService.score(userId, itemIds, "item",
+                context.getParams().getValueToString("sessionId"), requestContext, candidateContexts);
             for (ScoreResult itemScore : rankItems) {
                 double rankScore = rankResult.getOrDefault(itemScore.getId(), 0d);
                 itemScore.setRankScore(rankScore);
