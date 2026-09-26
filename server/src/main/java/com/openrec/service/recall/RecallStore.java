@@ -26,4 +26,12 @@ public interface RecallStore {
 
     List<ScoreResult> embedding(String tableName, String scene, List<String> triggerItems, int size,
         long timeoutMillis);
+
+    /** Finds nearest items for a request-time query vector. */
+    List<ScoreResult> queryEmbedding(String tableName, String scene, List<Double> queryVector, int size,
+        long timeoutMillis);
+
+    /** Executes BM25/full-text recall against the active sparse entity index. */
+    List<ScoreResult> sparse(String tableName, String scene, String query, String textField, String minimumShouldMatch,
+        int size, long timeoutMillis);
 }

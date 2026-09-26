@@ -35,6 +35,10 @@ public class ServingNodeRegistryConfig {
             com.openrec.graph.node.item.U2iNode::new);
         register(registry, beans, "item.embedding", com.openrec.graph.node.item.EmbeddingNode.class,
             com.openrec.graph.node.item.EmbeddingNode::new);
+        register(registry, beans, "item.query-embedding", com.openrec.graph.node.item.QueryEmbeddingNode.class,
+            com.openrec.graph.node.item.QueryEmbeddingNode::new);
+        register(registry, beans, "item.sparse", com.openrec.graph.node.item.SparseNode.class,
+            com.openrec.graph.node.item.SparseNode::new);
         register(registry, beans, "item.combine", com.openrec.graph.node.item.CombineNode.class,
             com.openrec.graph.node.item.CombineNode::new);
         register(registry, beans, "item.rank", com.openrec.graph.node.item.RankNode.class,

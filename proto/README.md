@@ -81,6 +81,7 @@ class RecommendReq {
     String type;
     boolean debug;
     String targetType;
+    Map<String, Object> params;
 }
 
 class RecommendRes<T> {
@@ -95,6 +96,10 @@ serving graph.
 
 `GraphEngine.prepare()` exposes `RecommendReq` fields to nodes by field name. Renaming one is
 therefore a serving-graph contract change, not a cosmetic refactor.
+
+The item graph accepts a dense request vector in `params.queryEmbedding`. The query embedding
+recall node uses it against the configured item-vector index. Keeping the vector in `params`
+preserves compatibility for SDKs and callers that do not use semantic query recall.
 
 ### Scores and recall provenance
 

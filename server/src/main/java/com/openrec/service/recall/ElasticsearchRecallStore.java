@@ -32,7 +32,7 @@ public class ElasticsearchRecallStore implements RecallStore {
     private static final String EMBEDDING_VECTORS_QUERY =
         "{\"query\":{\"constant_score\":{\"filter\":{" + "\"terms\":{\"id\":%s}}}}}}";
     private static final String EMBEDDING_RECALL_QUERY =
-        "{\"knn\":{\"field\":\"vector\"," + "\"query_vector\":%s,\"k\":10,\"num_candidates\":20},\"size\":%d}";
+        "{\"knn\":{\"field\":\"vector\"," + "\"query_vector\":%s,\"k\":%d,\"num_candidates\":%d},\"size\":%d}";
 
     @Autowired
     private EsService esService;
@@ -149,15 +149,72 @@ public class ElasticsearchRecallStore implements RecallStore {
             if (CollectionUtils.isEmpty(vectors)) {
                 return Collections.emptyList();
             }
-            SearchResponse<RecallDocument> recallResponse = esService.search(index,
-                String.format(EMBEDDING_RECALL_QUERY, JsonUtil.objToJson(average(vectors)), size), RecallDocument.class,
-                timeout);
-            return recallResponse.hits().hits().stream().filter(hit -> hit.source() != null)
-                .map(hit -> new ScoreResult(hit.source().getId(), hit.score())).collect(Collectors.toList());
+            SearchResponse<RecallDocument> recallResponse =
+                esService.search(index, embeddingQuery(average(vectors), size), RecallDocument.class, timeout);
+            return embeddingResults(recallResponse);
         } catch (Exception e) {
             log.error("Elasticsearch embedding recall failed: {}", ExceptionUtils.getStackTrace(e));
             return Collections.emptyList();
         }
+    }
+
+    @Override
+    public List<ScoreResult> queryEmbedding(String tableName, String scene, List<Double> queryVector, int size,
+        long timeoutMillis) {
+        if (!validVector(queryVector) || size <= 0) {
+            return Collections.emptyList();
+        }
+        String index = String.format(EMBEDDING_INDEX_FORMAT, scene, tableName);
+        try {
+            return embeddingResults(
+                esService.search(index, embeddingQuery(queryVector, size), RecallDocument.class, timeoutMillis + "ms"));
+        } catch (Exception e) {
+            log.error("Elasticsearch query embedding recall failed: {}", ExceptionUtils.getStackTrace(e));
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public List<ScoreResult> sparse(String tableName, String scene, String query, String textField,
+        String minimumShouldMatch, int size, long timeoutMillis) {
+        if (query == null || query.trim().isEmpty() || size <= 0 || !validField(textField)) {
+            return Collections.emptyList();
+        }
+        String match = "{\"match\":{" + JsonUtil.objToJson(textField) + ":{" + "\"query\":" + JsonUtil.objToJson(query)
+            + (minimumShouldMatch == null || minimumShouldMatch.trim().isEmpty() ? ""
+                : ",\"minimum_should_match\":" + JsonUtil.objToJson(minimumShouldMatch))
+            + "}}}";
+        String body = "{\"query\":{\"bool\":{\"filter\":[{\"term\":{\"scene\":" + JsonUtil.objToJson(scene)
+            + "}}],\"must\":[" + match + "]}},\"size\":" + size + "}";
+        try {
+            return scoredItems(search(tableName, body, timeoutMillis + "ms"), false);
+        } catch (Exception e) {
+            log.error("Elasticsearch sparse recall failed: {}", ExceptionUtils.getStackTrace(e));
+            return Collections.emptyList();
+        }
+    }
+
+    private static boolean validField(String field) {
+        return field != null && field.matches("[A-Za-z_][A-Za-z0-9_.]*");
+    }
+
+    private static String embeddingQuery(List<Double> vector, int size) {
+        int candidates = Math.max(size, Math.min(10000, size * 2));
+        return String.format(EMBEDDING_RECALL_QUERY, JsonUtil.objToJson(vector), size, candidates, size);
+    }
+
+    private static boolean validVector(List<Double> vector) {
+        return vector != null && !vector.isEmpty()
+            && vector.stream().allMatch(value -> value != null && Double.isFinite(value));
+    }
+
+    private static List<ScoreResult> embeddingResults(SearchResponse<RecallDocument> response) {
+        if (response == null || response.hits() == null) {
+            return Collections.emptyList();
+        }
+        return response.hits().hits().stream().filter(hit -> hit.source() != null && hit.source().getId() != null)
+            .map(hit -> new ScoreResult(hit.source().getId(), hit.score() == null ? 0d : hit.score()))
+            .collect(Collectors.toList());
     }
 
     static List<Double> average(List<List<Double>> vectors) {

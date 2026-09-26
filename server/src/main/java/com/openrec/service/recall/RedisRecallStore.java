@@ -80,4 +80,16 @@ public class RedisRecallStore implements RecallStore {
         long timeoutMillis) {
         return Collections.emptyList();
     }
+
+    @Override
+    public List<ScoreResult> queryEmbedding(String tableName, String scene, List<Double> queryVector, int size,
+        long timeoutMillis) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<ScoreResult> sparse(String tableName, String scene, String query, String textField,
+        String minimumShouldMatch, int size, long timeoutMillis) {
+        return Collections.emptyList();
+    }
 }

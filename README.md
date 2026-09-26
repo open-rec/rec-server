@@ -128,6 +128,7 @@ curl -s -X POST http://localhost:13579/api/recommend/item \
     "userId": "user_247",
     "deviceId": "d1",
     "type": "click",
+    "params": {"queryEmbedding": [0.12, -0.04, 0.31]},
     "debug": true
   }
 }'
@@ -153,6 +154,8 @@ The default item graph enables these channels:
 | `content_i2i` | `I2iNode`: trigger item to content-similar candidates in `content-i2i` |
 | `user_cf_u2i` | `U2iNode`: scene and user to UserCF candidates in `user-cf-u2i` |
 | `item_seq_emb` | `EmbeddingNode`: aggregate trigger vectors, then run ANN recall |
+| `query_emb` | `QueryEmbeddingNode`: run ANN recall directly from `params.queryEmbedding` |
+| `sparse` | `SparseNode`: run BM25 recall from `params.query` against `openrec-recall-sparse-active` |
 | `hot` / `new` | Scene-level popular and recent candidates |
 
 The default user graph enables these channels:
@@ -175,7 +178,9 @@ openrec-recall-{tableName}-active
 
 For example, `item-cf-i2i` maps to `openrec-recall-item-cf-i2i-active`. Physical indexes carry a
 business date and revision, while queries filter by scene. Embedding recall uses the per-scene
-index convention `{scene}-{tableName}-index`.
+index convention `{scene}-{tableName}-index`. Query and item vectors must have the same dimension
+and embedding space. A request without `params.queryEmbedding` produces an empty `query_emb`
+channel and leaves the other recall channels unchanged.
 
 Set `recall.store=elasticsearch` or `recall.store=redis` to select the implementation. The Redis
 store is primarily a local/debug compatibility path and does not provide atomic activation of

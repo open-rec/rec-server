@@ -51,6 +51,9 @@ public class RecallStoreUnitTest {
 
         assertEquals(Collections.emptyList(),
             store.embedding("item-vector", "scene-1", Arrays.asList("a", "b"), 5, 50));
+        assertEquals(Collections.emptyList(),
+            store.queryEmbedding("item-vector", "scene-1", Arrays.asList(1.0, 2.0), 5, 50));
+        assertEquals(Collections.emptyList(), store.sparse("sparse", "scene-1", "blue train", "text", null, 5, 50));
     }
 
     @Test
@@ -118,6 +121,44 @@ public class RecallStoreUnitTest {
             store.embedding("item-vector", "scene-1", Collections.singletonList("trigger"), 5, 50);
         assertEquals(Collections.singletonList("embedding-result"), ids(result));
         assertEquals(0.75, result.get(0).getScore(), 0.000001);
+    }
+
+    @Test
+    public void elasticsearchQueryEmbeddingSearchesDirectlyWithRequestedSize() throws IOException {
+        EsService es = mock(EsService.class);
+        ElasticsearchRecallStore store = elasticsearchStore(es);
+        RecallDocument recalled = new RecallDocument();
+        recalled.setId("query-result");
+        when(es.search(eq("scene-1-item-vector-index"), anyString(), eq(RecallDocument.class), eq("50ms")))
+            .thenReturn(response(recalled, 0.85));
+
+        List<ScoreResult> result = store.queryEmbedding("item-vector", "scene-1", Arrays.asList(1.0, 2.0), 25, 50);
+        assertEquals(Collections.singletonList("query-result"), ids(result));
+        assertEquals(0.85, result.get(0).getScore(), 0.000001);
+        verify(es).search(eq("scene-1-item-vector-index"),
+            org.mockito.ArgumentMatchers.contains("\"k\":25,\"num_candidates\":50"), eq(RecallDocument.class),
+            eq("50ms"));
+
+        assertEquals(Collections.emptyList(),
+            store.queryEmbedding("item-vector", "scene-1", Arrays.asList(1.0, Double.NaN), 25, 50));
+    }
+
+    @Test
+    public void elasticsearchSparseUsesBm25ScoreAndSceneFilter() throws IOException {
+        EsService es = mock(EsService.class);
+        ElasticsearchRecallStore store = elasticsearchStore(es);
+        RecallDocument recalled = new RecallDocument();
+        recalled.setScene("scene-1");
+        recalled.setItem("track-1");
+        when(es.search(eq("openrec-recall-sparse-active"), anyString(), eq(RecallDocument.class), eq("50ms")))
+            .thenReturn(response(recalled, 3.25));
+
+        List<ScoreResult> result = store.sparse("sparse", "scene-1", "blue train", "text", "30%", 25, 50);
+
+        assertEquals(Collections.singletonList("track-1"), ids(result));
+        assertEquals(3.25, result.get(0).getScore(), 0.000001);
+        verify(es).search(eq("openrec-recall-sparse-active"),
+            org.mockito.ArgumentMatchers.contains("minimum_should_match"), eq(RecallDocument.class), eq("50ms"));
     }
 
     @Test

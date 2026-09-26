@@ -33,4 +33,5 @@ public class RecallDocument {
     private Long publishTime;
 
     private List<Double> vector;
+    private String text;
 }

@@ -124,6 +124,35 @@
       }
     },
     {
+      "name": "query_emb",
+      "clazz": "com.openrec.graph.node.item.QueryEmbeddingNode",
+      "configClazz": "com.openrec.graph.config.EmbeddingConfig",
+      "open": true,
+      "timeout": 300,
+      "content": {
+        "size": 1000,
+        "tableName": "item-vector",
+        "recallType": "query_emb",
+        "vectorField": "vector",
+        "idField": "id"
+      }
+    },
+    {
+      "name": "sparse",
+      "clazz": "com.openrec.graph.node.item.SparseNode",
+      "configClazz": "com.openrec.graph.config.SparseConfig",
+      "open": true,
+      "timeout": 300,
+      "content": {
+        "size": 1000,
+        "tableName": "sparse",
+        "recallType": "sparse",
+        "queryParam": "query",
+        "textField": "text",
+        "minimumShouldMatch": "30%"
+      }
+    },
+    {
       "name": "combine",
       "clazz": "com.openrec.graph.node.item.CombineNode",
       "configClazz": "com.openrec.graph.config.CombineConfig",
@@ -137,6 +166,8 @@
           "content_i2i",
           "user_cf_u2i",
           "item_seq_emb",
+          "query_emb",
+          "sparse",
           "hot",
           "new"
         ]
@@ -155,12 +186,38 @@
           "recallWeight": 0.2,
           "rankWeight": 0.9,
           "channels": [
-            {"name": "item_cf_i2i", "weight": 2.0},
-            {"name": "content_i2i", "weight": 1.0},
-            {"name": "user_cf_u2i", "weight": 1.0},
-            {"name": "item_seq_emb", "weight": 1.0},
-            {"name": "hot", "weight": 2.0},
-            {"name": "new", "weight": 1.0}
+            {
+              "name": "item_cf_i2i",
+              "weight": 2.0
+            },
+            {
+              "name": "content_i2i",
+              "weight": 1.0
+            },
+            {
+              "name": "user_cf_u2i",
+              "weight": 1.0
+            },
+            {
+              "name": "item_seq_emb",
+              "weight": 1.0
+            },
+            {
+              "name": "query_emb",
+              "weight": 1.0
+            },
+            {
+              "name": "sparse",
+              "weight": 1.0
+            },
+            {
+              "name": "hot",
+              "weight": 2.0
+            },
+            {
+              "name": "new",
+              "weight": 1.0
+            }
           ]
         }
       }
@@ -183,14 +240,19 @@
         "operationName": "WeightedChannelOperationRule",
         "windowSize": 5,
         "repeatK": 2,
-        "diversityDimensions": ["category", "tags"],
+        "diversityDimensions": [
+          "category",
+          "tags"
+        ],
         "channelRatios": {
           "item_cf_i2i": 0.2,
           "content_i2i": 0.1,
           "user_cf_u2i": 0.1,
           "item_seq_emb": 0.2,
           "hot": 0.2,
-          "new": 0.2
+          "new": 0.2,
+          "query_emb": 0.2,
+          "sparse": 0.1
         },
         "randomInsertRatios": {
           "hot": 0.1,
@@ -234,6 +296,14 @@
     },
     {
       "from": "item_seq_emb",
+      "to": "combine"
+    },
+    {
+      "from": "query_emb",
+      "to": "combine"
+    },
+    {
+      "from": "sparse",
       "to": "combine"
     },
     {

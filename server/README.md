@@ -35,6 +35,7 @@ The default item graph combines six recall strategies:
 | `content_i2i` | `I2iNode` | trigger item to content-similar candidates |
 | `user_cf_u2i` | `U2iNode` | user to collaborative-filter candidates |
 | `item_seq_emb` | `EmbeddingNode` | trigger sequence vector to nearest items |
+| `sparse` | `SparseNode` | request text to BM25 matches in the active sparse index |
 | `hot` | `HotNode` | scene to popular items |
 | `new` | `NewNode` | scene to recent items |
 

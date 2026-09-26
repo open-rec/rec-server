@@ -74,6 +74,53 @@ public class NodeExecutionUnitTest {
     }
 
     @Test
+    public void queryEmbeddingUsesRequestVectorAndExportsItsOwnChannel() {
+        RecallStore recallStore = mock(RecallStore.class);
+        EmbeddingConfig content = new EmbeddingConfig();
+        content.setSize(4);
+        content.setTableName("item-vector");
+        content.setRecallType("query_emb");
+        QueryEmbeddingNode node = new QueryEmbeddingNode(config("query_emb", content, true));
+        ReflectionTestUtils.setField(node, "recallStore", recallStore);
+        List<ScoreResult> recalled = Collections.singletonList(new ScoreResult("result", 0.8));
+        when(recallStore.queryEmbedding("item-vector", "s", Arrays.asList(1.0, 2.0), 4, 50)).thenReturn(recalled);
+        GraphContext context = new GraphContext();
+        context.addParam("scene", "s");
+        context.addParam("queryEmbedding", Arrays.asList(1, 2.0));
+
+        node.run(context);
+        context.exportNodeData(node);
+
+        assertSame(recalled, context.getData("queryEmbeddingItems"));
+        assertSame(recalled, context.getData("recall:query_emb"));
+    }
+
+    @Test
+    public void sparseUsesRequestTextAndExportsItsOwnChannel() {
+        RecallStore recallStore = mock(RecallStore.class);
+        SparseConfig content = new SparseConfig();
+        content.setSize(20);
+        content.setTableName("sparse");
+        content.setRecallType("sparse");
+        content.setQueryParam("query");
+        content.setTextField("text");
+        content.setMinimumShouldMatch("30%");
+        SparseNode node = new SparseNode(config("sparse", content, true));
+        ReflectionTestUtils.setField(node, "recallStore", recallStore);
+        List<ScoreResult> recalled = Collections.singletonList(new ScoreResult("result", 2.5));
+        when(recallStore.sparse("sparse", "s", "blue train", "text", "30%", 20, 50)).thenReturn(recalled);
+        GraphContext context = new GraphContext();
+        context.addParam("scene", "s");
+        context.addParam("query", "blue train");
+
+        node.run(context);
+        context.exportNodeData(node);
+
+        assertSame(recalled, context.getData("sparseItems"));
+        assertSame(recalled, context.getData("recall:sparse"));
+    }
+
+    @Test
     public void u2iLooksUpRequestUserAndExportsConfiguredChannel() {
         RecallStore recallStore = mock(RecallStore.class);
         U2iConfig content = new U2iConfig();
