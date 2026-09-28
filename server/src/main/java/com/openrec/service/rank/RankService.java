@@ -103,7 +103,7 @@ public class RankService {
         String effectivePort = environment.getProperty("RANK_PORT", rankPort);
         String scoreUrl = String.format("http://%s:%s%s", effectiveHost, effectivePort, SCORE_PATH);
         RankUserItems rUserItems = new RankUserItems(userId, candidateIds, targetType);
-        rUserItems.setSessionId(sessionId);
+        rUserItems.setSessionId(sessionId == null ? "" : sessionId);
         rUserItems.setContext(context);
         rUserItems.setCandidateContexts(candidateContexts);
         HttpHeaders headers = new HttpHeaders();

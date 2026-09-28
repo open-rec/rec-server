@@ -199,6 +199,30 @@ public class ControllerAndServiceUnitTest {
     }
 
     @Test
+    public void rankServiceSerializesMissingSessionAsEmptyString() throws Exception {
+        RestTemplate rest = mock(RestTemplate.class);
+        RankService service = new RankService();
+        ReflectionTestUtils.setField(service, "restTemplate", rest);
+        ReflectionTestUtils.setField(service, "rankHost", "localhost");
+        ReflectionTestUtils.setField(service, "rankPort", "8123");
+        ReflectionTestUtils.setField(service, "environment", new MockEnvironment());
+        RankService.RankItemScores response = new RankService.RankItemScores();
+        response.setCode(0);
+        response.setData(Collections.singletonMap("i", 1d));
+        when(rest.postForObject(anyString(), any(), eq(RankService.RankItemScores.class))).thenReturn(response);
+
+        service.score("u", Collections.singletonList("i"), "item", null, Collections.emptyMap(),
+            Collections.emptyMap());
+
+        org.mockito.ArgumentCaptor<org.springframework.http.HttpEntity> request =
+            org.mockito.ArgumentCaptor.forClass(org.springframework.http.HttpEntity.class);
+        verify(rest).postForObject(anyString(), request.capture(), eq(RankService.RankItemScores.class));
+        ObjectMapper mapper = new ObjectMapper();
+        assertEquals("",
+            mapper.readTree(mapper.writeValueAsString(request.getValue().getBody())).get("session_id").asText());
+    }
+
+    @Test
     public void rankServiceIsAlwaysClosedInStandaloneProfile() {
         RankService service = new RankService();
         ReflectionTestUtils.setField(service, "open", true);
