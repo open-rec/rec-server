@@ -13,7 +13,9 @@ public class RestConfig {
 
     @Bean
     public RestTemplate restTemplate() {
-        HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+        // rank-engine serves HTTP/1.1 (Uvicorn); do not send an h2c upgrade with a streaming POST.
+        HttpClient client =
+            HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(3)).build();
         JdkClientHttpRequestFactory httpClientFactory = new JdkClientHttpRequestFactory(client);
         httpClientFactory.setReadTimeout(Duration.ofSeconds(60));
         return new RestTemplate(httpClientFactory);

@@ -8,6 +8,7 @@ services:
     restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: cluster
+      RECOMMEND_DEADLINE_MS: ${RECOMMEND_DEADLINE_MS:-1000}
       REDIS_HOSTNAME: redis
       REDIS_PORT: 6379
       ES_HOST: elasticsearch

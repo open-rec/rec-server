@@ -81,6 +81,10 @@ public class RecService {
         }
         graphEngine.execGraph(selectedGraphPlan, recommendDeadlineMillis);
         List<ScoreResult> results = graphEngine.getResult();
+        if (results == null) {
+            throw new IllegalStateException("recommendation graph produced no result; requestId="
+                + traceContext.getRequestId() + "; node statuses=" + graphEngine.getNodeStatuses());
+        }
         recommendRes.setResults(results);
         if (recommendReq.isDebug()) {
             String entity = RecommendReq.TARGET_USER.equals(recommendReq.getTargetType()) ? "user" : "item";
