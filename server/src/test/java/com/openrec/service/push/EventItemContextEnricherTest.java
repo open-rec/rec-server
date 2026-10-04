@@ -10,7 +10,7 @@ import java.util.Map;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.openrec.proto.model.Event;
 import com.openrec.proto.model.Item;
 import com.openrec.service.query.QueryService;

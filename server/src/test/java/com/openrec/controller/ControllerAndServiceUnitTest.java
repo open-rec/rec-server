@@ -1,6 +1,6 @@
 package com.openrec.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.openrec.controller.sys.OperateController;
 import com.openrec.controller.api.PushController;
 import com.openrec.controller.api.QueryController;

@@ -7,7 +7,7 @@ import static com.openrec.graph.RecParams.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.assertj.core.util.Lists;
+import com.google.common.collect.Lists;
 
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.NodeConfig;

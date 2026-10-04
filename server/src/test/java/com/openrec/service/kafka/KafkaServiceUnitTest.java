@@ -7,7 +7,7 @@ import com.openrec.proto.biz.push.PushCmd;
 import org.junit.Test;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.util.concurrent.SettableListenableFuture;
+import java.util.concurrent.CompletableFuture;
 import org.springframework.kafka.support.SendResult;
 
 import java.util.concurrent.TimeoutException;
@@ -21,8 +21,8 @@ public class KafkaServiceUnitTest {
     @Test
     public void serializesEachDomainObjectToItsTopic() {
         KafkaTemplate<String, String> template = mock(KafkaTemplate.class);
-        SettableListenableFuture<SendResult<String, String>> acknowledged = new SettableListenableFuture<>();
-        acknowledged.set(null);
+        CompletableFuture<SendResult<String, String>> acknowledged = new CompletableFuture<>();
+        acknowledged.complete(null);
         when(template.send(anyString(), anyString(), anyString())).thenReturn(acknowledged);
         KafkaService service = new KafkaService();
         ReflectionTestUtils.setField(service, "kafkaTemplate", template);
@@ -46,9 +46,9 @@ public class KafkaServiceUnitTest {
 
     @Test
     public void failedAcknowledgementFailsPush() {
-        SettableListenableFuture<SendResult<String, String>> future = new SettableListenableFuture<>();
+        CompletableFuture<SendResult<String, String>> future = new CompletableFuture<>();
         RuntimeException failure = new RuntimeException("broker unavailable");
-        future.setException(failure);
+        future.completeExceptionally(failure);
         try {
             sendWith(future);
             fail("unacknowledged delivery must not succeed");
@@ -60,7 +60,7 @@ public class KafkaServiceUnitTest {
     @Test
     public void pendingAcknowledgementTimesOut() {
         try {
-            sendWith(new SettableListenableFuture<>());
+            sendWith(new CompletableFuture<>());
             fail("pending delivery must not succeed");
         } catch (IllegalStateException error) {
             assertTrue(error.getCause() instanceof TimeoutException);
@@ -71,7 +71,7 @@ public class KafkaServiceUnitTest {
     public void interruptionIsPreserved() {
         Thread.currentThread().interrupt();
         try {
-            sendWith(new SettableListenableFuture<>());
+            sendWith(new CompletableFuture<>());
             fail("interrupted delivery must not succeed");
         } catch (IllegalStateException error) {
             assertTrue(error.getCause() instanceof InterruptedException);
@@ -81,7 +81,7 @@ public class KafkaServiceUnitTest {
         }
     }
 
-    private void sendWith(SettableListenableFuture<SendResult<String, String>> future) {
+    private void sendWith(CompletableFuture<SendResult<String, String>> future) {
         KafkaTemplate<String, String> template = mock(KafkaTemplate.class);
         when(template.send(anyString(), anyString(), anyString())).thenReturn(future);
         KafkaService service = new KafkaService();

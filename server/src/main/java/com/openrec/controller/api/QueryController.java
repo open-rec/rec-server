@@ -12,11 +12,11 @@ import com.openrec.proto.model.User;
 import com.openrec.service.query.QueryService;
 import com.openrec.config.BlockingTaskExecutor;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import reactor.core.publisher.Mono;
 
-@Api(tags = "数据查询接口")
+@Tag(name = "数据查询接口")
 @RestController
 @RequestMapping("/api/query")
 public class QueryController {
@@ -27,21 +27,21 @@ public class QueryController {
     @Autowired
     private BlockingTaskExecutor blockingTaskExecutor;
 
-    @ApiOperation("查询用户")
+    @Operation(summary = "查询用户")
     @RequestMapping(value = {"/user/{userId}"}, method = RequestMethod.GET)
     @ResponseBody
     public Mono<JsonRes<User>> getUser(@PathVariable String userId) {
         return blockingTaskExecutor.submit(() -> new JsonRes<>(queryService.queryUser(userId)));
     }
 
-    @ApiOperation("查询物品")
+    @Operation(summary = "查询物品")
     @RequestMapping(value = {"/item/{itemId}"}, method = RequestMethod.GET)
     @ResponseBody
     public Mono<JsonRes<Item>> getItem(@PathVariable String itemId) {
         return blockingTaskExecutor.submit(() -> new JsonRes<>(queryService.queryItem(itemId)));
     }
 
-    @ApiOperation("查询用户事件列表")
+    @Operation(summary = "查询用户事件列表")
     @RequestMapping(value = {"/event/{userId}/{scene}/{type}"}, method = RequestMethod.GET)
     @ResponseBody
     public Mono<JsonRes<List<ScoreResult>>> getEvents(@PathVariable String userId, @PathVariable String scene,

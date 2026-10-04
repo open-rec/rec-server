@@ -1,6 +1,6 @@
 package com.openrec.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -8,9 +8,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.serializer.support.DeserializingConverter;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import redis.clients.jedis.JedisPoolConfig;
@@ -45,12 +47,11 @@ public class RedisConfig {
         jedisPoolConfig.setMaxTotal(maxTotal);
         jedisPoolConfig.setMaxWaitMillis(maxWaitMillis);
         jedisPoolConfig.setTestOnBorrow(testOnBorrow);
-        JedisConnectionFactory jedisFactory = new JedisConnectionFactory();
-        jedisFactory.setHostName(hostName);
-        jedisFactory.setPort(port);
-        jedisFactory.setTimeout(timeout);
-        jedisFactory.setPoolConfig(jedisPoolConfig);
-        return jedisFactory;
+        RedisStandaloneConfiguration server = new RedisStandaloneConfiguration(hostName, port);
+        JedisClientConfiguration client =
+            JedisClientConfiguration.builder().connectTimeout(java.time.Duration.ofMillis(timeout))
+                .readTimeout(java.time.Duration.ofMillis(timeout)).usePooling().poolConfig(jedisPoolConfig).build();
+        return new JedisConnectionFactory(server, client);
     }
 
     @Bean
@@ -69,7 +70,7 @@ public class RedisConfig {
         redisTemplate.setConnectionFactory(redisConnectionFactory);
         redisTemplate.afterPropertiesSet();
         redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer(new ObjectMapper()));
+        redisTemplate.setValueSerializer(new GenericJacksonJsonRedisSerializer(new ObjectMapper()));
         return redisTemplate;
     }
 }

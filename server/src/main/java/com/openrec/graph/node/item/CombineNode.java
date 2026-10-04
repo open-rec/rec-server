@@ -11,9 +11,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.assertj.core.util.Lists;
+import com.google.common.collect.Lists;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;

@@ -13,11 +13,11 @@ import com.openrec.service.metrics.ApiMetricsService;
 import com.openrec.ab.AbExperimentService;
 import com.openrec.config.BlockingTaskExecutor;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import reactor.core.publisher.Mono;
 
-@Api(tags = "推荐")
+@Tag(name = "推荐")
 @RestController
 public class RecommendController {
 
@@ -30,14 +30,14 @@ public class RecommendController {
     @Autowired
     private BlockingTaskExecutor blockingTaskExecutor;
 
-    @ApiOperation("物品推荐接口（兼容路径）")
+    @Operation(summary = "物品推荐接口（兼容路径）")
     @RequestMapping(value = {"/api/recommend"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<RecommendRes<Item>>> recommend(@RequestBody JsonReq<RecommendReq> recommendReq) {
         return recommendItem(recommendReq);
     }
 
-    @ApiOperation("物品推荐接口")
+    @Operation(summary = "物品推荐接口")
     @RequestMapping(value = {"/api/recommend/item"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<RecommendRes<Item>>> recommendItem(@RequestBody JsonReq<RecommendReq> recommendReq) {
@@ -47,7 +47,7 @@ public class RecommendController {
             () -> abExperimentService.execute(recommendReq.getBody(), recommendReq.getRequestId()))));
     }
 
-    @ApiOperation("用户推荐接口")
+    @Operation(summary = "用户推荐接口")
     @RequestMapping(value = {"/api/recommend/user"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<RecommendRes<User>>> recommendUser(@RequestBody JsonReq<RecommendReq> recommendReq) {

@@ -13,13 +13,13 @@ import com.openrec.service.push.PushService;
 import com.openrec.service.metrics.ApiMetricsService;
 import com.openrec.config.BlockingTaskExecutor;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import reactor.core.publisher.Mono;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
-@Api(tags = "数据推送接口")
+@Tag(name = "数据推送接口")
 @RestController
 @RequestMapping("/api/push")
 public class PushController {
@@ -34,7 +34,7 @@ public class PushController {
     @Autowired
     private BlockingTaskExecutor blockingTaskExecutor;
 
-    @ApiOperation("用户表推送")
+    @Operation(summary = "用户表推送")
     @RequestMapping(value = {"/user"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<String>> pushUser(@RequestBody JsonReq<UserReq> userReq) {
@@ -44,7 +44,7 @@ public class PushController {
         });
     }
 
-    @ApiOperation("物品表推送")
+    @Operation(summary = "物品表推送")
     @RequestMapping(value = {"/item"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<String>> pushItem(@RequestBody JsonReq<ItemReq> itemReq) {
@@ -54,7 +54,7 @@ public class PushController {
         });
     }
 
-    @ApiOperation("事件推送表")
+    @Operation(summary = "事件推送表")
     @RequestMapping(value = {"/event"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<String>> pushEvent(@RequestBody JsonReq<EventReq> eventReq) {

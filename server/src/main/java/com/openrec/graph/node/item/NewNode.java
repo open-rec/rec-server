@@ -6,7 +6,7 @@ import static com.openrec.graph.RecParams.SCENE;
 
 import java.util.List;
 
-import org.assertj.core.util.Lists;
+import com.google.common.collect.Lists;
 
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.NewConfig;

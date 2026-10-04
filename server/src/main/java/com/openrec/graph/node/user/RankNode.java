@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import java.util.HashMap;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.assertj.core.util.Lists;
+import com.google.common.collect.Lists;
 import org.springframework.util.CollectionUtils;
 
 import com.openrec.graph.GraphContext;

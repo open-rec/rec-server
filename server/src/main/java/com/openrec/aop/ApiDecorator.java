@@ -8,7 +8,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.MDC;
-import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
+import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.stereotype.Component;
 
 import com.openrec.proto.JsonReq;
@@ -42,7 +42,7 @@ public class ApiDecorator {
         String clazz = joinPoint.getTarget().getClass().getName();
         Method method = ((MethodSignature)joinPoint.getSignature()).getMethod();
         String methodName = method.getName();
-        LocalVariableTableParameterNameDiscoverer paramDiscoverer = new LocalVariableTableParameterNameDiscoverer();
+        DefaultParameterNameDiscoverer paramDiscoverer = new DefaultParameterNameDiscoverer();
         String[] params = paramDiscoverer.getParameterNames(method);
         Object[] args = joinPoint.getArgs();
         setRequestIdByParams(args);

@@ -16,7 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.openrec.proto.biz.push.EventReq;
 import com.openrec.proto.biz.push.ItemReq;
 import com.openrec.proto.biz.push.PushCmd;

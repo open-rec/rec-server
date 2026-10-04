@@ -3,7 +3,7 @@ package com.openrec.service.rank;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Maps;
 import lombok.Data;
-import org.assertj.core.util.Lists;
+import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -108,7 +108,7 @@ public class RankService {
         rUserItems.setCandidateContexts(candidateContexts);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(Lists.list(MediaType.APPLICATION_JSON));
+        headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
         HttpEntity<RankUserItems> reqEntity = new HttpEntity<>(rUserItems, headers);
         RankItemScores rankItemScores = restTemplate.postForObject(scoreUrl, reqEntity, RankItemScores.class);
         if (rankItemScores.getCode() == 0) {

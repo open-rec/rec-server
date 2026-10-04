@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.openrec.graph.GraphContext;
 import com.openrec.graph.config.CombineConfig;
 import com.openrec.graph.config.NodeConfig;

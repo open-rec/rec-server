@@ -1,7 +1,7 @@
 # rec-server
 
 [![CI](https://github.com/open-rec/rec-server/actions/workflows/ci.yml/badge.svg)](https://github.com/open-rec/rec-server/actions/workflows/ci.yml)
-![Java](https://img.shields.io/badge/Java-8-ED8B00?logo=openjdk&logoColor=white)
+![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-2.3.1-6DB33F?logo=springboot&logoColor=white)
 ![Maven](https://img.shields.io/badge/build-Maven-C71A36?logo=apachemaven&logoColor=white)
 
@@ -9,7 +9,7 @@
 execute independent configurable DAGs that recall, filter, combine, rank, and post-process
 candidates before returning the requested entity type.
 
-- Java 8, Spring Boot 2.3.1, and WebFlux
+- Java 21, Spring Boot 4.1.1, and WebFlux
 - Default port `13579`
 - Redis for online entities, events, and filter state
 - Elasticsearch for versioned recall tables and vector indexes
@@ -72,6 +72,17 @@ flowchart TD
 ```
 
 ## Build and run
+
+Use a JDK 21 installation for Maven and the online server (`JAVA_HOME` must point to it).
+The Docker build and runtime stages both use Temurin 21. The `proto`, `graph`, and `contrib`
+modules temporarily compile with `--release 8` so existing SDK and streaming consumers can
+upgrade independently. Their runtime dependencies remain Java 8 compatible; Spring Boot's BOM
+is imported only by `server`. CI also runs shared-library tests in a Java 8 fork.
+
+Application JSON uses Jackson 3; Jackson 2 remains an explicit dependency of the Elasticsearch
+8.5 transport. Redis values retain their existing JSON representation, without added type metadata.
+OpenAPI is available at `/v3/api-docs` and Swagger UI at `/swagger-ui.html`.
+
 
 ```shell
 mvn clean package -DskipTests

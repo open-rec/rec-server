@@ -10,11 +10,11 @@ import com.openrec.proto.JsonRes;
 import com.openrec.service.operate.OperateService;
 import com.openrec.config.BlockingTaskExecutor;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import reactor.core.publisher.Mono;
 
-@Api(tags = "运营干预")
+@Tag(name = "运营干预")
 @RestController
 @RequestMapping("/api/operate")
 public class OperateController {
@@ -25,7 +25,7 @@ public class OperateController {
     @Autowired
     private BlockingTaskExecutor blockingTaskExecutor;
 
-    @ApiOperation("黑名单")
+    @Operation(summary = "黑名单")
     @RequestMapping(value = {"/blacklist"}, method = RequestMethod.POST)
     @ResponseBody
     public Mono<JsonRes<String>> set(@RequestBody JsonReq<Set<String>> blacklist) {
