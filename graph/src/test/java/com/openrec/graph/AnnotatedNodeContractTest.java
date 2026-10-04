@@ -97,7 +97,8 @@ public class AnnotatedNodeContractTest {
         node.setName(name);
         node.setClazz(type.getName());
         node.setOpen(true);
-        node.setTimeout(100);
+        // This suite verifies data contracts; allow worker startup on a busy CI host.
+        node.setTimeout(1000);
         return node;
     }
 

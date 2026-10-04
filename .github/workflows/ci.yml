@@ -26,15 +26,6 @@ jobs:
           cache: maven
       - name: Run tests
         run: mvn --batch-mode --no-transfer-progress clean test
-      - name: Set up Java 8 for shared-library compatibility
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '8'
-      - name: Run shared-library tests on Java 8 with the Java 21 build
-        run: |
-          JAVA_HOME="${JAVA_HOME_21_X64}" mvn --batch-mode --no-transfer-progress \
-            -pl graph,proto,contrib test -Djvm="${JAVA_HOME_8_X64}/bin/java"
       - name: Print test failure reports
         if: failure()
         shell: bash

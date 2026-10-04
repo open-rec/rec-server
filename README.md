@@ -74,10 +74,9 @@ flowchart TD
 ## Build and run
 
 Use a JDK 21 installation for Maven and the online server (`JAVA_HOME` must point to it).
-The Docker build and runtime stages both use Temurin 21. The `proto`, `graph`, and `contrib`
-modules temporarily compile with `--release 8` so existing SDK and streaming consumers can
-upgrade independently. Their runtime dependencies remain Java 8 compatible; Spring Boot's BOM
-is imported only by `server`. CI also runs shared-library tests in a Java 8 fork.
+The Docker build and runtime stages both use Temurin 21. All modules, including `proto`,
+`graph`, and `contrib`, compile with `--release 21`. Their consumers (SDK, example/init and
+data-processor) must use Java 21. Spring Boot's BOM is imported only by `server`.
 
 Application JSON uses Jackson 3; Jackson 2 remains an explicit dependency of the Elasticsearch
 8.5 transport. Redis values retain their existing JSON representation, without added type metadata.
