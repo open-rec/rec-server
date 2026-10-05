@@ -11,7 +11,9 @@ loaders. It consists of serializable POJOs and enums without Spring or transport
 </dependency>
 ```
 
-Run `mvn install` from the `rec-server` root before building consumers against a local snapshot.
+Build and run with JDK 21. Like graph/contrib and the SDK, this module targets `--release 21`;
+it no longer provides a Java 8 compatibility artifact. Run `mvn install` from the `rec-server`
+root before building consumers against a local snapshot.
 
 ## Envelope
 
@@ -87,10 +89,29 @@ class RecommendReq {
 class RecommendRes<T> {
     List<ScoreResult> results;
     List<T> detailInfos;
+    List<RecallDiagnostic> recallDiagnostics;
+}
+
+class RecallDiagnostic {
+    String node;
+    String channel;
+    String status;
+    int candidateCount;
 }
 ```
 
-`debug=true` asks the selected endpoint to attach item or user entity details. `targetType` is
+`debug=true` attaches item/user entity details and request-scoped `recallDiagnostics`. Each
+recall diagnostic reports the node status and its committed candidate count before filtering,
+merging, ranking and final truncation. An item returned by two recall nodes counts toward both
+channels, even if it does not reach the final results. Disabled nodes report `DISABLED`; failed or
+timed-out nodes report their execution status and zero candidates. Diagnostics are unset for
+normal requests. This additive field does not change existing result attribution.
+
+Recommendation endpoints return HTTP 503 until the selected target/experiment graph is ready;
+`/health` is liveness and `/ready` is the recommendation admission check. See the
+[readiness setup](../README.md#recommendation-readiness) for warmup samples and authentication.
+
+`targetType` is
 assigned by `/api/recommend/item` or `/api/recommend/user`; both endpoints execute their respective
 serving graph.
 

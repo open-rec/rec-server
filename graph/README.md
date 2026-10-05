@@ -4,6 +4,8 @@
 dependencies: it compiles a graph definition, runs ready nodes concurrently, and exchanges data
 through a request-scoped context. Recommendation-specific nodes live in `rec-server`.
 
+This module builds and runs with JDK 21 (`--release 21`), including when embedded outside rec-server.
+
 ## Use the engine
 
 Compile reusable graph metadata once, then create one engine per request:
@@ -140,6 +142,11 @@ then the next level starts after the batch completes. Every node has a timeout a
 may have an earlier deadline. A timed-out or cancelled invocation is interrupted and its late output
 is never committed. `failurePolicy` controls whether failure continues, skips descendants, or fails
 the graph.
+
+`execGraph(plan, deadlineMillis, nodeTimeoutFloorMillis)` provides a per-execution node timeout
+floor for warmup without mutating the shared plan. Ordinary serving calls retain the configured
+node deadlines. `setWarmup(true)` propagates an internal flag to node execution contexts; the
+serving collectors use it to suppress synthetic exposure writes during readiness probes.
 
 ## Execution trace
 

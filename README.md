@@ -85,9 +85,10 @@ OpenAPI is available at `/v3/api-docs` and Swagger UI at `/swagger-ui.html`.
 
 ```shell
 mvn clean package -DskipTests
-cd server
-java -jar target/rec-server-1.0-SNAPSHOT.jar \
-  --spring.profiles.active=standalone
+mkdir -p server/plugins
+cp contrib/target/rec-contrib-1.0-SNAPSHOT.jar server/plugins/
+(cd server && java -jar target/rec-server-1.0-SNAPSHOT.jar \
+  --spring.profiles.active=standalone)
 ```
 
 Use `mvn clean install -DskipTests` when the Java SDK or example loader needs the local
@@ -164,8 +165,11 @@ not a promise that later dependency outages or resource contention cannot cause 
 
 ## Quick check
 
+Load data and complete the warmup setup above first. `/ready` must return 200 before the
+recommendation call below can succeed.
+
 ```shell
-curl http://localhost:13579/health
+curl -fsS http://localhost:13579/ready
 
 curl -s -X POST http://localhost:13579/api/recommend/item \
   -H 'Content-Type: application/json' -d '{
@@ -284,7 +288,9 @@ as exposed. It is disabled in cluster mode, where clients report `expose` events
 | GET | `/api/query/item/{itemId}` | Query an item |
 | GET | `/api/query/event/{userId}/{scene}/{type}` | Query events |
 | POST | `/api/operate/blacklist` | Set the global item blacklist |
-| GET | `/health` | Health check |
+| GET | `/health` | Process liveness; does not admit recommendation traffic |
+| GET | `/ready` | Recommendation readiness; 200 when ready, otherwise 503 |
+| POST | `/internal/recommendation-warmup` | Start warmup/verification; requires `X-OpenRec-Token` |
 
 Requests and responses use `JsonReq<T>` and `JsonRes<T>`; see [`rec-proto`](proto) for the wire
 contract. Cluster push messages use a versioned mutation envelope with operation and event time.

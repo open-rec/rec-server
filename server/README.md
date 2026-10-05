@@ -4,7 +4,7 @@ This module contains the WebFlux application, serving DAG nodes, storage adapter
 management, and HTTP endpoints. The generic runtime is provided by [`rec-graph`](../graph), shared
 wire models by [`rec-proto`](../proto), and operation rules by [`rec-contrib`](../contrib).
 
-Entry point: `com.openrec.RecServer`. Default port: `13579`.
+Entry point: `com.openrec.RecServer`. Default port: `13579`. Runtime: Java 21 / Spring Boot 4.1.1.
 
 ## Package layout
 
@@ -22,12 +22,12 @@ Entry point: `com.openrec.RecServer`. Default port: `13579`.
 
 ## Request flow
 
-For every recommendation request, the active graph plan is selected, a request-scoped
-`GraphEngine` is created, request fields are added to its context, and ready nodes execute by DAG
-level. The collector returns ordered `ScoreResult` values and optionally loads item details for
-debug responses.
+Recommendation admission checks the selected target/experiment graph against completed warmup;
+unready routes return HTTP 503. For admitted requests, a request-scoped `GraphEngine` executes
+the active plan by DAG level. The collector returns ordered `ScoreResult` values. `RecService`
+attaches entity details and pre-selection `recallDiagnostics` for debug requests.
 
-The default item graph combines six recall strategies:
+The default item graph configures eight recall strategies (some require request-specific input):
 
 | `recallType` / node name | Node | Lookup |
 |---|---|---|
@@ -35,6 +35,7 @@ The default item graph combines six recall strategies:
 | `content_i2i` | `I2iNode` | trigger item to content-similar candidates |
 | `user_cf_u2i` | `U2iNode` | user to collaborative-filter candidates |
 | `item_seq_emb` | `EmbeddingNode` | trigger sequence vector to nearest items |
+| `query_emb` | `QueryEmbeddingNode` | supplied `params.queryEmbedding` vector to nearest items |
 | `sparse` | `SparseNode` | request text to BM25 matches in the active sparse index |
 | `hot` | `HotNode` | scene to popular items |
 | `new` | `NewNode` | scene to recent items |
@@ -96,9 +97,16 @@ Build from the repository root, then launch with the desired profile:
 
 ```shell
 mvn clean package -DskipTests
-java -jar server/target/rec-server-1.0-SNAPSHOT.jar \
+java -Dopenrec.operation.plugin="$PWD/contrib/target/rec-contrib-1.0-SNAPSHOT.jar" \
+  -jar server/target/rec-server-1.0-SNAPSHOT.jar \
   --spring.profiles.active=standalone
 ```
+
+After loading serving data, configure `RECOMMEND_WARMUP_USER_ID` before startup or submit
+representative samples to `/internal/recommendation-warmup`. Wait for `/ready` to return 200
+before sending recommendations; `/health` and Docker healthchecks indicate liveness only.
+The [root readiness guide](../README.md#recommendation-readiness) describes token configuration,
+independent warmup budgets and normal-budget verification. Example startup scripts automate this.
 
 Swagger UI is available at <http://localhost:13579/swagger-ui/index.html>. See the repository
 [`README`](../README.md) for dependencies, Docker usage, configuration, and endpoint examples.
