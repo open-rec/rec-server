@@ -97,8 +97,8 @@ Build from the repository root, then launch with the desired profile:
 
 ```shell
 mvn clean package -DskipTests
-java -Dopenrec.operation.plugin="$PWD/contrib/target/rec-contrib-1.0-SNAPSHOT.jar" \
-  -jar server/target/rec-server-1.0-SNAPSHOT.jar \
+java -Dopenrec.operation.plugin="$PWD/contrib/target/rec-contrib-0.1.0.jar" \
+  -jar server/target/rec-server-0.1.0.jar \
   --spring.profiles.active=standalone
 ```
 
