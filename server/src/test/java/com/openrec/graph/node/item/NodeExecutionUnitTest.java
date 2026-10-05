@@ -244,6 +244,25 @@ public class NodeExecutionUnitTest {
     }
 
     @Test
+    public void internalWarmupSuppressesExposureButRequestParameterCannot() {
+        RedisService redis = mock(RedisService.class);
+        CollectorNode node = new CollectorNode(config("collector", null, true));
+        ReflectionTestUtils.setField(node, "redisService", redis);
+        ReflectionTestUtils.setField(node, "finalItems", Collections.singletonList(new ScoreResult("a", 1)));
+        GraphContext context = new GraphContext();
+        context.addParam("size", 1);
+        context.addParam("userId", "u");
+        context.addParam("scene", "s");
+        context.setWarmup(true);
+        node.run(context.forkExecution());
+        verifyNoInteractions(redis);
+        context.setWarmup(false);
+        context.addParam("warmup", true);
+        node.run(context);
+        verify(redis).addZSets(eq("event:{u}:s:expose"), anyMap());
+    }
+
+    @Test
     public void collectorDoesNotWriteSyntheticExposureInCluster() {
         RedisService redis = mock(RedisService.class);
         MockEnvironment cluster = new MockEnvironment();

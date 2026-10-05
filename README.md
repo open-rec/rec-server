@@ -124,6 +124,44 @@ docker compose -f docker-compose.cluster.yml up -d --build --wait
 The complete initialization and acceptance flows live in `example/example_standalone` and
 `example/example_cluster`.
 
+### Recommendation readiness
+
+`/health` reports process liveness; use `/ready` for traffic admission. Recommendation endpoints
+return HTTP 503 until their target/experiment graph has been warmed. Push, query and control APIs
+remain available so cluster initialization can load data before recommendations become ready.
+
+For the examples, `RECOMMEND_WARMUP_USER_ID` and `RECOMMEND_WARMUP_SCENE` configure an automatic
+item recommendation sample on every process start. The startup scripts set these after preparing
+the fixture data. A bare server with no sample remains unready; provide representative requests
+through the authenticated endpoint after loading your data:
+
+```shell
+curl -fsS -X POST http://localhost:13579/internal/recommendation-warmup \
+  -H 'Content-Type: application/json' \
+  -H 'X-OpenRec-Token: openrec-serving-graph-token-change-me' \
+  -d '[{"targetType":"item","scene":"scene_0","userId":"user_0","size":12,"type":"click","params":{"ab":"default","query":"item"}}]'
+curl -fsS http://localhost:13579/ready
+```
+
+The POST returns 202 while a background worker runs the complete graph with a 10-second request
+budget and a 2-second node timeout floor. These apply only to the probe execution. It then requires
+three consecutive successful rounds with the original request and node budgets before `/ready`
+returns 200. Every probe must produce candidates and finish all nodes successfully; any failed
+normal round resets the success count. Built-in collectors suppress synthetic exposures during
+both phases using an internal context flag that cannot be supplied by public request parameters.
+
+Provide samples for every target/experiment route you intend to serve, including `targetType=user`
+and representative query/vector parameters where used. Uncovered routes remain blocked. Publishing
+a new graph invalidates its readiness and automatically rewarms configured samples. The defaults
+are `recommend.warmup.deadline-ms=10000`, `node-timeout-ms=2000`, `successes=3` and `max-attempts=20`
+(all under `recommend.warmup`). Attempts are one second apart; exhaustion leaves readiness failed.
+After fixing dependencies/data, repeat the POST to retry. An empty POST body reuses existing samples.
+Custom samples supplied by POST are in-memory; deployment automation must reapply them after restart.
+
+The container healthcheck deliberately uses liveness to avoid a bootstrap dependency cycle.
+Configure a load balancer or orchestrator readiness probe against `/ready`. This is a startup gate,
+not a promise that later dependency outages or resource contention cannot cause request failures.
+
 ## Quick check
 
 ```shell

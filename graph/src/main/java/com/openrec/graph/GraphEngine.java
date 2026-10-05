@@ -84,6 +84,10 @@ public class GraphEngine {
         context.addParam(key, value);
     }
 
+    public void setWarmup(boolean warmup) {
+        context.setWarmup(warmup);
+    }
+
     /** Retained for callers using the original build-then-execute API. */
     public void buildGraph(GraphConfig graphConfig) {
         try {
@@ -109,6 +113,11 @@ public class GraphEngine {
 
     /** Executes a precompiled plan within a request-wide deadline. */
     public void execGraph(GraphPlan plan, long deadlineMillis) {
+        execGraph(plan, deadlineMillis, 0L);
+    }
+
+    /** Per-execution warmup budget; never mutates the shared plan or node configuration. */
+    public void execGraph(GraphPlan plan, long deadlineMillis, long nodeTimeoutFloorMillis) {
         long graphStartedNanos = System.nanoTime();
         long deadlineNanos = deadlineMillis == Long.MAX_VALUE ? Long.MAX_VALUE
             : System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(Math.max(0L, deadlineMillis));
@@ -141,8 +150,9 @@ public class GraphEngine {
                     }
                     execution.bind(latch);
                     long remaining = remainingMillis(deadlineNanos);
-                    submit(execution, plan.getNodeContract(index), Math.min(nodes[index].getTimeout(), remaining),
-                        remaining <= nodes[index].getTimeout());
+                    long nodeTimeout = Math.max(nodes[index].getTimeout(), nodeTimeoutFloorMillis);
+                    submit(execution, plan.getNodeContract(index), Math.min(nodeTimeout, remaining),
+                        remaining <= nodeTimeout);
                 }
                 await(latch, executions);
 

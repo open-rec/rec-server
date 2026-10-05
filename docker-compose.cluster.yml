@@ -7,6 +7,8 @@ services:
     hostname: rec-server
     restart: unless-stopped
     environment:
+      RECOMMEND_WARMUP_USER_ID: ${RECOMMEND_WARMUP_USER_ID:-}
+      RECOMMEND_WARMUP_SCENE: ${RECOMMEND_WARMUP_SCENE:-scene_0}
       SPRING_PROFILES_ACTIVE: cluster
       RECOMMEND_DEADLINE_MS: ${RECOMMEND_DEADLINE_MS:-1000}
       REDIS_HOSTNAME: redis

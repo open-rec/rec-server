@@ -12,6 +12,7 @@ import com.openrec.proto.model.User;
 import com.openrec.service.metrics.ApiMetricsService;
 import com.openrec.ab.AbExperimentService;
 import com.openrec.config.BlockingTaskExecutor;
+import com.openrec.service.rec.RecommendationReadiness;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +21,9 @@ import reactor.core.publisher.Mono;
 @Tag(name = "推荐")
 @RestController
 public class RecommendController {
+
+    @Autowired
+    private RecommendationReadiness readiness;
 
     @Autowired
     private AbExperimentService abExperimentService;
@@ -42,9 +46,13 @@ public class RecommendController {
     @ResponseBody
     public Mono<JsonRes<RecommendRes<Item>>> recommendItem(@RequestBody JsonReq<RecommendReq> recommendReq) {
         prepareTarget(recommendReq.getBody(), RecommendReq.TARGET_ITEM);
+        readiness.requireReady(recommendReq.getBody());
         String experiment = abExperimentService.resolve(recommendReq.getBody());
-        return blockingTaskExecutor.submit(() -> new JsonRes<>(apiMetricsService.recordRecommend(experiment,
-            () -> abExperimentService.execute(recommendReq.getBody(), recommendReq.getRequestId()))));
+        return blockingTaskExecutor.submit(() -> new JsonRes<>(apiMetricsService.recordRecommend(experiment, () -> {
+            readiness.requireReady(recommendReq.getBody());
+            return abExperimentService.execute(recommendReq.getBody(), recommendReq.getRequestId(),
+                selected -> readiness.requireReady(recommendReq.getBody(), selected));
+        })));
     }
 
     @Operation(summary = "用户推荐接口")
@@ -52,9 +60,13 @@ public class RecommendController {
     @ResponseBody
     public Mono<JsonRes<RecommendRes<User>>> recommendUser(@RequestBody JsonReq<RecommendReq> recommendReq) {
         prepareTarget(recommendReq.getBody(), RecommendReq.TARGET_USER);
+        readiness.requireReady(recommendReq.getBody());
         String experiment = abExperimentService.resolve(recommendReq.getBody());
-        return blockingTaskExecutor.submit(() -> new JsonRes<>(apiMetricsService.recordRecommend(experiment,
-            () -> abExperimentService.execute(recommendReq.getBody(), recommendReq.getRequestId()))));
+        return blockingTaskExecutor.submit(() -> new JsonRes<>(apiMetricsService.recordRecommend(experiment, () -> {
+            readiness.requireReady(recommendReq.getBody());
+            return abExperimentService.execute(recommendReq.getBody(), recommendReq.getRequestId(),
+                selected -> readiness.requireReady(recommendReq.getBody(), selected));
+        })));
     }
 
     private static void prepareTarget(RecommendReq request, String targetType) {

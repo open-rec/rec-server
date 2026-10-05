@@ -59,7 +59,8 @@ public class CollectorNode extends AbstractCollectorNode {
     protected void afterCollect(GraphContext context, List<ScoreResult> finalItems) {
         // Keep this capability deploy-time configurable: standalone enables it, while cluster
         // clients report impressions that were actually rendered through the Push API.
-        if (environment == null || environment.getProperty("collector.fake-expose.enabled", Boolean.class, true)) {
+        if (!context.isWarmup()
+            && (environment == null || environment.getProperty("collector.fake-expose.enabled", Boolean.class, true))) {
             writeFakeExpose(context, finalItems);
         }
         log.info("{} return with final item size:{}", getName(), finalItems.size());

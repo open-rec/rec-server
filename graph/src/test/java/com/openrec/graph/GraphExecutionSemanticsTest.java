@@ -19,6 +19,20 @@ import com.openrec.graph.tools.anno.Export;
 public class GraphExecutionSemanticsTest {
 
     @Test
+    public void warmupBudgetDoesNotChangeSubsequentNormalExecution() {
+        NodeConfig<Object> config = node("slow", SlowExportNode.class, FailurePolicy.CONTINUE);
+        config.setTimeout(5);
+        GraphPlan plan = GraphPlan.compile(graph(config));
+        GraphEngine warmup = GraphEngine.getSessionGraphEngine();
+        warmup.execGraph(plan, 2000L, 1000L);
+        assertEquals(NodeStatus.SUCCESS, warmup.getNodeStatuses().get("slow"));
+        assertEquals(5, config.getTimeout());
+        GraphEngine normal = GraphEngine.getSessionGraphEngine();
+        normal.execGraph(plan, 2000L);
+        assertEquals(NodeStatus.TIMED_OUT, normal.getNodeStatuses().get("slow"));
+    }
+
+    @Test
     public void requestDeadlineCancelsWorkAndRejectsLateOutput() throws Exception {
         GraphEngine engine = GraphEngine.getSessionGraphEngine();
         engine.execGraph(GraphPlan.compile(graph(node("slow", SlowExportNode.class, FailurePolicy.CONTINUE))), 25L);

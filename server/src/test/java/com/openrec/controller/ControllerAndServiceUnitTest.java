@@ -97,6 +97,8 @@ public class ControllerAndServiceUnitTest {
 
         AbExperimentService experiments = mock(AbExperimentService.class);
         RecommendController recommendController = new RecommendController();
+        ReflectionTestUtils.setField(recommendController, "readiness",
+            mock(com.openrec.service.rec.RecommendationReadiness.class));
         ReflectionTestUtils.setField(recommendController, "abExperimentService", experiments);
         ReflectionTestUtils.setField(recommendController, "apiMetricsService",
             new ApiMetricsService(new SimpleMeterRegistry()));
@@ -104,14 +106,14 @@ public class ControllerAndServiceUnitTest {
         RecommendReq req = new RecommendReq();
         RecommendRes<Item> res = new RecommendRes<>();
         when(experiments.resolve(req)).thenReturn("default");
-        doReturn(res).when(experiments).execute(eq(req), anyString());
+        doReturn(res).when(experiments).execute(eq(req), anyString(), any());
         assertSame(res, recommendController.recommend(new JsonReq<>(req)).block().getData());
         assertEquals(RecommendReq.TARGET_ITEM, req.getTargetType());
         assertSame(res, recommendController.recommendItem(new JsonReq<>(req)).block().getData());
 
         RecommendReq userReq = new RecommendReq();
         RecommendRes<User> userRes = new RecommendRes<>();
-        doReturn(userRes).when(experiments).execute(eq(userReq), anyString());
+        doReturn(userRes).when(experiments).execute(eq(userReq), anyString(), any());
         com.openrec.proto.JsonRes<RecommendRes<User>> userResponse =
             recommendController.recommendUser(new JsonReq<>(userReq)).block();
         assertEquals(com.openrec.proto.ProtoCode.SUCCESS, userResponse.getCode());

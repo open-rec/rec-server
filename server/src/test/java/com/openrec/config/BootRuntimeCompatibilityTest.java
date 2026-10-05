@@ -57,6 +57,32 @@ public class BootRuntimeCompatibilityTest {
         assertTrue(metrics.body().contains("jvm_memory_used_bytes"));
     }
 
+    @Test
+    public void coldServerIsLiveButNotReadyAndCannotBypassRecommendationGate() throws Exception {
+        assertEquals(200, get("/health").statusCode());
+        HttpResponse<String> ready = get("/ready");
+        assertEquals(503, ready.statusCode());
+        assertFalse(mapper.readTree(ready.body()).get("ready").booleanValue());
+        String request = "{\"body\":{\"scene\":\"s\",\"userId\":\"u\",\"size\":1," + "\"params\":{\"warmup\":true}}}";
+        for (String path : new String[] {"/api/recommend", "/api/recommend/item", "/api/recommend/user"}) {
+            assertEquals(503, post(path, request, null).statusCode());
+        }
+        assertEquals(401, post("/internal/recommendation-warmup", "[]", null).statusCode());
+        assertEquals(400,
+            post("/internal/recommendation-warmup", "[]", "openrec-serving-graph-token-change-me").statusCode());
+    }
+
+    private HttpResponse<String> post(String path, String body, String token) throws Exception {
+        String url = "http://127.0.0.1:" + environment.getProperty("local.server.port") + path;
+        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(url)).header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(body));
+        if (token != null)
+            builder.header("X-OpenRec-Token", token);
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            return client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        }
+    }
+
     private HttpResponse<String> get(String path) throws Exception {
         String url = "http://127.0.0.1:" + environment.getProperty("local.server.port") + path;
         try (HttpClient client = HttpClient.newHttpClient()) {

@@ -22,6 +22,15 @@ public class GraphContext {
     private Map<DataKey<?>, Object> typedDataMap;
     private Object result;
     private GraphContext parent;
+    private boolean warmup;
+
+    public boolean isWarmup() {
+        return warmup;
+    }
+
+    public void setWarmup(boolean warmup) {
+        this.warmup = warmup;
+    }
 
     public GraphContext() {
         this.params = new GraphParams();
@@ -36,6 +45,7 @@ public class GraphContext {
         this.dataMap = Maps.newHashMap();
         this.typedDataMap = Maps.newHashMap();
         this.parent = parent;
+        this.warmup = parent.warmup;
     }
 
     public GraphContext forkExecution() {

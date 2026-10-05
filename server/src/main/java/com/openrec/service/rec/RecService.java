@@ -15,6 +15,7 @@ import com.openrec.graph.GraphPlan;
 import com.openrec.graph.RecTemplate;
 import com.openrec.graph.node.NodeRegistry;
 import com.openrec.graph.node.ReflectiveNodeFactory;
+import com.openrec.graph.node.NodeStatus;
 import com.openrec.graph.trace.GraphTraceContext;
 import com.openrec.graph.trace.GraphTraceObserver;
 import com.openrec.proto.biz.recommend.RecommendReq;
@@ -73,17 +74,35 @@ public class RecService {
 
     public RecommendRes execute(RecommendReq recommendReq, GraphPlan selectedGraphPlan,
         GraphTraceContext traceContext) {
+        return execute(recommendReq, selectedGraphPlan, traceContext, false, recommendDeadlineMillis, 0L);
+    }
+
+    public void probe(RecommendReq request, GraphPlan plan, String requestId, long deadlineMillis,
+        long nodeTimeoutFloorMillis) {
+        execute(request, plan,
+            GraphTraceContext.create(requestId, request.getTargetType(), request.getScene(), "warmup", "warmup"), true,
+            deadlineMillis > 0 ? deadlineMillis : recommendDeadlineMillis, nodeTimeoutFloorMillis);
+    }
+
+    private RecommendRes execute(RecommendReq recommendReq, GraphPlan selectedGraphPlan, GraphTraceContext traceContext,
+        boolean warmup, long deadlineMillis, long nodeTimeoutFloorMillis) {
         RecommendRes recommendRes = new RecommendRes();
         GraphEngine graphEngine = GraphEngine.getSessionGraphEngine(traceContext, graphTraceObserver);
         graphEngine.prepare(recommendReq);
+        graphEngine.setWarmup(warmup);
         if (recommendReq != null && recommendReq.getParams() != null) {
             recommendReq.getParams().forEach(graphEngine::addParam);
         }
-        graphEngine.execGraph(selectedGraphPlan, recommendDeadlineMillis);
+        graphEngine.execGraph(selectedGraphPlan, deadlineMillis, nodeTimeoutFloorMillis);
         List<ScoreResult> results = graphEngine.getResult();
         if (results == null) {
             throw new IllegalStateException("recommendation graph produced no result; requestId="
                 + traceContext.getRequestId() + "; node statuses=" + graphEngine.getNodeStatuses());
+        }
+        if (warmup && (results.isEmpty()
+            || graphEngine.getNodeStatuses().values().stream().anyMatch(status -> status != NodeStatus.SUCCESS))) {
+            throw new IllegalStateException(
+                "warmup requires candidates and successful graph nodes; statuses=" + graphEngine.getNodeStatuses());
         }
         recommendRes.setResults(results);
         if (recommendReq.isDebug()) {

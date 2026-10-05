@@ -49,10 +49,17 @@ public class AbExperimentService {
     }
 
     public <T> RecommendRes<T> execute(RecommendReq request, String requestId) {
+        return execute(request, requestId, graph -> {
+        });
+    }
+
+    public <T> RecommendRes<T> execute(RecommendReq request, String requestId,
+        java.util.function.Consumer<GraphConfig> admission) {
         String experimentName = resolve(request);
         String targetType = request == null ? RecommendReq.TARGET_ITEM : request.getTargetType();
         String scene = request == null ? null : request.getScene();
         Experiment experiment = required(experiments(targetType), experimentName);
+        admission.accept(experiment.graph);
         GraphTraceContext trace =
             GraphTraceContext.create(requestId, targetType, scene, experimentName, experiment.version);
         return recService.execute(request, experiment.plan, trace);
