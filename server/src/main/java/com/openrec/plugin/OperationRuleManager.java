@@ -16,7 +16,7 @@ import com.openrec.contrib.operation.OperationRule;
 public class OperationRuleManager {
 
     private static final String JAR_FILE = System.getProperty("openrec.operation.plugin",
-        System.getProperty("user.dir") + File.separator + "plugins/rec-contrib-1.0-SNAPSHOT.jar");
+        System.getProperty("user.dir") + File.separator + "plugins/rec-contrib-0.1.0.jar");
     private static final String PLUGIN_ID = "contrib-plugins";
 
     private static PluginManager pluginManager;

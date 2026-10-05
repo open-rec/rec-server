@@ -1,5 +1,7 @@
 # rec-server
 
+[Release v0.1.0](RELEASE_NOTES.md) · [Changelog](CHANGELOG.md)
+
 [![CI](https://github.com/open-rec/rec-server/actions/workflows/ci.yml/badge.svg)](https://github.com/open-rec/rec-server/actions/workflows/ci.yml)
 ![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1.1-6DB33F?logo=springboot&logoColor=white)
@@ -86,8 +88,8 @@ OpenAPI is available at `/v3/api-docs` and Swagger UI at `/swagger-ui.html`.
 ```shell
 mvn clean package -DskipTests
 mkdir -p server/plugins
-cp contrib/target/rec-contrib-1.0-SNAPSHOT.jar server/plugins/
-(cd server && java -jar target/rec-server-1.0-SNAPSHOT.jar \
+cp contrib/target/rec-contrib-0.1.0.jar server/plugins/
+(cd server && java -jar target/rec-server-0.1.0.jar \
   --spring.profiles.active=standalone)
 ```
 
@@ -99,14 +101,14 @@ under the server working directory:
 
 ```shell
 mkdir -p server/plugins
-cp contrib/target/rec-contrib-1.0-SNAPSHOT.jar server/plugins/
+cp contrib/target/rec-contrib-0.1.0.jar server/plugins/
 ```
 
 Alternatively, set an explicit path:
 
 ```shell
 java -Dopenrec.operation.plugin=/path/to/rec-contrib.jar \
-  -jar server/target/rec-server-1.0-SNAPSHOT.jar \
+  -jar server/target/rec-server-0.1.0.jar \
   --spring.profiles.active=standalone
 ```
 

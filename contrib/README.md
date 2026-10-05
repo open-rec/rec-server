@@ -81,7 +81,7 @@ match. Keep rule execution within the operation node's timeout.
 The plugin is loaded as a jar rather than from the application classpath. The default path is:
 
 ```text
-<server-working-directory>/plugins/rec-contrib-1.0-SNAPSHOT.jar
+<server-working-directory>/plugins/rec-contrib-0.1.0.jar
 ```
 
 Build and stage it with:
@@ -89,14 +89,14 @@ Build and stage it with:
 ```shell
 mvn -pl contrib package
 mkdir -p server/plugins
-cp contrib/target/rec-contrib-1.0-SNAPSHOT.jar server/plugins/
+cp contrib/target/rec-contrib-0.1.0.jar server/plugins/
 ```
 
 Override the location when necessary:
 
 ```shell
-java -Dopenrec.operation.plugin=/absolute/path/rec-contrib-1.0-SNAPSHOT.jar \
-  -jar server/target/rec-server-1.0-SNAPSHOT.jar
+java -Dopenrec.operation.plugin=/absolute/path/rec-contrib-0.1.0.jar \
+  -jar server/target/rec-server-0.1.0.jar
 ```
 
 The manifest declares plugin ID `contrib-plugins`. Keep the artifact path, version, and loader

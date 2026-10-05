@@ -20,8 +20,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /opt/openrec
-COPY --from=build /src/server/target/rec-server-1.0-SNAPSHOT.jar ./rec-server.jar
-COPY --from=build /src/contrib/target/rec-contrib-1.0-SNAPSHOT.jar ./plugins/rec-contrib.jar
+COPY --from=build /src/server/target/rec-server-0.1.0.jar ./rec-server.jar
+COPY --from=build /src/contrib/target/rec-contrib-0.1.0.jar ./plugins/rec-contrib.jar
 
 EXPOSE 13579
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=12 \
