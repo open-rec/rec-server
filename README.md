@@ -312,3 +312,16 @@ wait bounded separately by `spring.kafka.producer.properties.max.block.ms` (defa
 A failed batch can have an acknowledged prefix; a timeout has an unknown delivery outcome.
 Clients must retain stable entity IDs and event IDs on retries. Batches are not atomic and the
 server does not silently retry an entire batch after a failure. Standalone Redis pushes are unchanged.
+
+### Recall diagnostics for acceptance checks
+
+Recommendation requests with `debug: true` return `data.recallDiagnostics`: one entry per
+recall node containing `node`, `channel`, `status`, and `candidateCount`. Counts describe
+successfully committed recall outputs before filtering, de-duplication, ranking and top-N
+selection. The same item can count toward multiple recall channels. Disabled nodes report
+`DISABLED`; failed or timed-out nodes report their execution status and zero candidates.
+Normal requests leave diagnostics unset. Existing result attribution (`recallFrom` and
+`recallScores`) and recommendation selection are unchanged.
+
+Use these request-scoped diagnostics to verify recall availability. Final results need not
+represent every healthy recall channel; channel allocation is a separate operation-rule contract.

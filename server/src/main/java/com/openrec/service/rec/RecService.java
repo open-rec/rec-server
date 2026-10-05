@@ -1,6 +1,8 @@
 package com.openrec.service.rec;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -16,10 +18,14 @@ import com.openrec.graph.RecTemplate;
 import com.openrec.graph.node.NodeRegistry;
 import com.openrec.graph.node.ReflectiveNodeFactory;
 import com.openrec.graph.node.NodeStatus;
+import com.openrec.graph.node.AbstractRecallNode;
+import com.openrec.graph.config.RecallConfig;
+import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.trace.GraphTraceContext;
 import com.openrec.graph.trace.GraphTraceObserver;
 import com.openrec.proto.biz.recommend.RecommendReq;
 import com.openrec.proto.biz.recommend.RecommendRes;
+import com.openrec.proto.biz.recommend.RecallDiagnostic;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.redis.RedisService;
 
@@ -106,11 +112,29 @@ public class RecService {
         }
         recommendRes.setResults(results);
         if (recommendReq.isDebug()) {
+            recommendRes.setRecallDiagnostics(recallDiagnostics(selectedGraphPlan, graphEngine));
             String entity = RecommendReq.TARGET_USER.equals(recommendReq.getTargetType()) ? "user" : "item";
             recommendRes.setDetailInfos(redisService.getVs(
                 results.stream().map(i -> String.format(entity + ":{%s}", i.getId())).collect(Collectors.toList())));
         }
         return recommendRes;
+    }
+
+    private List<RecallDiagnostic> recallDiagnostics(GraphPlan plan, GraphEngine engine) {
+        List<RecallDiagnostic> diagnostics = new ArrayList<>();
+        for (NodeConfig<?> node : plan.getConfig().getNodes()) {
+            if (!(node.getContent() instanceof RecallConfig recall)) {
+                continue;
+            }
+            NodeStatus status = engine.getNodeStatuses().get(node.getName());
+            Object output = engine.getData(AbstractRecallNode.CHANNEL_PREFIX + recall.getRecallType());
+            // Failed/timed-out executions must never be reported as successful recall supply.
+            int count = node.isOpen() && status == NodeStatus.SUCCESS && output instanceof Collection<?>
+                ? ((Collection<?>)output).size() : 0;
+            diagnostics.add(new RecallDiagnostic(node.getName(), recall.getRecallType(),
+                !node.isOpen() ? "DISABLED" : status == null ? "UNKNOWN" : status.name(), count));
+        }
+        return diagnostics;
     }
 
     public void replaceGraphConfig(String targetType, GraphConfig newGraphConfig) {

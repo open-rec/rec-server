@@ -14,6 +14,9 @@ public class RecommendRes<T> {
 
     private List<T> detailInfos;
 
+    /** Present for debug requests; independent of which candidates reach the final results. */
+    private List<RecallDiagnostic> recallDiagnostics;
+
     public RecommendRes() {
         this(new ArrayList<>(0));
     }

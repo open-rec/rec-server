@@ -10,7 +10,7 @@ import com.openrec.proto.model.ScoreResult;
 /** Shared configuration and dynamic channel export for table-backed recall nodes. */
 public abstract class AbstractRecallNode<C extends RecallConfig> extends AbstractSyncNode<C> {
 
-    static final String CHANNEL_PREFIX = "recall:";
+    public static final String CHANNEL_PREFIX = "recall:";
 
     protected AbstractRecallNode(NodeConfig nodeConfig) {
         super(nodeConfig);
