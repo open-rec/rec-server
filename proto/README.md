@@ -67,9 +67,12 @@ class AbstractPushReq<T> {
 enum PushCmd { INSERT, UPDATE, DELETE }
 ```
 
-`INSERT` and `UPDATE` are upserts in the current server implementations. `DELETE` removes the
-corresponding records. The active Spring profile decides whether mutations are written directly to
-Redis or published as versioned Kafka messages.
+`INSERT` and `UPDATE` are upserts in the current server implementations. User/item `DELETE`
+removes entities by ID. Event `DELETE` is mode-specific: standalone removes the supplied item IDs
+from the user/scene/type Redis sorted set, rather than deleting historical events by ID; cluster
+rejects event deletion through the public push API. Downstream event-tombstone support is a
+separate mutation-consumer contract. The active Spring profile decides whether accepted mutations
+are written directly to Redis or published as versioned Kafka messages.
 
 ## Recommendation contract
 
@@ -133,7 +136,7 @@ preserves compatibility for SDKs and callers that do not use semantic query reca
 | `recallFrom` | First recall channel that produced the item |
 | `recallScore` | Score from `recallFrom`, or `null` if recall did not run |
 | `recallFusionScore` | Aggregated multi-channel recall score |
-| `rankScore` | Rank-engine contribution, or `null` when ranking was skipped |
+| `rankScore` | Rank-engine contribution, or `null` on bypass or fallback after failure/timeout |
 | `recallScores` | Insertion-ordered map of every recall channel and its score |
 
 An item recalled by several channels is emitted once while retaining all channel contributions.
