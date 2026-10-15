@@ -5,13 +5,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -35,14 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GraphEngine {
 
-    private static final int WORKER_THREADS =
-        Integer.getInteger("openrec.graph.worker.threads", Math.max(8, Runtime.getRuntime().availableProcessors() * 4));
-    private static final int WORKER_QUEUE_CAPACITY = Integer.getInteger("openrec.graph.worker.queue-capacity", 1024);
-
-    private static final ThreadPoolExecutor threadPool = new ThreadPoolExecutor(WORKER_THREADS, WORKER_THREADS, 0L,
-        TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(WORKER_QUEUE_CAPACITY),
-        new ThreadFactoryBuilder().setNameFormat("graph-engine-pool-%d").setDaemon(true).build(),
-        new ThreadPoolExecutor.AbortPolicy());
+    private static final ExecutorService threadPool = GraphWorkerExecutor.create(System::getProperty, System::getenv);
 
     private static final ScheduledExecutorService timeoutThreadPool = Executors.newSingleThreadScheduledExecutor(
         new ThreadFactoryBuilder().setNameFormat("graph-timeout-pool-%d").setDaemon(true).build());

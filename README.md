@@ -247,6 +247,12 @@ their existing snapshot.
 
 ## Profiles and configuration
 
+Graph nodes use JDK 21 virtual threads by default in both standalone and cluster modes.
+Set `OPENREC_GRAPH_EXECUTOR=platform` to use the previous fixed thread pool; optionally set
+`OPENREC_GRAPH_WORKER_THREADS` and `OPENREC_GRAPH_WORKER_QUEUE_CAPACITY`. Restart/recreate the
+service after changing these process-wide settings. The HTTP admission executor remains bounded.
+See [graph worker configuration](graph/README.md#worker-selection) for JVM flags and semantics.
+
 Configuration lives in `server/src/main/resources`:
 
 | File | Purpose |

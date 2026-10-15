@@ -25,8 +25,41 @@ List<MyResult> result = engine.getResult();
 `GraphEngine` is stateful and must not be shared between requests. `GraphPlan` is immutable and may
 be reused. The older `buildGraph(...)` followed by `execGraph()` API remains available.
 
-`destroy()` clears only request-scoped state. Worker and timeout executors are bounded, daemonized,
-and shared by all engine instances.
+`destroy()` clears only request-scoped state. Worker and timeout executors are shared by all
+engine instances and use daemon threads. JDK 21 virtual threads are the default for node execution.
+
+## Worker selection
+
+Select the executor before the first `GraphEngine` use; changing it requires a process restart.
+JVM system properties override environment variables. This configuration also works without Spring;
+these are not Spring `application.properties` settings.
+
+| JVM property | Environment variable | Default |
+|---|---|---|
+| `openrec.graph.executor` | `OPENREC_GRAPH_EXECUTOR` | `virtual` (`platform` selects the previous fixed pool) |
+| `openrec.graph.worker.threads` | `OPENREC_GRAPH_WORKER_THREADS` | `max(8, availableProcessors × 4)` |
+| `openrec.graph.worker.queue-capacity` | `OPENREC_GRAPH_WORKER_QUEUE_CAPACITY` | `1024` |
+
+Worker count and queue capacity apply only to `platform`. It retains a bounded queue and rejection
+on overload. `virtual` creates one named virtual thread per submitted node; it has no worker/queue
+limit of its own. Keep admission and downstream connection limits at the application boundary.
+rec-server retains its existing bounded HTTP blocking executor (32 threads and 256 queued tasks by
+default). Node deadlines, interruption, failure policies and output commit semantics are identical
+in both modes. Invalid modes and invalid platform pool sizes fail on engine initialization.
+
+```shell
+# Default; supported by both standalone and cluster Compose assemblies.
+OPENREC_GRAPH_EXECUTOR=virtual docker compose -f docker-compose.standalone.yml up -d --build
+# Roll back to platform workers; restart/recreate the application to apply.
+OPENREC_GRAPH_EXECUTOR=platform OPENREC_GRAPH_WORKER_THREADS=32 \
+  docker compose -f docker-compose.standalone.yml up -d
+# Embedded / java -jar usage: place the JVM property before -jar.
+java -Dopenrec.graph.executor=platform -jar server.jar
+```
+
+Virtual threads suit nodes waiting on Redis, Elasticsearch or HTTP. CPU-heavy nodes still execute
+normally, but virtual threads do not increase available CPU capacity. Both modes use the same DAG;
+there is no per-node executor selection.
 
 ## Graph definition
 
@@ -168,6 +201,7 @@ when WebFlux dispatches work to the blocking and graph worker pools.
 
 ```shell
 mvn -pl graph test
+mvn -pl graph test -Dopenrec.graph.executor=platform
 ```
 
 The graph module tests are self-contained and require no external services.
