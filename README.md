@@ -275,6 +275,11 @@ graph-version metadata and per-node status, queue time, execution time, input/ou
 failure class. Aggregate graph and node latency/outcome/volume metrics are available from
 `/actuator/prometheus` under the `openrec_graph_*` prefix.
 
+With the default `CONTINUE` failure policy, an item/user rank timeout or failure leaves
+the original recall candidates available to operation and collection nodes. Rank writes use
+independent copies, so late completion cannot alter fallback results. The graph trace still
+records the failed/timed-out node, and fallback results keep `rankScore` unset.
+
 `collector.fake-expose.enabled` is enabled by default in standalone mode, treating returned items
 as exposed. It is disabled in cluster mode, where clients report `expose` events after display.
 
