@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import tools.jackson.core.type.TypeReference;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import com.openrec.proto.model.Event;
 import com.openrec.proto.model.Item;
@@ -47,8 +48,12 @@ public class EventItemContextEnricher {
             return new LinkedHashMap<>();
         }
         try {
-            return new LinkedHashMap<>(objectMapper.convertValue(value, new TypeReference<Map<String, Object>>() {}));
-        } catch (IllegalArgumentException ignored) {
+            Map<String,
+                Object> fields = value instanceof String
+                    ? objectMapper.readValue((String)value, new TypeReference<Map<String, Object>>() {})
+                    : objectMapper.convertValue(value, new TypeReference<Map<String, Object>>() {});
+            return fields == null ? new LinkedHashMap<>() : new LinkedHashMap<>(fields);
+        } catch (JacksonException | IllegalArgumentException ignored) {
             return new LinkedHashMap<>();
         }
     }

@@ -60,7 +60,7 @@ public class RankNode extends AbstractSyncNode<RankConfig> {
             return;
         }
 
-        rankItems = combineItems.subList(0, Math.min(size, combineItems.size()));
+        rankItems = RankCandidates.copy(combineItems, size);
         if (CollectionUtils.isEmpty(rankItems)) {
             return;
         }

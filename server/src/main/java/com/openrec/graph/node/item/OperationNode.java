@@ -20,8 +20,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OperationNode extends AbstractSyncNode<OperationConfig> {
 
-    @Import("rankItems")
+    @Import(value = "rankItems", required = false)
     private List<ScoreResult> rankItems;
+
+    @Import(value = "combineItems", required = false)
+    private List<ScoreResult> combineItems;
 
     @Export("operationItems")
     private List<ScoreResult> operationItems;
@@ -39,6 +42,11 @@ public class OperationNode extends AbstractSyncNode<OperationConfig> {
 
     @Override
     public void run(GraphContext context) {
+        // A failed or timed-out rank node publishes no output. Preserve recall results.
+        if (rankItems == null)
+            rankItems = combineItems;
+        if (rankItems == null)
+            throw new IllegalStateException("no ranked or recall candidates");
         operationItems = operationRule == null ? rankItems : operationRule.handle(context, rankItems);
         log.info("{}:{} exec finished", getName(), config.getContent().getOperationName());
         log.info("{} with result size:{}", getName(), operationItems.size());
