@@ -17,7 +17,6 @@ import com.openrec.graph.config.RankConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
 import com.openrec.graph.node.RankScoreFusion;
-import com.openrec.graph.node.RankCandidates;
 import com.openrec.graph.node.AbstractSyncNode;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.rank.RankService;
@@ -49,7 +48,7 @@ public class RankNode extends AbstractSyncNode<RankConfig> {
             rankUsers = userCandidates;
             return;
         }
-        rankUsers = RankCandidates.copy(userCandidates, config.getContent().getSize());
+        rankUsers = userCandidates.subList(0, Math.min(config.getContent().getSize(), userCandidates.size()));
         if (CollectionUtils.isEmpty(rankUsers))
             return;
         for (ScoreResult candidate : rankUsers)

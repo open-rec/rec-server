@@ -171,13 +171,9 @@ public class AbExperimentService {
     }
 
     public Map<String, Object> status() {
-        return overview(RecommendReq.TARGET_ITEM);
-    }
-
-    public Map<String, Object> overview(String targetType) {
-        Map<String, Object> result = status(targetType, DEFAULT_EXPERIMENT);
+        Map<String, Object> result = status(DEFAULT_EXPERIMENT);
         Map<String, Object> all = new LinkedHashMap<>();
-        experiments(targetType).keySet().stream().sorted().forEach(name -> all.put(name, status(targetType, name)));
+        experiments.keySet().stream().sorted().forEach(name -> all.put(name, status(name)));
         result.put("experiments", all);
         result.put("routing", routing());
         return result;

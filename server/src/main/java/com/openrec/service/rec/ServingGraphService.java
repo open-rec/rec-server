@@ -73,11 +73,6 @@ public class ServingGraphService {
         return abExperimentService.status(experiment);
     }
 
-    public Map<String, Object> overview(String targetType) {
-        ensureDefaultChecksum(targetType);
-        return abExperimentService.overview(targetType);
-    }
-
     public Map<String, Object> status(String targetType, String experiment) {
         ensureDefaultChecksum(targetType);
         return abExperimentService.status(targetType, experiment);

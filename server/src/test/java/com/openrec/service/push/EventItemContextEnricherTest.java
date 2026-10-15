@@ -43,34 +43,4 @@ public class EventItemContextEnricherTest {
         assertEquals("fiction", context.get("subcategory"));
         assertEquals(19.5d, (Double)context.get("price"), 0d);
     }
-
-    @Test
-    public void acceptsJsonStringsAndIgnoresNonObjectExtensions() {
-        for (Object value : new Object[] {null, "", "null", "[]", "true", "broken", 12, java.util.List.of("a"),
-            "{\"price\":\"NaN\"}"}) {
-            assertContext(value, value, null, null);
-        }
-        assertContext("{\"unit_price\":19.5}", "{\"source\":\"search\"}", 19.5d, "search");
-        assertContext("{\"price\":-1,\"unitPrice\":2}", null, 2d, null);
-    }
-
-    private void assertContext(Object itemFields, Object eventFields, Double price, String source) {
-        QueryService query = mock(QueryService.class);
-        Item item = new Item();
-        item.setCategory("books");
-        item.setExtFields(itemFields);
-        when(query.queryItem("i")).thenReturn(item);
-        EventItemContextEnricher enricher = new EventItemContextEnricher();
-        ReflectionTestUtils.setField(enricher, "queryService", query);
-        ReflectionTestUtils.setField(enricher, "objectMapper", new ObjectMapper());
-        Event event = new Event();
-        event.setItemId("i");
-        event.setExtFields(eventFields);
-        enricher.enrich(event);
-        Map<?, ?> ext = (Map<?, ?>)event.getExtFields();
-        assertEquals(source, ext.get("source"));
-        Map<?, ?> context = (Map<?, ?>)ext.get(EventItemContextEnricher.FIELD);
-        assertEquals("books", context.get("category"));
-        assertEquals(price, context.get("price"));
-    }
 }

@@ -51,8 +51,8 @@ public class ServingGraphController {
         @RequestParam(value = "target", defaultValue = "item") String targetType,
         @RequestParam(value = "experiment", required = false) String experiment) {
         authorize(requestToken);
-        return blockingTaskExecutor.submit(() -> new JsonRes<>(experiment == null
-            ? servingGraphService.overview(targetType) : servingGraphService.status(targetType, experiment)));
+        return blockingTaskExecutor.submit(() -> new JsonRes<>(servingGraphService.status(targetType,
+            experiment == null ? AbExperimentService.DEFAULT_EXPERIMENT : experiment)));
     }
 
     @PutMapping("/routing")

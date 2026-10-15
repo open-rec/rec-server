@@ -65,26 +65,4 @@ public class ServingGraphServiceTest {
         Assert.assertEquals("ab-v1", service.status("test1").get("version"));
         Assert.assertNotEquals(update.getTimeout(), recService.getGraphConfig().getNodes().get(0).getTimeout());
     }
-
-    @Test
-    public void controllerOverviewIncludesExperimentsAndRoutingForSelectedTarget() {
-        abExperimentService.create("test1");
-        com.openrec.controller.sys.ServingGraphController controller =
-            new com.openrec.controller.sys.ServingGraphController();
-        com.openrec.config.BlockingTaskExecutor executor = new com.openrec.config.BlockingTaskExecutor(1, 4);
-        ReflectionTestUtils.setField(controller, "servingGraphService", service);
-        ReflectionTestUtils.setField(controller, "blockingTaskExecutor", executor);
-        ReflectionTestUtils.setField(controller, "token", "test");
-        try {
-            java.util.Map<String, Object> overview = controller.status("test", "item", null).block().getData();
-            Assert.assertTrue(((java.util.Map<?, ?>)overview.get("experiments")).containsKey("test1"));
-            Assert.assertNotNull(overview.get("routing"));
-            java.util.Map<String, Object> user = controller.status("test", "user", null).block().getData();
-            Assert.assertFalse(((java.util.Map<?, ?>)user.get("experiments")).containsKey("test1"));
-            Assert.assertEquals("test1",
-                controller.status("test", "item", "test1").block().getData().get("experiment"));
-        } finally {
-            executor.shutdown();
-        }
-    }
 }
