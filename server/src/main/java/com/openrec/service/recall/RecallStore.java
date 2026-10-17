@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.openrec.proto.model.ScoreResult;
 
-/** Storage-neutral access to the four offline recall channels. */
+/** Access to item and user recall tables, vectors, and text search. */
 public interface RecallStore {
 
     List<ScoreResult> hot(String tableName, String scene, int size);
@@ -28,10 +28,9 @@ public interface RecallStore {
         long timeoutMillis);
 
     /** Finds nearest items for a request-time query vector. */
-    List<ScoreResult> queryEmbedding(String tableName, String scene, List<Double> queryVector, int size,
-        long timeoutMillis);
+    List<ScoreResult> queryEmbedding(String tableName, List<Double> queryVector, int size, long timeoutMillis);
 
-    /** Executes BM25/full-text recall against the active sparse entity index. */
-    List<ScoreResult> sparse(String tableName, String scene, String query, String textField, String minimumShouldMatch,
-        int size, long timeoutMillis);
+    /** Executes BM25/full-text recall against the active text-search entity index. */
+    List<ScoreResult> textSearch(String tableName, String scene, String query, String textField,
+        String minimumShouldMatch, String entityField, int size, long timeoutMillis);
 }

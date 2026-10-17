@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.openrec.graph.GraphContext;
+import com.openrec.graph.RequestTrigger;
 import com.openrec.graph.config.EmbeddingConfig;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.node.AbstractRecallNode;
@@ -22,8 +23,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class EmbeddingNode extends AbstractRecallNode<EmbeddingConfig> {
     @Autowired
     private RecallStore recallStore;
-    @Import("triggerUsers")
-    private List<ScoreResult> triggerUsers;
+    @Import(RequestTrigger.KEY)
+    private RequestTrigger requestTrigger;
     @Export("embeddingUsers")
     private List<ScoreResult> embeddingUsers = new ArrayList<>();
 
@@ -35,7 +36,7 @@ public class EmbeddingNode extends AbstractRecallNode<EmbeddingConfig> {
     public void run(GraphContext context) {
         if (!config.isOpen())
             return;
-        List<String> triggers = triggerUsers.stream().map(ScoreResult::getId).collect(Collectors.toList());
+        List<String> triggers = requestTrigger.userSeedIds();
         Map<String, Double> merged = new LinkedHashMap<>();
         for (String trigger : triggers) {
             for (ScoreResult user : recallStore.u2u(tableName(), context.getParams().getValueToString(SCENE), trigger,

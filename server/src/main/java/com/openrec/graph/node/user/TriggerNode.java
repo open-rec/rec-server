@@ -1,21 +1,22 @@
 package com.openrec.graph.node.user;
 
-import static com.openrec.graph.RecParams.USER_ID;
-
-import java.util.Collections;
-import java.util.List;
-
 import com.openrec.graph.GraphContext;
+import com.openrec.graph.RecParams;
+import com.openrec.service.redis.RedisService;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.openrec.graph.RequestTrigger;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.config.UserTriggerConfig;
 import com.openrec.graph.node.AbstractSyncNode;
 import com.openrec.graph.tools.anno.Export;
-import com.openrec.proto.model.ScoreResult;
 
-/** Supplies the requesting user as the seed for user-to-user recall. */
+/** Supplies shared request triggers and the seed for user-to-user recall. */
 public class TriggerNode extends AbstractSyncNode<UserTriggerConfig> {
-    @Export("triggerUsers")
-    private List<ScoreResult> triggerUsers = Collections.emptyList();
+    @Autowired
+    private RedisService redisService;
+
+    @Export(RequestTrigger.KEY)
+    private RequestTrigger requestTrigger;
 
     public TriggerNode(NodeConfig nodeConfig) {
         super(nodeConfig);
@@ -23,10 +24,17 @@ public class TriggerNode extends AbstractSyncNode<UserTriggerConfig> {
 
     @Override
     public void run(GraphContext context) {
-        if (!config.isOpen())
+        requestTrigger = RequestTrigger.fromParams(context);
+        String scene = context.getParams().getValueToString(RecParams.SCENE);
+        if (!config.isOpen() || requestTrigger.triggerSelf().isEmpty() || scene == null || scene.isBlank()
+            || config.getContent().getSize() <= 0) {
             return;
-        String userId = context.getParams().getValueToString(USER_ID);
-        triggerUsers = userId == null || userId.trim().isEmpty() ? Collections.emptyList()
-            : Collections.singletonList(new ScoreResult(userId, 1d));
+        }
+        String key = String.format("user-event:{%s}:%s:click", requestTrigger.triggerSelf(), scene);
+        requestTrigger = requestTrigger
+            .withUsers(redisService.getZSet(key, 0, Double.MAX_VALUE, config.getContent().getSize()).stream()
+                .filter(user -> user.getId() != null && !user.getId().isBlank()
+                    && !user.getId().equals(requestTrigger.triggerSelf()))
+                .map(user -> new RequestTrigger.TriggerUser(user.getId(), user.getScore())).toList());
     }
 }

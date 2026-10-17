@@ -2,12 +2,12 @@ package com.openrec.graph.node.user;
 
 import com.openrec.graph.node.AbstractCombineNode;
 
-import static com.openrec.graph.RecParams.USER_ID;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import com.openrec.graph.GraphContext;
+import com.openrec.graph.RequestTrigger;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
@@ -19,8 +19,8 @@ public class CombineNode extends AbstractCombineNode {
     private Set<String> filterUserSet = java.util.Collections.emptySet();
     @Import("blackUserSet")
     private Set<String> blackUserSet = java.util.Collections.emptySet();
-    @Import("triggerUsers")
-    private List<ScoreResult> triggerUsers = java.util.Collections.emptyList();
+    @Import(RequestTrigger.KEY)
+    private RequestTrigger requestTrigger;
     @Export("userCandidates")
     private List<ScoreResult> candidates = new ArrayList<>();
 
@@ -30,11 +30,10 @@ public class CombineNode extends AbstractCombineNode {
 
     @Override
     public void run(GraphContext context) {
-        String requester = context.getParams().getValueToString(USER_ID);
-        Set<String> triggers = triggerUsers == null ? java.util.Collections.emptySet()
-            : triggerUsers.stream().map(ScoreResult::getId).collect(java.util.stream.Collectors.toSet());
-        Set<String> excluded = new java.util.HashSet<>(triggers);
-        excluded.add(requester);
+        Set<String> excluded = new java.util.HashSet<>(requestTrigger.userSeedIds());
+        if (!requestTrigger.triggerSelf().isEmpty()) {
+            excluded.add(requestTrigger.triggerSelf());
+        }
         MergeResult merged =
             mergeChannels(context, java.util.Collections.emptyMap(), filterUserSet, blackUserSet, excluded);
         candidates = new ArrayList<>(merged.candidates().values());

@@ -10,6 +10,7 @@ import java.util.List;
 import com.google.common.collect.Lists;
 
 import com.openrec.graph.GraphContext;
+import com.openrec.graph.RequestTrigger;
 import com.openrec.graph.config.EmbeddingConfig;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
@@ -26,8 +27,8 @@ public class EmbeddingNode extends AbstractRecallNode<EmbeddingConfig> {
     @Autowired
     private RecallStore recallStore;
 
-    @Import("triggerItems")
-    private List<ScoreResult> triggerItems;
+    @Import(RequestTrigger.KEY)
+    private RequestTrigger requestTrigger;
 
     @Export("embeddingItems")
     private List<ScoreResult> embeddingItems;
@@ -44,8 +45,8 @@ public class EmbeddingNode extends AbstractRecallNode<EmbeddingConfig> {
             return;
         }
         List<String> triggers = new ArrayList<>();
-        for (ScoreResult trigger : triggerItems) {
-            triggers.add(trigger.getId());
+        for (RequestTrigger.TriggerItem trigger : requestTrigger.triggerItems()) {
+            triggers.add(trigger.id());
         }
         String scene = context.getParams().getValueToString(SCENE);
         embeddingItems =

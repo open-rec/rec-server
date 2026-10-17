@@ -36,20 +36,24 @@ flowchart TD
     user_trigger --> item_cf_i2i
     user_trigger --> content_i2i
     user_trigger --> item_seq_emb
-
+    user_trigger --> item_search
+    user_trigger --> query_title_emb
+    user_trigger --> user_cf_u2i
     item_cf_i2i --> combine
     content_i2i --> combine
     user_cf_u2i --> combine
     item_seq_emb --> combine
+    query_title_emb --> combine
+    item_search --> combine
     hot --> combine
     new --> combine
     filter --> combine
     black --> combine
-
     combine --> rank
     user_feature --> rank
     item_feature --> rank
-    rank --> operation --> collector
+    rank --> operation
+    operation --> collector
 ```
 
 ### User graph
@@ -61,16 +65,17 @@ flowchart TD
     user_trigger --> user_cf_u2u
     user_trigger --> content_u2u
     user_trigger --> user_als_u2u
-
+    user_trigger --> user_search
+    filter --> combine
+    black --> combine
     user_cf_u2u --> combine
     content_u2u --> combine
     user_als_u2u --> combine
-    filter --> combine
-    black --> combine
-
     combine --> rank
     user_feature --> rank
-    rank --> operation --> collector
+    rank --> operation
+    operation --> collector
+    user_search --> combine
 ```
 
 ## Build and run
@@ -121,6 +126,9 @@ docker compose -f docker-compose.cluster.yml up -d --build --wait
 ```
 
 - Standalone writes push requests directly to Redis and may bypass rank-engine.
+  `application-standalone.properties` explicitly disables online query embedding by default
+  (`embedding.enabled=${EMBEDDING_ENABLED:false}`), so query text does not call vLLM.
+  Enable it explicitly only when the inference service and title-vector index are available.
 - Cluster publishes push mutations to Kafka, calls rank-engine, and expects clients to report real
   exposures.
 
@@ -208,8 +216,8 @@ The default item graph enables these channels:
 | `content_i2i` | `I2iNode`: trigger item to content-similar candidates in `content-i2i` |
 | `user_cf_u2i` | `U2iNode`: scene and user to UserCF candidates in `user-cf-u2i` |
 | `item_seq_emb` | `EmbeddingNode`: aggregate trigger vectors, then run ANN recall |
-| `query_qwen_emb` | `QueryEmbeddingNode`: run ANN recall directly from `params.queryEmbedding` |
-| `sparse` | `SparseNode`: run BM25 recall from `params.query` against `openrec-recall-sparse-active` |
+| `query_title_emb` | `QueryEmbeddingNode`: embed `params.query` through vLLM (or use `params.queryEmbedding`), then search the global `query-title-emb-index` |
+| `item_search` | `SearchNode`: run BM25 recall from `params.query` against `openrec-recall-item-search-active` |
 | `hot` / `new` | Scene-level popular and recent candidates |
 
 The default user graph enables these channels:
@@ -219,6 +227,18 @@ The default user graph enables these channels:
 | `user_cf_u2u` | `U2uNode`: source user to UserCF user candidates in `user-cf-u2u` |
 | `content_u2u` | `U2uNode`: source user to content-similar user candidates in `content-u2u` |
 | `user_als_u2u` | `EmbeddingNode`: read ALS-based U2U results from `user-als-u2u` |
+| `user_search` | `SearchNode`: run BM25 recall from `params.query` against `openrec-recall-user-search-active` |
+
+`user_trigger` exports one immutable `requestTrigger` containing `triggerItems`
+(item IDs with scores), `triggerUsers` (clicked user IDs with scores), `triggerSelf` (request user ID), and `triggerQuery` (request text).
+I2I, sequence/ALS recall, user-based recall, text/vector search, and combine consume
+this shared object. Independent `triggerItems`/`triggerUsers` exports are removed;
+custom nodes must import `requestTrigger` and access its fields. Query-title, UserCF U2I, and both search
+channels run after `user_trigger` and feed `combine`. Missing user IDs skip history
+lookup and user-based recall; query-only requests can still run text/vector recall.
+Custom graphs without a trigger retain request-parameter fallback.
+Both search nodes consume the shared query (or their configured custom query parameter). They filter text-search
+candidates by the request scene and return item IDs or user IDs respectively.
 
 Each recall node retains its fixed `@Export` for older graphs and also writes
 `recall:<recallType>`. The default `CombineNode` reads the dynamic keys listed in `recallTypes`, so
@@ -231,17 +251,19 @@ openrec-recall-{tableName}-active
 ```
 
 For example, `item-cf-i2i` maps to `openrec-recall-item-cf-i2i-active`. Physical indexes carry a
-business date and revision, while queries filter by scene. Embedding recall uses the per-scene
+business date and revision, while queries filter by scene. Sequence embedding recall uses the per-scene
 index convention `{scene}-{tableName}-index`. Query and item vectors must have the same dimension
-and embedding space. The `query_qwen_emb` channel reads its own
-`{scene}-query_qwen_emb-index`, populated with Qwen vectors (the Music CRS experiment uses
-Qwen3-Embedding-8B, 4096 dimensions). It must not read the Word2Vec sequence index.
-Bootstrap does not populate the Qwen index. A request without `params.queryEmbedding` produces an empty `query_qwen_emb`
-channel and leaves the other recall channels unchanged.
+and embedding space. The `query_title_emb` channel ignores scene and reads the global
+`query-title-emb-index`, populated from Qwen3-Embedding-0.6B title vectors
+(1024 dimensions) when `EMBEDDING_ENABLED=true` during example initialization.
+A supplied `params.queryEmbedding` is still accepted. Otherwise, when enabled,
+`params.query` is encoded through an OpenAI-compatible embedding endpoint before kNN.
+No query or a disabled/unavailable provider produces an empty semantic recall channel.
+The query and sequence indexes remain separate.
 
-Set `recall.store=elasticsearch` or `recall.store=redis` to select the implementation. The Redis
-store is primarily a local/debug compatibility path and does not provide atomic activation of
-versioned recall indexes.
+
+Elasticsearch is the sole recall-store implementation in both standalone and cluster modes.
+Redis stores online entities, features, history, and filtering state.
 
 `rec-console` may publish complete item and user serving graphs through protected internal APIs.
 The server validates registered node creation, typed contracts, edge references, and cycles, then atomically switches new
@@ -347,3 +369,15 @@ Normal requests leave diagnostics unset. Existing result attribution (`recallFro
 
 Use these request-scoped diagnostics to verify recall availability. Final results need not
 represent every healthy recall channel; channel allocation is a separate operation-rule contract.
+
+User full-text recall uses `user.search` with `SearchConfig`, channel `user_search`,
+table `user-search`, and alias `openrec-recall-user-search-active`. Both searches read
+`params.query`; absent or blank queries skip retrieval.
+
+User triggers read recent clicks from the Redis sorted set
+`user-event:{userId}:{scene}:click`, limited by `user_trigger.content.size`.
+U2U/ALS recall uses distinct clicked users as seeds and sums overlapping candidate scores;
+without history it falls back to `triggerSelf`. User combine excludes both clicked users
+and self. Missing identity/scene, a disabled trigger, or a nonpositive size skips history.
+The current item-event push API writes `event:{userId}:{scene}:click`, not user-click
+history; the user-event producer must populate the separate `user-event` namespace.

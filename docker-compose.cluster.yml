@@ -26,7 +26,15 @@ services:
       # not reliable. SPRING_APPLICATION_JSON has explicit, high-precedence dotted properties.
       SPRING_APPLICATION_JSON: >-
         {"rank":{"open":true,"host":"${RANK_HOST:-rank-engine}","port":"${RANK_PORT:-8123}"}}
-      RECALL_STORE: ${RECALL_STORE:-elasticsearch}
+      EMBEDDING_ENABLED: ${EMBEDDING_ENABLED:-false}
+      EMBEDDING_ENDPOINT: ${EMBEDDING_ENDPOINT:-http://vllm:8000/v1/embeddings}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-Qwen/Qwen3-Embedding-0.6B}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1024}
+      EMBEDDING_TIMEOUT_MS: ${EMBEDDING_TIMEOUT_MS:-500}
+      EMBEDDING_MAX_CONCURRENT: ${EMBEDDING_MAX_CONCURRENT:-8}
+      EMBEDDING_MAX_CHARS: ${EMBEDDING_MAX_CHARS:-4096}
+      OPENREC_TEXT_EMBEDDING_INSTRUCTION: ${OPENREC_TEXT_EMBEDDING_INSTRUCTION:-Given a search query, retrieve relevant items that match the query}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
       SERVING_GRAPH_TOKEN: ${SERVING_GRAPH_TOKEN:-openrec-serving-graph-token-change-me}
     ports:

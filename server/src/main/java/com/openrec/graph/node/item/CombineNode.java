@@ -15,6 +15,7 @@ import com.google.common.collect.Lists;
 
 import tools.jackson.databind.ObjectMapper;
 import com.openrec.graph.GraphContext;
+import com.openrec.graph.RequestTrigger;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
 import com.openrec.graph.tools.anno.Import;
@@ -75,8 +76,8 @@ public class CombineNode extends AbstractCombineNode {
     @Import("blackTagSet")
     private Set<String> blackTagSet;
 
-    @Import("triggerItems")
-    private List<ScoreResult> triggerItems;
+    @Import(RequestTrigger.KEY)
+    private RequestTrigger requestTrigger;
 
     @Export("combineItems")
     private List<ScoreResult> combineItems;
@@ -95,7 +96,8 @@ public class CombineNode extends AbstractCombineNode {
     public void run(GraphContext context) {
 
         int size = config.getContent().getSize();
-        Set<String> triggerItemSet = triggerItems.stream().map(ScoreResult::getId).collect(Collectors.toSet());
+        Set<String> triggerItemSet =
+            requestTrigger.triggerItems().stream().map(RequestTrigger.TriggerItem::id).collect(Collectors.toSet());
 
         Map<String, List<ScoreResult>> fallback = new LinkedHashMap<>();
         fallback.put(CHANNEL_I2I, i2iItems);

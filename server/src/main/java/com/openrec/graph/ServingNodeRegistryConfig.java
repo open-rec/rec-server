@@ -37,8 +37,6 @@ public class ServingNodeRegistryConfig {
             com.openrec.graph.node.item.EmbeddingNode::new);
         register(registry, beans, "item.query-embedding", com.openrec.graph.node.item.QueryEmbeddingNode.class,
             com.openrec.graph.node.item.QueryEmbeddingNode::new);
-        register(registry, beans, "item.sparse", com.openrec.graph.node.item.SparseNode.class,
-            com.openrec.graph.node.item.SparseNode::new);
         register(registry, beans, "item.combine", com.openrec.graph.node.item.CombineNode.class,
             com.openrec.graph.node.item.CombineNode::new);
         register(registry, beans, "item.rank", com.openrec.graph.node.item.RankNode.class,
@@ -72,6 +70,8 @@ public class ServingNodeRegistryConfig {
             com.openrec.graph.node.user.OperationNode::new);
         register(registry, beans, "user.collector", com.openrec.graph.node.user.CollectorNode.class,
             com.openrec.graph.node.user.CollectorNode::new);
+        register(registry, beans, "user.search", com.openrec.graph.node.user.SearchNode.class,
+            com.openrec.graph.node.user.SearchNode::new);
         return registry.build();
     }
 

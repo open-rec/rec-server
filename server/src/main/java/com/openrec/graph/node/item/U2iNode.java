@@ -3,13 +3,13 @@ package com.openrec.graph.node.item;
 import com.openrec.graph.node.*;
 
 import static com.openrec.graph.RecParams.SCENE;
-import static com.openrec.graph.RecParams.USER_ID;
 
 import java.util.List;
 
 import com.google.common.collect.Lists;
 
 import com.openrec.graph.GraphContext;
+import com.openrec.graph.RequestTrigger;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.config.U2iConfig;
 import com.openrec.graph.tools.anno.Export;
@@ -41,8 +41,9 @@ public class U2iNode extends AbstractRecallNode<U2iConfig> {
             return;
         }
         String scene = context.getParams().getValueToString(SCENE);
-        String userId = context.getParams().getValueToString(USER_ID);
-        u2iItems = recallStore.u2i(tableName(), scene, userId, config.getContent().getSize());
+        String userId = RequestTrigger.resolve(context).triggerSelf();
+        u2iItems = userId.isEmpty() ? java.util.Collections.emptyList()
+            : recallStore.u2i(tableName(), scene, userId, config.getContent().getSize());
         exportChannel(context, u2iItems);
         log.info("{} type:{} table:{} with u2i size:{}", getName(), recallType(), tableName(), u2iItems.size());
     }

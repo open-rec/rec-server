@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -25,14 +24,14 @@ import lombok.extern.slf4j.Slf4j;
 /** Reads versioned offline recall tables through stable per-algorithm Elasticsearch aliases. */
 @Slf4j
 @Service
-@ConditionalOnProperty(name = "recall.store", havingValue = "elasticsearch")
 public class ElasticsearchRecallStore implements RecallStore {
 
     private static final String EMBEDDING_INDEX_FORMAT = "%s-%s-index";
     private static final String EMBEDDING_VECTORS_QUERY =
         "{\"query\":{\"constant_score\":{\"filter\":{" + "\"terms\":{\"id\":%s}}}}}}";
     private static final String EMBEDDING_RECALL_QUERY =
-        "{\"knn\":{\"field\":\"vector\"," + "\"query_vector\":%s,\"k\":%d,\"num_candidates\":%d},\"size\":%d}";
+        "{\"_source\":{\"includes\":[\"id\"]},\"knn\":{\"field\":\"vector\","
+            + "\"query_vector\":%s,\"k\":%d,\"num_candidates\":%d},\"size\":%d}";
 
     @Autowired
     private EsService esService;
@@ -159,12 +158,11 @@ public class ElasticsearchRecallStore implements RecallStore {
     }
 
     @Override
-    public List<ScoreResult> queryEmbedding(String tableName, String scene, List<Double> queryVector, int size,
-        long timeoutMillis) {
+    public List<ScoreResult> queryEmbedding(String tableName, List<Double> queryVector, int size, long timeoutMillis) {
         if (!validVector(queryVector) || size <= 0) {
             return Collections.emptyList();
         }
-        String index = String.format(EMBEDDING_INDEX_FORMAT, scene, tableName);
+        String index = tableName + "-index";
         try {
             return embeddingResults(
                 esService.search(index, embeddingQuery(queryVector, size), RecallDocument.class, timeoutMillis + "ms"));
@@ -175,9 +173,10 @@ public class ElasticsearchRecallStore implements RecallStore {
     }
 
     @Override
-    public List<ScoreResult> sparse(String tableName, String scene, String query, String textField,
-        String minimumShouldMatch, int size, long timeoutMillis) {
-        if (query == null || query.trim().isEmpty() || size <= 0 || !validField(textField)) {
+    public List<ScoreResult> textSearch(String tableName, String scene, String query, String textField,
+        String minimumShouldMatch, String entityField, int size, long timeoutMillis) {
+        if (query == null || query.trim().isEmpty() || size <= 0 || !validField(textField)
+            || !("item".equals(entityField) || "user".equals(entityField))) {
             return Collections.emptyList();
         }
         String match = "{\"match\":{" + JsonUtil.objToJson(textField) + ":{" + "\"query\":" + JsonUtil.objToJson(query)
@@ -187,9 +186,10 @@ public class ElasticsearchRecallStore implements RecallStore {
         String body = "{\"query\":{\"bool\":{\"filter\":[{\"term\":{\"scene\":" + JsonUtil.objToJson(scene)
             + "}}],\"must\":[" + match + "]}},\"size\":" + size + "}";
         try {
-            return scoredItems(search(tableName, body, timeoutMillis + "ms"), false);
+            SearchResponse<RecallDocument> response = search(tableName, body, timeoutMillis + "ms");
+            return "user".equals(entityField) ? scoredUsers(response) : scoredItems(response, false);
         } catch (Exception e) {
-            log.error("Elasticsearch sparse recall failed: {}", ExceptionUtils.getStackTrace(e));
+            log.error("Elasticsearch text search recall failed: {}", ExceptionUtils.getStackTrace(e));
             return Collections.emptyList();
         }
     }

@@ -6,6 +6,7 @@ import com.openrec.graph.node.item.*;
 import com.openrec.graph.node.user.*;
 
 import com.openrec.graph.GraphContext;
+import com.openrec.graph.RequestTrigger;
 import com.openrec.graph.config.*;
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.rank.RankService;
@@ -46,9 +47,157 @@ public class NodeExecutionUnitTest {
         context.addParam("itemIds", Arrays.asList("explicit1", "explicit2"));
         node.run(context);
         context.exportNodeData(node);
-        List<ScoreResult> result = (List<ScoreResult>)context.getData("triggerItems");
+        List<RequestTrigger.TriggerItem> result = RequestTrigger.resolve(context).triggerItems();
         assertEquals(3, result.size());
-        assertEquals("stored", result.get(2).getId());
+        assertEquals("stored", result.get(2).id());
+        assertEquals(2d, result.get(2).score(), 0d);
+        assertEquals(Collections.singleton("requestTrigger"), context.extractNodeData(node).keySet());
+        try {
+            result.clear();
+            fail("trigger items must be immutable");
+        } catch (UnsupportedOperationException expected) {
+            assertEquals(3, RequestTrigger.resolve(context).triggerItems().size());
+        }
+        GraphContext next = new GraphContext();
+        next.addParam("query", "query only");
+        node.run(next);
+        next.exportNodeData(node);
+        assertTrue(RequestTrigger.resolve(next).triggerItems().isEmpty());
+        assertEquals(3, result.size());
+    }
+
+    @Test
+    public void queryOnlyTriggerSkipsHistoryAndFeedsTextRecall() {
+        RedisService redis = mock(RedisService.class);
+        TriggerNode trigger = new TriggerNode(config("user_trigger", new UserTriggerConfig(), true));
+        ReflectionTestUtils.setField(trigger, "redisService", redis);
+        GraphContext context = new GraphContext();
+        context.addParam("scene", "s");
+        context.addParam("query", "blue train");
+        trigger.run(context);
+        context.exportNodeData(trigger);
+        assertEquals(Collections.emptyList(), RequestTrigger.resolve(context).triggerItems());
+        verifyNoInteractions(redis);
+        // Downstream nodes consume the trigger snapshot, not later parameter changes.
+        context.addParam("query", "changed");
+        RecallStore store = mock(RecallStore.class);
+        SearchConfig search = new SearchConfig();
+        search.setTableName("item-search");
+        search.setRecallType("item_search");
+        search.setSize(5);
+        search.setMinimumShouldMatch("30%");
+        SearchNode node = new SearchNode(config("item_search", search, true));
+        ReflectionTestUtils.setField(node, "recallStore", store);
+        when(store.textSearch("item-search", "s", "blue train", "text", "30%", "item", 5, 50))
+            .thenReturn(Collections.singletonList(new ScoreResult("matched", 1)));
+        node.run(context);
+        assertEquals("matched", ((List<ScoreResult>)context.getData("recall:item_search")).get(0).getId());
+        U2iConfig u2i = new U2iConfig();
+        u2i.setTableName("user-cf-u2i");
+        u2i.setRecallType("user_cf_u2i");
+        U2iNode userRecall = new U2iNode(config("user_cf_u2i", u2i, true));
+        ReflectionTestUtils.setField(userRecall, "recallStore", store);
+        userRecall.run(context);
+        assertEquals(Collections.emptyList(), context.getData("recall:user_cf_u2i"));
+        verify(store, never()).u2i(anyString(), anyString(), anyString(), anyInt());
+    }
+
+    @Test
+    public void userTriggerExportsIdentityAndQueryWithoutHistory() {
+        com.openrec.graph.node.user.TriggerNode trigger =
+            new com.openrec.graph.node.user.TriggerNode(config("user_trigger", new UserTriggerConfig(), true));
+        GraphContext context = new GraphContext();
+        context.addParam("userId", "u");
+        context.addParam("query", "jazz");
+        trigger.run(context);
+        context.exportNodeData(trigger);
+        com.openrec.graph.RequestTrigger request = com.openrec.graph.RequestTrigger.resolve(context);
+        assertEquals("u", request.triggerSelf());
+        assertEquals("jazz", request.triggerQuery());
+        assertEquals("u", RequestTrigger.resolve(context).triggerSelf());
+        GraphContext queryOnly = new GraphContext();
+        queryOnly.addParam("query", "jazz");
+        trigger.run(queryOnly);
+        queryOnly.exportNodeData(trigger);
+        assertEquals("", RequestTrigger.resolve(queryOnly).triggerSelf());
+        assertEquals("jazz", com.openrec.graph.RequestTrigger.resolve(queryOnly).triggerQuery());
+    }
+
+    @Test
+    public void userClickHistorySeedsRecallAndSelfRemainsSeparate() {
+        UserTriggerConfig content = new UserTriggerConfig();
+        content.setSize(3);
+        RedisService redis = mock(RedisService.class);
+        when(redis.getZSet("user-event:{self}:s:click", 0, Double.MAX_VALUE, 3))
+            .thenReturn(Arrays.asList(new ScoreResult("a", 100), new ScoreResult("b", 90)));
+        com.openrec.graph.node.user.TriggerNode trigger =
+            new com.openrec.graph.node.user.TriggerNode(config("user_trigger", content, true));
+        ReflectionTestUtils.setField(trigger, "redisService", redis);
+        GraphContext context = new GraphContext();
+        context.addParam("scene", "s");
+        context.addParam("userId", "self");
+        trigger.run(context);
+        context.exportNodeData(trigger);
+        RequestTrigger seeds = RequestTrigger.resolve(context);
+        assertEquals("self", seeds.triggerSelf());
+        assertEquals(Arrays.asList("a", "b"), seeds.userSeedIds());
+        assertEquals(100d, seeds.triggerUsers().get(0).score(), 0d);
+        assertTrue(seeds.triggerItems().isEmpty());
+        try {
+            seeds.triggerUsers().clear();
+            fail("user seeds must be immutable");
+        } catch (UnsupportedOperationException expected) {
+            assertEquals(2, seeds.triggerUsers().size());
+        }
+        RecallStore store = mock(RecallStore.class);
+        when(store.u2u("user-cf-u2u", "s", "a", 5))
+            .thenReturn(Collections.singletonList(new ScoreResult("shared", 0.4)));
+        when(store.u2u("user-cf-u2u", "s", "b", 5))
+            .thenReturn(Collections.singletonList(new ScoreResult("shared", 0.6)));
+        U2uConfig recall = new U2uConfig();
+        recall.setSize(5);
+        recall.setTableName("user-cf-u2u");
+        recall.setRecallType("user_cf_u2u");
+        com.openrec.graph.node.user.U2uNode node =
+            new com.openrec.graph.node.user.U2uNode(config("user_cf_u2u", recall, true));
+        ReflectionTestUtils.setField(node, "recallStore", store);
+        node.run(context);
+        assertEquals(1d, ((List<ScoreResult>)context.getData("recall:user_cf_u2u")).get(0).getScore(), 0.000001);
+        verify(store, never()).u2u(anyString(), anyString(), eq("self"), anyInt());
+        when(redis.getZSet("user-event:{self}:s:click", 0, Double.MAX_VALUE, 3)).thenReturn(Collections.emptyList());
+        trigger.run(context);
+        context.exportNodeData(trigger);
+        assertEquals(Collections.singletonList("self"), RequestTrigger.resolve(context).userSeedIds());
+        assertTrue(RequestTrigger.resolve(context).triggerUsers().isEmpty());
+        assertEquals(2, seeds.triggerUsers().size());
+        GraphContext queryOnly = new GraphContext();
+        queryOnly.addParam("scene", "s");
+        queryOnly.addParam("query", "jazz");
+        clearInvocations(redis);
+        trigger.run(queryOnly);
+        queryOnly.exportNodeData(trigger);
+        verifyNoInteractions(redis);
+        assertEquals("jazz", RequestTrigger.resolve(queryOnly).triggerQuery());
+        assertTrue(RequestTrigger.resolve(queryOnly).userSeedIds().isEmpty());
+    }
+
+    @Test
+    public void userToItemRecallConsumesTriggerIdentity() {
+        GraphContext context = new GraphContext();
+        context.addParam("scene", "s");
+        context.addParam("userId", "unrelated");
+        context.addData(com.openrec.graph.RequestTrigger.KEY,
+            new com.openrec.graph.RequestTrigger(Collections.emptyList(), Collections.emptyList(), "seed", ""));
+        U2iConfig content = new U2iConfig();
+        content.setTableName("user-cf-u2i");
+        content.setRecallType("user_cf_u2i");
+        content.setSize(5);
+        RecallStore store = mock(RecallStore.class);
+        U2iNode node = new U2iNode(config("user_cf_u2i", content, true));
+        ReflectionTestUtils.setField(node, "recallStore", store);
+        when(store.u2i("user-cf-u2i", "s", "seed", 5)).thenReturn(Collections.emptyList());
+        node.run(context);
+        verify(store).u2i("user-cf-u2i", "s", "seed", 5);
     }
 
     @Test
@@ -60,8 +209,10 @@ public class NodeExecutionUnitTest {
         content.setRecallType("item_cf_i2i");
         I2iNode node = new I2iNode(config("item_cf_i2i", content, true));
         ReflectionTestUtils.setField(node, "recallStore", recallStore);
-        ReflectionTestUtils.setField(node, "triggerItems",
-            Arrays.asList(new ScoreResult("a", 1), new ScoreResult("b", 2)));
+        ReflectionTestUtils.setField(node, "requestTrigger",
+            new RequestTrigger(
+                Arrays.asList(new RequestTrigger.TriggerItem("a", 1), new RequestTrigger.TriggerItem("b", 2)),
+                Collections.emptyList(), "", ""));
         when(recallStore.i2i("item-cf-i2i", "s", Arrays.asList("a", "b"), 4))
             .thenReturn(Collections.singletonList(new ScoreResult("result", 3)));
         GraphContext context = new GraphContext();
@@ -78,12 +229,13 @@ public class NodeExecutionUnitTest {
         RecallStore recallStore = mock(RecallStore.class);
         EmbeddingConfig content = new EmbeddingConfig();
         content.setSize(4);
-        content.setTableName("query_qwen_emb");
+        content.setTableName("query-title-emb");
         content.setRecallType("query_qwen_emb");
         QueryEmbeddingNode node = new QueryEmbeddingNode(config("query_qwen_emb", content, true));
         ReflectionTestUtils.setField(node, "recallStore", recallStore);
         List<ScoreResult> recalled = Collections.singletonList(new ScoreResult("result", 0.8));
-        when(recallStore.queryEmbedding("query_qwen_emb", "s", Arrays.asList(1.0, 2.0), 4, 50)).thenReturn(recalled);
+        when(recallStore.queryEmbedding(eq("query-title-emb"), eq(Arrays.asList(1.0, 2.0)), eq(4), anyLong()))
+            .thenReturn(recalled);
         GraphContext context = new GraphContext();
         context.addParam("scene", "s");
         context.addParam("queryEmbedding", Arrays.asList(1, 2.0));
@@ -96,19 +248,49 @@ public class NodeExecutionUnitTest {
     }
 
     @Test
-    public void sparseUsesRequestTextAndExportsItsOwnChannel() {
+    public void queryTextIsEmbeddedAndUnavailableProviderSkipsVectorSearch() {
+        RecallStore store = mock(RecallStore.class);
+        com.openrec.service.embedding.EmbeddingService embeddings =
+            mock(com.openrec.service.embedding.EmbeddingService.class);
+        EmbeddingConfig content = new EmbeddingConfig();
+        content.setSize(4);
+        content.setTableName("query-title-emb");
+        content.setRecallType("query_qwen_emb");
+        NodeConfig<EmbeddingConfig> configuration = config("query_qwen_emb", content, true);
+        configuration.setTimeout(800);
+        QueryEmbeddingNode node = new QueryEmbeddingNode(configuration);
+        ReflectionTestUtils.setField(node, "recallStore", store);
+        ReflectionTestUtils.setField(node, "embeddingService", embeddings);
+        GraphContext context = new GraphContext();
+        context.addParam("scene", "s");
+        context.addParam("query", "jazz");
+        when(embeddings.embedQuery(eq("jazz"), anyLong())).thenReturn(Collections.emptyList());
+        node.run(context);
+        verifyNoInteractions(store);
+        assertEquals(Collections.emptyList(), context.getData("recall:query_qwen_emb"));
+        List<Double> vector = Arrays.asList(0.6, 0.8);
+        when(embeddings.embedQuery(eq("jazz"), anyLong())).thenReturn(vector);
+        List<ScoreResult> candidates = Collections.singletonList(new ScoreResult("item-1", 0.9));
+        when(store.queryEmbedding(eq("query-title-emb"), eq(vector), eq(4), anyLong())).thenReturn(candidates);
+        node.run(context);
+        assertSame(candidates, context.getData("recall:query_qwen_emb"));
+    }
+
+    @Test
+    public void searchUsesRequestTextAndExportsItsOwnChannel() {
         RecallStore recallStore = mock(RecallStore.class);
-        SparseConfig content = new SparseConfig();
+        SearchConfig content = new SearchConfig();
         content.setSize(20);
-        content.setTableName("sparse");
-        content.setRecallType("sparse");
+        content.setTableName("item-search");
+        content.setRecallType("item_search");
         content.setQueryParam("query");
         content.setTextField("text");
         content.setMinimumShouldMatch("30%");
-        SparseNode node = new SparseNode(config("sparse", content, true));
+        SearchNode node = new SearchNode(config("item_search", content, true));
         ReflectionTestUtils.setField(node, "recallStore", recallStore);
         List<ScoreResult> recalled = Collections.singletonList(new ScoreResult("result", 2.5));
-        when(recallStore.sparse("sparse", "s", "blue train", "text", "30%", 20, 50)).thenReturn(recalled);
+        when(recallStore.textSearch("item-search", "s", "blue train", "text", "30%", "item", 20, 50))
+            .thenReturn(recalled);
         GraphContext context = new GraphContext();
         context.addParam("scene", "s");
         context.addParam("query", "blue train");
@@ -116,8 +298,35 @@ public class NodeExecutionUnitTest {
         node.run(context);
         context.exportNodeData(node);
 
-        assertSame(recalled, context.getData("sparseItems"));
-        assertSame(recalled, context.getData("recall:sparse"));
+        assertSame(recalled, context.getData("searchItems"));
+        assertSame(recalled, context.getData("recall:item_search"));
+    }
+
+    @Test
+    public void searchSkipsBlankQueriesAndDisabledNodes() {
+        RecallStore recallStore = mock(RecallStore.class);
+        SearchConfig content = new SearchConfig();
+        content.setTableName("item-search");
+        content.setRecallType("item_search");
+        content.setQueryParam("searchText");
+        SearchNode node = new SearchNode(config("search", content, true));
+        ReflectionTestUtils.setField(node, "recallStore", recallStore);
+        for (String query : Arrays.asList(null, "", "   ")) {
+            GraphContext context = new GraphContext();
+            if (query != null) {
+                context.addParam("searchText", query);
+            }
+            node.run(context);
+            context.exportNodeData(node);
+            assertEquals(Collections.emptyList(), context.getData("searchItems"));
+            assertEquals(Collections.emptyList(), context.getData("recall:item_search"));
+        }
+        SearchNode disabled = new SearchNode(config("search", content, false));
+        ReflectionTestUtils.setField(disabled, "recallStore", recallStore);
+        GraphContext context = new GraphContext();
+        context.addParam("searchText", "query");
+        disabled.run(context);
+        verifyNoInteractions(recallStore);
     }
 
     @Test
@@ -290,6 +499,7 @@ public class NodeExecutionUnitTest {
         context.addData("recall:user_cf_u2u", Arrays.asList(new ScoreResult("self", 9), new ScoreResult("u2", 0.7)));
         context.addData("recall:content_u2u", Arrays.asList(new ScoreResult("u2", 0.2), new ScoreResult("u3", 0.4)));
         context.addData("recall:user_als_u2u", Collections.singletonList(new ScoreResult("u3", 0.1)));
+        ReflectionTestUtils.setField(combine, "requestTrigger", RequestTrigger.fromParams(context));
         combine.run(context);
         context.exportNodeData(combine);
 
@@ -309,7 +519,7 @@ public class NodeExecutionUnitTest {
     }
 
     @Test
-    public void simpleFeatureBlackSearchAndOperationNodesWork() {
+    public void simpleFeatureBlackAndOperationNodesWork() {
         GraphContext context = new GraphContext();
         context.addParam("userId", "u");
         UserFeatureNode user = new UserFeatureNode(config("user_feature", null, true));
@@ -317,7 +527,6 @@ public class NodeExecutionUnitTest {
         context.exportNodeData(user);
         assertEquals("u", ((Map<?, ?>)context.getData("userFeatureMap")).get("userId"));
         new ItemFeatureNode(config("item_feature", null, true)).run(context);
-        new SearchNode(config("search", null, true)).run(context);
 
         RedisService redis = mock(RedisService.class);
         when(redis.getSet("black")).thenReturn(Collections.singleton("x"));

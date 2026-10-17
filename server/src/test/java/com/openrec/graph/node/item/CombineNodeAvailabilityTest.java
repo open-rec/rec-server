@@ -74,7 +74,8 @@ public class CombineNodeAvailabilityTest {
         when(redis.getVs(anyList())).thenReturn(Collections.singletonList(available));
         ReflectionTestUtils.setField(node, "redisService", redis);
         ReflectionTestUtils.setField(node, "objectMapper", new ObjectMapper());
-        ReflectionTestUtils.setField(node, "triggerItems", Collections.emptyList());
+        ReflectionTestUtils.setField(node, "requestTrigger",
+            new com.openrec.graph.RequestTrigger(Collections.emptyList(), Collections.emptyList(), "", ""));
         ReflectionTestUtils.setField(node, "filterItemSet", Collections.emptySet());
         ReflectionTestUtils.setField(node, "blackItemSet", Collections.emptySet());
         ReflectionTestUtils.setField(node, "blackCategorySet", Collections.emptySet());

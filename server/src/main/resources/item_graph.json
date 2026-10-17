@@ -117,39 +117,39 @@
       "timeout": 300,
       "content": {
         "size": 1000,
-        "tableName": "item_seq_emb",
+        "tableName": "item-seq-emb",
         "recallType": "item_seq_emb",
         "vectorField": "vector",
         "idField": "id"
       }
     },
     {
-      "name": "query_qwen_emb",
+      "name": "query_title_emb",
       "clazz": "com.openrec.graph.node.item.QueryEmbeddingNode",
       "configClazz": "com.openrec.graph.config.EmbeddingConfig",
       "open": true,
-      "timeout": 300,
+      "timeout": 800,
       "content": {
         "size": 1000,
-        "tableName": "query_qwen_emb",
-        "recallType": "query_qwen_emb",
+        "tableName": "query-title-emb",
+        "recallType": "query_title_emb",
         "vectorField": "vector",
         "idField": "id"
       }
     },
     {
-      "name": "sparse",
-      "clazz": "com.openrec.graph.node.item.SparseNode",
-      "configClazz": "com.openrec.graph.config.SparseConfig",
+      "name": "item_search",
+      "clazz": "com.openrec.graph.node.item.SearchNode",
+      "configClazz": "com.openrec.graph.config.SearchConfig",
       "open": true,
       "timeout": 300,
       "content": {
         "size": 1000,
-        "tableName": "sparse",
-        "recallType": "sparse",
+        "tableName": "item-search",
+        "recallType": "item_search",
         "queryParam": "query",
         "textField": "text",
-        "minimumShouldMatch": "30%"
+        "minimumShouldMatch": "80%"
       }
     },
     {
@@ -166,8 +166,8 @@
           "content_i2i",
           "user_cf_u2i",
           "item_seq_emb",
-          "query_qwen_emb",
-          "sparse",
+          "query_title_emb",
+          "item_search",
           "hot",
           "new"
         ]
@@ -203,11 +203,11 @@
               "weight": 1.0
             },
             {
-              "name": "query_qwen_emb",
+              "name": "query_title_emb",
               "weight": 1.0
             },
             {
-              "name": "sparse",
+              "name": "item_search",
               "weight": 1.0
             },
             {
@@ -251,8 +251,8 @@
           "item_seq_emb": 0.2,
           "hot": 0.2,
           "new": 0.2,
-          "query_qwen_emb": 0.2,
-          "sparse": 0.1
+          "query_title_emb": 0.2,
+          "item_search": 0.1
         },
         "randomInsertRatios": {
           "hot": 0.1,
@@ -283,6 +283,18 @@
       "to": "item_seq_emb"
     },
     {
+      "from": "user_trigger",
+      "to": "item_search"
+    },
+    {
+      "from": "user_trigger",
+      "to": "query_title_emb"
+    },
+    {
+      "from": "user_trigger",
+      "to": "user_cf_u2i"
+    },
+    {
       "from": "item_cf_i2i",
       "to": "combine"
     },
@@ -299,11 +311,11 @@
       "to": "combine"
     },
     {
-      "from": "query_qwen_emb",
+      "from": "query_title_emb",
       "to": "combine"
     },
     {
-      "from": "sparse",
+      "from": "item_search",
       "to": "combine"
     },
     {

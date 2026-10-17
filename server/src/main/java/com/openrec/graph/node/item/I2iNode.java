@@ -9,6 +9,7 @@ import java.util.List;
 import com.google.common.collect.Lists;
 
 import com.openrec.graph.GraphContext;
+import com.openrec.graph.RequestTrigger;
 import com.openrec.graph.config.I2iConfig;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.tools.anno.Export;
@@ -25,8 +26,8 @@ public class I2iNode extends AbstractRecallNode<I2iConfig> {
     @Autowired
     private RecallStore recallStore;
 
-    @Import("triggerItems")
-    private List<ScoreResult> triggerItems;
+    @Import(RequestTrigger.KEY)
+    private RequestTrigger requestTrigger;
 
     @Export("i2iItems")
     private List<ScoreResult> i2iItems;
@@ -50,8 +51,8 @@ public class I2iNode extends AbstractRecallNode<I2iConfig> {
         int size = config.getContent().getSize();
 
         List<String> triggers = new java.util.ArrayList<>();
-        for (ScoreResult trigger : triggerItems) {
-            triggers.add(trigger.getId());
+        for (RequestTrigger.TriggerItem trigger : requestTrigger.triggerItems()) {
+            triggers.add(trigger.id());
         }
         i2iItems = recallStore.i2i(tableName(), scene, triggers, size);
         exportChannel(context, i2iItems);

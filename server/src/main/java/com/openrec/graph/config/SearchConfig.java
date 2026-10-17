@@ -2,9 +2,9 @@ package com.openrec.graph.config;
 
 import lombok.Data;
 
-/** Configuration for request-text sparse retrieval. */
+/** Configuration for request-text full-text retrieval. */
 @Data
-public class SparseConfig extends RecallConfig {
+public class SearchConfig extends RecallConfig {
 
     private int size;
     private String queryParam = "query";

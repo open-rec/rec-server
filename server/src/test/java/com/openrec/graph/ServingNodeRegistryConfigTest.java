@@ -31,8 +31,13 @@ public class ServingNodeRegistryConfigTest {
         NodeRegistry registry =
             new ServingNodeRegistryConfig().servingNodeRegistry(mock(AutowireCapableBeanFactory.class));
         NodeConfig<Object> node = new NodeConfig<>();
-        node.setName("feature");
-        node.setType("item.user-feature");
+        node.setName("search");
+        node.setType("item.search");
+        com.openrec.graph.config.SearchConfig content = new com.openrec.graph.config.SearchConfig();
+        content.setTableName("item-search");
+        content.setRecallType("item_search");
+        content.setSize(20);
+        node.setContent(content);
         node.setOpen(true);
         node.setTimeout(20);
         GraphConfig graph = new GraphConfig();

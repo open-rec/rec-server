@@ -3,10 +3,10 @@ package com.openrec.graph.node.user;
 import com.openrec.graph.node.AbstractRecallNode;
 
 import static com.openrec.graph.RecParams.SCENE;
-import static com.openrec.graph.RecParams.USER_ID;
 
 import java.util.List;
 import com.openrec.graph.GraphContext;
+import com.openrec.graph.RequestTrigger;
 import com.openrec.graph.config.NodeConfig;
 import com.openrec.graph.config.U2uConfig;
 import com.openrec.proto.model.ScoreResult;
@@ -26,8 +26,17 @@ public class U2uNode extends AbstractRecallNode<U2uConfig> {
     public void run(GraphContext context) {
         if (!config.isOpen())
             return;
-        List<ScoreResult> users = recallStore.u2u(tableName(), context.getParams().getValueToString(SCENE),
-            context.getParams().getValueToString(USER_ID), config.getContent().getSize());
+        java.util.Map<String, Double> merged = new java.util.LinkedHashMap<>();
+        for (String seed : RequestTrigger.resolve(context).userSeedIds()) {
+            for (ScoreResult candidate : recallStore.u2u(tableName(), context.getParams().getValueToString(SCENE), seed,
+                config.getContent().getSize())) {
+                merged.merge(candidate.getId(), candidate.getScore(), Double::sum);
+            }
+        }
+        List<ScoreResult> users = merged.entrySet().stream()
+            .map(entry -> new ScoreResult(entry.getKey(), entry.getValue())).sorted(java.util.Comparator
+                .comparingDouble(ScoreResult::getScore).reversed().thenComparing(ScoreResult::getId))
+            .limit(config.getContent().getSize()).toList();
         exportChannel(context, users);
     }
 }

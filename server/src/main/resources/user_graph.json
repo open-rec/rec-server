@@ -6,7 +6,9 @@
       "configClazz": "com.openrec.graph.config.UserTriggerConfig",
       "open": true,
       "timeout": 50,
-      "content": {"size": 1}
+      "content": {
+        "size": 1
+      }
     },
     {
       "name": "user_feature",
@@ -22,7 +24,14 @@
       "configClazz": "com.openrec.graph.config.FilterConfig",
       "open": true,
       "timeout": 50,
-      "content": {"filterMap": {"expose": {"duration": 86400, "size": 1000}}}
+      "content": {
+        "filterMap": {
+          "expose": {
+            "duration": 86400,
+            "size": 1000
+          }
+        }
+      }
     },
     {
       "name": "black",
@@ -30,7 +39,9 @@
       "configClazz": "com.openrec.graph.config.FilterConfig",
       "open": true,
       "timeout": 20,
-      "content": {"filterMap": {}}
+      "content": {
+        "filterMap": {}
+      }
     },
     {
       "name": "user_cf_u2u",
@@ -38,7 +49,11 @@
       "configClazz": "com.openrec.graph.config.U2uConfig",
       "open": true,
       "timeout": 200,
-      "content": {"size": 1000, "tableName": "user-cf-u2u", "recallType": "user_cf_u2u"}
+      "content": {
+        "size": 1000,
+        "tableName": "user-cf-u2u",
+        "recallType": "user_cf_u2u"
+      }
     },
     {
       "name": "content_u2u",
@@ -46,7 +61,11 @@
       "configClazz": "com.openrec.graph.config.U2uConfig",
       "open": true,
       "timeout": 200,
-      "content": {"size": 1000, "tableName": "content-u2u", "recallType": "content_u2u"}
+      "content": {
+        "size": 1000,
+        "tableName": "content-u2u",
+        "recallType": "content_u2u"
+      }
     },
     {
       "name": "user_als_u2u",
@@ -54,8 +73,28 @@
       "configClazz": "com.openrec.graph.config.EmbeddingConfig",
       "open": true,
       "timeout": 300,
-      "content": {"size": 1000, "tableName": "user-als-u2u", "recallType": "user_als_u2u",
-        "vectorField": "vector", "idField": "id"}
+      "content": {
+        "size": 1000,
+        "tableName": "user-als-u2u",
+        "recallType": "user_als_u2u",
+        "vectorField": "vector",
+        "idField": "id"
+      }
+    },
+    {
+      "name": "user_search",
+      "clazz": "com.openrec.graph.node.user.SearchNode",
+      "configClazz": "com.openrec.graph.config.SearchConfig",
+      "open": true,
+      "timeout": 300,
+      "content": {
+        "size": 1000,
+        "tableName": "user-search",
+        "recallType": "user_search",
+        "queryParam": "query",
+        "textField": "text",
+        "minimumShouldMatch": "30%"
+      }
     },
     {
       "name": "combine",
@@ -63,8 +102,16 @@
       "configClazz": "com.openrec.graph.config.CombineConfig",
       "open": true,
       "timeout": 50,
-      "content": {"size": 1000, "checkExpireTime": false,
-        "recallTypes": ["user_cf_u2u", "content_u2u", "user_als_u2u"]}
+      "content": {
+        "size": 1000,
+        "checkExpireTime": false,
+        "recallTypes": [
+          "user_cf_u2u",
+          "content_u2u",
+          "user_als_u2u",
+          "user_search"
+        ]
+      }
     },
     {
       "name": "rank",
@@ -72,13 +119,32 @@
       "configClazz": "com.openrec.graph.config.RankConfig",
       "open": true,
       "timeout": 200,
-      "content": {"size": 1000, "scoreStrategy": {
-        "recallAggregation": "sum", "recallWeight": 0.2, "rankWeight": 0.9,
-        "channels": [
-          {"name": "user_cf_u2u", "weight": 1.0},
-          {"name": "content_u2u", "weight": 1.0},
-          {"name": "user_als_u2u", "weight": 1.0}
-        ]}}
+      "content": {
+        "size": 1000,
+        "scoreStrategy": {
+          "recallAggregation": "sum",
+          "recallWeight": 0.2,
+          "rankWeight": 0.9,
+          "channels": [
+            {
+              "name": "user_cf_u2u",
+              "weight": 1.0
+            },
+            {
+              "name": "content_u2u",
+              "weight": 1.0
+            },
+            {
+              "name": "user_als_u2u",
+              "weight": 1.0
+            },
+            {
+              "name": "user_search",
+              "weight": 1.0
+            }
+          ]
+        }
+      }
     },
     {
       "name": "operation",
@@ -86,7 +152,9 @@
       "configClazz": "com.openrec.graph.config.OperationConfig",
       "open": true,
       "timeout": 20,
-      "content": {"operationName": "UserOperationRule"}
+      "content": {
+        "operationName": "UserOperationRule"
+      }
     },
     {
       "name": "collector",
@@ -98,17 +166,61 @@
     }
   ],
   "edges": [
-    {"from": "user_trigger", "to": "user_cf_u2u"},
-    {"from": "user_trigger", "to": "content_u2u"},
-    {"from": "user_trigger", "to": "user_als_u2u"},
-    {"from": "filter", "to": "combine"},
-    {"from": "black", "to": "combine"},
-    {"from": "user_cf_u2u", "to": "combine"},
-    {"from": "content_u2u", "to": "combine"},
-    {"from": "user_als_u2u", "to": "combine"},
-    {"from": "combine", "to": "rank"},
-    {"from": "user_feature", "to": "rank"},
-    {"from": "rank", "to": "operation"},
-    {"from": "operation", "to": "collector"}
+    {
+      "from": "user_trigger",
+      "to": "user_cf_u2u"
+    },
+    {
+      "from": "user_trigger",
+      "to": "content_u2u"
+    },
+    {
+      "from": "user_trigger",
+      "to": "user_als_u2u"
+    },
+    {
+      "from": "user_trigger",
+      "to": "user_search"
+    },
+    {
+      "from": "filter",
+      "to": "combine"
+    },
+    {
+      "from": "black",
+      "to": "combine"
+    },
+    {
+      "from": "user_cf_u2u",
+      "to": "combine"
+    },
+    {
+      "from": "content_u2u",
+      "to": "combine"
+    },
+    {
+      "from": "user_als_u2u",
+      "to": "combine"
+    },
+    {
+      "from": "combine",
+      "to": "rank"
+    },
+    {
+      "from": "user_feature",
+      "to": "rank"
+    },
+    {
+      "from": "rank",
+      "to": "operation"
+    },
+    {
+      "from": "operation",
+      "to": "collector"
+    },
+    {
+      "from": "user_search",
+      "to": "combine"
+    }
   ]
 }

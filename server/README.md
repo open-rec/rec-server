@@ -14,7 +14,7 @@ Entry point: `com.openrec.RecServer`. Default port: `13579`. Runtime: Java 21 / 
 | `graph/node` | Recall, filter, combine, rank, operation, and collector nodes |
 | `graph/config` | Typed node configuration deserialized from item/user graph JSON |
 | `graph` | Graph loading, request parameter constants, and event types |
-| `service/recall` | Redis and Elasticsearch recall-store implementations |
+| `service/recall` | Elasticsearch recall-store implementation |
 | `service` | Entity, event, rank, Kafka, runtime serving, trace, and metrics services |
 | `plugin` | PF4J operation-rule loader |
 | `config` | Spring configuration for storage, messaging, HTTP clients, and WebFlux |
@@ -35,8 +35,8 @@ The default item graph configures eight recall strategies (some require request-
 | `content_i2i` | `I2iNode` | trigger item to content-similar candidates |
 | `user_cf_u2i` | `U2iNode` | user to collaborative-filter candidates |
 | `item_seq_emb` | `EmbeddingNode` | trigger sequence vector to nearest items |
-| `query_qwen_emb` | `QueryEmbeddingNode` | supplied `params.queryEmbedding` vector to nearest items |
-| `sparse` | `SparseNode` | request text to BM25 matches in the active sparse index |
+| `query_qwen_emb` | `QueryEmbeddingNode` | supplied vector or online `params.query` embedding to nearest items |
+| `item_search` | `SearchNode` | request text to BM25 matches in the active item-search index |
 | `hot` | `HotNode` | scene to popular items |
 | `new` | `NewNode` | scene to recent items |
 
@@ -121,3 +121,37 @@ mvn -pl server -am test -Dtest=FilterNodeTest#run
 Most node and service tests are isolated unit tests. Storage, messaging, or full application tests
 may require Redis, Elasticsearch, Kafka, the operation plugin, or other profile-specific services;
 check the selected test before assuming it is self-contained.
+
+Full-text recall is implemented by `SearchNode` with `SearchConfig` and registry type
+`item.search`. Its channel is `item_search` and table is `item-search`, and the request parameter
+remains `query` by default. It exports `searchItems` and the configured recall channel.
+Persisted graph overrides must replace the former sparse node/config class names with
+`com.openrec.graph.node.item.SearchNode` / `com.openrec.graph.config.SearchConfig`
+and use `item.search` if specifying a registry type. The former empty SearchNode now
+requires recall content configuration; the packaged item graph supplies it.
+
+User full-text recall uses `user.search` with `SearchConfig`, channel `user_search`,
+table `user-search`, and alias `openrec-recall-user-search-active`. Both searches read
+`params.query`; absent or blank queries skip retrieval.
+
+
+Online query embeddings are optional (`EMBEDDING_ENABLED=false` by default).
+`EMBEDDING_ENDPOINT` is a full OpenAI-compatible `/v1/embeddings` URL; the default is
+`http://vllm:8000/v1/embeddings`. Configure `EMBEDDING_MODEL` (default
+`Qwen/Qwen3-Embedding-0.6B`), `EMBEDDING_API_KEY`, `EMBEDDING_DIMENSIONS` (1024),
+`EMBEDDING_TIMEOUT_MS` (500), `EMBEDDING_MAX_CONCURRENT` (8), and
+`EMBEDDING_MAX_CHARS` (4096). `OPENREC_TEXT_EMBEDDING_INSTRUCTION` is the Qwen
+query instruction, shared with the offline encoder; set it empty for models that
+require plain query text. Requests contain model IDs, never local model paths.
+
+`QueryEmbeddingNode` prefers explicit `params.queryEmbedding`, otherwise encodes
+`params.query`. Remote responses must have the expected dimensions and finite,
+nonzero values; vectors are L2-normalized. Timeout, saturation, malformed output,
+or provider failure skips this channel. The packaged node has an 800 ms budget;
+inference and Elasticsearch share that budget, within the overall request deadline.
+When changing timeouts, synchronize persisted graph overrides and the request deadline.
+
+Trigger nodes export a single immutable `requestTrigger`: `triggerItems` (item ID/score seeds), `triggerUsers` (user click ID/score seeds),
+`triggerSelf` (user ID), and `triggerQuery` (text). Recall and combine nodes consume
+this object; custom nodes must migrate former `triggerItems`/`triggerUsers` imports
+to `requestTrigger`. Empty user/history seeds leave text and query-vector recall available.

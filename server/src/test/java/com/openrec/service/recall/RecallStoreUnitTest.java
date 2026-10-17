@@ -16,10 +16,10 @@ import java.util.stream.Collectors;
 
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import com.openrec.proto.model.ScoreResult;
 import com.openrec.service.es.EsService;
-import com.openrec.service.redis.RedisService;
 
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
@@ -27,33 +27,14 @@ import co.elastic.clients.elasticsearch.core.search.Hit;
 public class RecallStoreUnitTest {
 
     @Test
-    public void redisImplementationPreservesCurrentContracts() {
-        RedisService redis = mock(RedisService.class);
-        RedisRecallStore store = new RedisRecallStore();
-        ReflectionTestUtils.setField(store, "redisService", redis);
-
-        List<ScoreResult> hot = Collections.singletonList(new ScoreResult("hot-1", 0.9));
-        when(redis.getZSet("hot:{scene-1}", 0, Double.MAX_VALUE, 10)).thenReturn(hot);
-        assertSame(hot, store.hot("hot", "scene-1", 10));
-
-        when(redis.getZSet("new:{scene-1}", 100, 200, 10))
-            .thenReturn(Collections.singletonList(new ScoreResult("new-1", 150)));
-        assertEquals(0.75, store.newest("new", "scene-1", 100, 200, 10).get(0).getScore(), 0.000001);
-
-        List<ScoreResult> i2i = Collections.singletonList(new ScoreResult("next", 1.5));
-        when(redis.getZSet(Arrays.asList("item-cf-i2i:{a}:scene-1", "item-cf-i2i:{b}:scene-1"), 0, Double.MAX_VALUE, 5))
-            .thenReturn(i2i);
-        assertSame(i2i, store.i2i("item-cf-i2i", "scene-1", Arrays.asList("a", "b"), 5));
-
-        List<ScoreResult> u2i = Collections.singletonList(new ScoreResult("personal", 0.8));
-        when(redis.getZSet("user-cf-u2i:{user-1}:scene-1", 0, Double.MAX_VALUE, 5)).thenReturn(u2i);
-        assertSame(u2i, store.u2i("user-cf-u2i", "scene-1", "user-1", 5));
-
-        assertEquals(Collections.emptyList(),
-            store.embedding("item_seq_emb", "scene-1", Arrays.asList("a", "b"), 5, 50));
-        assertEquals(Collections.emptyList(),
-            store.queryEmbedding("item_seq_emb", "scene-1", Arrays.asList(1.0, 2.0), 5, 50));
-        assertEquals(Collections.emptyList(), store.sparse("sparse", "scene-1", "blue train", "text", null, 5, 50));
+    public void elasticsearchIsAvailableWithoutStoreSelection() {
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            context.getBeanFactory().registerSingleton("esService", mock(EsService.class));
+            context.scan("com.openrec.service.recall");
+            context.refresh();
+            assertEquals(1, context.getBeansOfType(RecallStore.class).size());
+            assertSame(context.getBean(ElasticsearchRecallStore.class), context.getBean(RecallStore.class));
+        }
     }
 
     @Test
@@ -77,7 +58,7 @@ public class RecallStoreUnitTest {
     }
 
     @Test
-    public void elasticsearchI2iMatchesRedisUnionSumSemantics() throws IOException {
+    public void elasticsearchI2iSumsDuplicateCandidateScores() throws IOException {
         EsService es = mock(EsService.class);
         ElasticsearchRecallStore store = elasticsearchStore(es);
         SearchResponse<RecallDocument> i2iResponse = response(Arrays.asList(document("scene-1", null, "same", 0.7),
@@ -114,11 +95,11 @@ public class RecallStoreUnitTest {
         trigger.setVector(Arrays.asList(1.0, 2.0));
         RecallDocument recalled = new RecallDocument();
         recalled.setId("embedding-result");
-        when(es.search(eq("scene-1-item_seq_emb-index"), anyString(), eq(RecallDocument.class), eq("50ms")))
+        when(es.search(eq("scene-1-item-seq-emb-index"), anyString(), eq(RecallDocument.class), eq("50ms")))
             .thenReturn(response(trigger, 1.0), response(recalled, 0.75));
 
         List<ScoreResult> result =
-            store.embedding("item_seq_emb", "scene-1", Collections.singletonList("trigger"), 5, 50);
+            store.embedding("item-seq-emb", "scene-1", Collections.singletonList("trigger"), 5, 50);
         assertEquals(Collections.singletonList("embedding-result"), ids(result));
         assertEquals(0.75, result.get(0).getScore(), 0.000001);
     }
@@ -129,36 +110,52 @@ public class RecallStoreUnitTest {
         ElasticsearchRecallStore store = elasticsearchStore(es);
         RecallDocument recalled = new RecallDocument();
         recalled.setId("query-result");
-        when(es.search(eq("scene-1-item_seq_emb-index"), anyString(), eq(RecallDocument.class), eq("50ms")))
+        when(es.search(eq("query-title-emb-index"), anyString(), eq(RecallDocument.class), eq("50ms")))
             .thenReturn(response(recalled, 0.85));
 
-        List<ScoreResult> result = store.queryEmbedding("item_seq_emb", "scene-1", Arrays.asList(1.0, 2.0), 25, 50);
+        List<ScoreResult> result = store.queryEmbedding("query-title-emb", Arrays.asList(1.0, 2.0), 25, 50);
         assertEquals(Collections.singletonList("query-result"), ids(result));
         assertEquals(0.85, result.get(0).getScore(), 0.000001);
-        verify(es).search(eq("scene-1-item_seq_emb-index"),
-            org.mockito.ArgumentMatchers.contains("\"k\":25,\"num_candidates\":50"), eq(RecallDocument.class),
-            eq("50ms"));
+        verify(es).search(eq("query-title-emb-index"),
+            org.mockito.ArgumentMatchers.argThat(query -> query.contains("\"k\":25,\"num_candidates\":50")
+                && query.contains("\"_source\":{\"includes\":[\"id\"]}")),
+            eq(RecallDocument.class), eq("50ms"));
 
         assertEquals(Collections.emptyList(),
-            store.queryEmbedding("item_seq_emb", "scene-1", Arrays.asList(1.0, Double.NaN), 25, 50));
+            store.queryEmbedding("query-title-emb", Arrays.asList(1.0, Double.NaN), 25, 50));
     }
 
     @Test
-    public void elasticsearchSparseUsesBm25ScoreAndSceneFilter() throws IOException {
+    public void elasticsearchTextSearchUsesBm25ScoreAndSceneFilter() throws IOException {
         EsService es = mock(EsService.class);
         ElasticsearchRecallStore store = elasticsearchStore(es);
         RecallDocument recalled = new RecallDocument();
         recalled.setScene("scene-1");
         recalled.setItem("track-1");
-        when(es.search(eq("openrec-recall-sparse-active"), anyString(), eq(RecallDocument.class), eq("50ms")))
+        when(es.search(eq("openrec-recall-item-search-active"), anyString(), eq(RecallDocument.class), eq("50ms")))
             .thenReturn(response(recalled, 3.25));
 
-        List<ScoreResult> result = store.sparse("sparse", "scene-1", "blue train", "text", "30%", 25, 50);
+        List<ScoreResult> result =
+            store.textSearch("item-search", "scene-1", "blue train", "text", "30%", "item", 25, 50);
 
         assertEquals(Collections.singletonList("track-1"), ids(result));
         assertEquals(3.25, result.get(0).getScore(), 0.000001);
-        verify(es).search(eq("openrec-recall-sparse-active"),
+        verify(es).search(eq("openrec-recall-item-search-active"),
             org.mockito.ArgumentMatchers.contains("minimum_should_match"), eq(RecallDocument.class), eq("50ms"));
+    }
+
+    @Test
+    public void elasticsearchUserSearchReturnsUserIdsAndBm25Score() throws IOException {
+        EsService es = mock(EsService.class);
+        ElasticsearchRecallStore store = elasticsearchStore(es);
+        RecallDocument recalled = new RecallDocument();
+        recalled.setUser("user-2");
+        recalled.setItem("wrong-item");
+        when(es.search(eq("openrec-recall-user-search-active"), anyString(), eq(RecallDocument.class), eq("50ms")))
+            .thenReturn(response(recalled, 2.5));
+        List<ScoreResult> result = store.textSearch("user-search", "scene-1", "jazz", "text", "30%", "user", 25, 50);
+        assertEquals(Collections.singletonList("user-2"), ids(result));
+        assertEquals(2.5, result.get(0).getScore(), 0.000001);
     }
 
     @Test

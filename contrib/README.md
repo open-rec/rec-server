@@ -39,7 +39,7 @@ The default serving graph selects `WeightedChannelOperationRule` with these curr
     "hot": 0.2,
     "new": 0.2,
     "query_qwen_emb": 0.2,
-    "sparse": 0.1
+    "item_search": 0.1
   }
 }
 ```
@@ -111,3 +111,7 @@ recommendation alone does not prove the requested operation rule ran.
 
 The plugin depends on `rec-proto`, `rec-graph`, and PF4J, but deliberately not Spring. Plugin
 extensions are created by PF4J, so Spring injection is unavailable.
+
+User full-text recall uses `user.search` with `SearchConfig`, channel `user_search`,
+table `user-search`, and alias `openrec-recall-user-search-active`. Both searches read
+`params.query`; absent or blank queries skip retrieval.
