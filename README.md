@@ -60,11 +60,11 @@ The default user graph is [`user_graph.json`](server/src/main/resources/user_gra
 flowchart TD
     user_trigger --> user_cf_u2u
     user_trigger --> content_u2u
-    user_trigger --> user_als_emb
+    user_trigger --> user_als_u2u
 
     user_cf_u2u --> combine
     content_u2u --> combine
-    user_als_emb --> combine
+    user_als_u2u --> combine
     filter --> combine
     black --> combine
 
@@ -208,7 +208,7 @@ The default item graph enables these channels:
 | `content_i2i` | `I2iNode`: trigger item to content-similar candidates in `content-i2i` |
 | `user_cf_u2i` | `U2iNode`: scene and user to UserCF candidates in `user-cf-u2i` |
 | `item_seq_emb` | `EmbeddingNode`: aggregate trigger vectors, then run ANN recall |
-| `query_emb` | `QueryEmbeddingNode`: run ANN recall directly from `params.queryEmbedding` |
+| `query_qwen_emb` | `QueryEmbeddingNode`: run ANN recall directly from `params.queryEmbedding` |
 | `sparse` | `SparseNode`: run BM25 recall from `params.query` against `openrec-recall-sparse-active` |
 | `hot` / `new` | Scene-level popular and recent candidates |
 
@@ -218,7 +218,7 @@ The default user graph enables these channels:
 |---|---|
 | `user_cf_u2u` | `U2uNode`: source user to UserCF user candidates in `user-cf-u2u` |
 | `content_u2u` | `U2uNode`: source user to content-similar user candidates in `content-u2u` |
-| `user_als_emb` | `EmbeddingNode`: read ALS-based U2U results from `user-als-emb` |
+| `user_als_u2u` | `EmbeddingNode`: read ALS-based U2U results from `user-als-u2u` |
 
 Each recall node retains its fixed `@Export` for older graphs and also writes
 `recall:<recallType>`. The default `CombineNode` reads the dynamic keys listed in `recallTypes`, so
@@ -233,7 +233,10 @@ openrec-recall-{tableName}-active
 For example, `item-cf-i2i` maps to `openrec-recall-item-cf-i2i-active`. Physical indexes carry a
 business date and revision, while queries filter by scene. Embedding recall uses the per-scene
 index convention `{scene}-{tableName}-index`. Query and item vectors must have the same dimension
-and embedding space. A request without `params.queryEmbedding` produces an empty `query_emb`
+and embedding space. The `query_qwen_emb` channel reads its own
+`{scene}-query_qwen_emb-index`, populated with Qwen vectors (the Music CRS experiment uses
+Qwen3-Embedding-8B, 4096 dimensions). It must not read the Word2Vec sequence index.
+Bootstrap does not populate the Qwen index. A request without `params.queryEmbedding` produces an empty `query_qwen_emb`
 channel and leaves the other recall channels unchanged.
 
 Set `recall.store=elasticsearch` or `recall.store=redis` to select the implementation. The Redis

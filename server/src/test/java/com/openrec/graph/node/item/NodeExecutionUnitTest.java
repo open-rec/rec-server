@@ -78,12 +78,12 @@ public class NodeExecutionUnitTest {
         RecallStore recallStore = mock(RecallStore.class);
         EmbeddingConfig content = new EmbeddingConfig();
         content.setSize(4);
-        content.setTableName("item-vector");
-        content.setRecallType("query_emb");
-        QueryEmbeddingNode node = new QueryEmbeddingNode(config("query_emb", content, true));
+        content.setTableName("query_qwen_emb");
+        content.setRecallType("query_qwen_emb");
+        QueryEmbeddingNode node = new QueryEmbeddingNode(config("query_qwen_emb", content, true));
         ReflectionTestUtils.setField(node, "recallStore", recallStore);
         List<ScoreResult> recalled = Collections.singletonList(new ScoreResult("result", 0.8));
-        when(recallStore.queryEmbedding("item-vector", "s", Arrays.asList(1.0, 2.0), 4, 50)).thenReturn(recalled);
+        when(recallStore.queryEmbedding("query_qwen_emb", "s", Arrays.asList(1.0, 2.0), 4, 50)).thenReturn(recalled);
         GraphContext context = new GraphContext();
         context.addParam("scene", "s");
         context.addParam("queryEmbedding", Arrays.asList(1, 2.0));
@@ -92,7 +92,7 @@ public class NodeExecutionUnitTest {
         context.exportNodeData(node);
 
         assertSame(recalled, context.getData("queryEmbeddingItems"));
-        assertSame(recalled, context.getData("recall:query_emb"));
+        assertSame(recalled, context.getData("recall:query_qwen_emb"));
     }
 
     @Test
@@ -282,14 +282,14 @@ public class NodeExecutionUnitTest {
     public void userNodesReuseMergeAndCollectionWithoutItemSideEffects() {
         CombineConfig content = new CombineConfig();
         content.setSize(10);
-        content.setRecallTypes(Arrays.asList("user_cf_u2u", "content_u2u", "user_als_emb"));
+        content.setRecallTypes(Arrays.asList("user_cf_u2u", "content_u2u", "user_als_u2u"));
         com.openrec.graph.node.user.CombineNode combine =
             new com.openrec.graph.node.user.CombineNode(config("combine", content, true));
         GraphContext context = new GraphContext();
         context.addParam("userId", "self");
         context.addData("recall:user_cf_u2u", Arrays.asList(new ScoreResult("self", 9), new ScoreResult("u2", 0.7)));
         context.addData("recall:content_u2u", Arrays.asList(new ScoreResult("u2", 0.2), new ScoreResult("u3", 0.4)));
-        context.addData("recall:user_als_emb", Collections.singletonList(new ScoreResult("u3", 0.1)));
+        context.addData("recall:user_als_u2u", Collections.singletonList(new ScoreResult("u3", 0.1)));
         combine.run(context);
         context.exportNodeData(combine);
 

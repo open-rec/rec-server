@@ -122,7 +122,7 @@ serving graph.
 therefore a serving-graph contract change, not a cosmetic refactor.
 
 The item graph accepts a dense request vector in `params.queryEmbedding`. The query embedding
-recall node uses it against the configured item-vector index. Keeping the vector in `params`
+recall node uses it against the configured query_qwen_emb index. Keeping the vector in `params`
 preserves compatibility for SDKs and callers that do not use semantic query recall.
 
 ### Scores and recall provenance

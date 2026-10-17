@@ -117,22 +117,22 @@
       "timeout": 300,
       "content": {
         "size": 1000,
-        "tableName": "item-vector",
+        "tableName": "item_seq_emb",
         "recallType": "item_seq_emb",
         "vectorField": "vector",
         "idField": "id"
       }
     },
     {
-      "name": "query_emb",
+      "name": "query_qwen_emb",
       "clazz": "com.openrec.graph.node.item.QueryEmbeddingNode",
       "configClazz": "com.openrec.graph.config.EmbeddingConfig",
       "open": true,
       "timeout": 300,
       "content": {
         "size": 1000,
-        "tableName": "item-vector",
-        "recallType": "query_emb",
+        "tableName": "query_qwen_emb",
+        "recallType": "query_qwen_emb",
         "vectorField": "vector",
         "idField": "id"
       }
@@ -166,7 +166,7 @@
           "content_i2i",
           "user_cf_u2i",
           "item_seq_emb",
-          "query_emb",
+          "query_qwen_emb",
           "sparse",
           "hot",
           "new"
@@ -203,7 +203,7 @@
               "weight": 1.0
             },
             {
-              "name": "query_emb",
+              "name": "query_qwen_emb",
               "weight": 1.0
             },
             {
@@ -251,7 +251,7 @@
           "item_seq_emb": 0.2,
           "hot": 0.2,
           "new": 0.2,
-          "query_emb": 0.2,
+          "query_qwen_emb": 0.2,
           "sparse": 0.1
         },
         "randomInsertRatios": {
@@ -299,7 +299,7 @@
       "to": "combine"
     },
     {
-      "from": "query_emb",
+      "from": "query_qwen_emb",
       "to": "combine"
     },
     {

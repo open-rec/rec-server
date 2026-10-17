@@ -35,7 +35,7 @@ The default item graph configures eight recall strategies (some require request-
 | `content_i2i` | `I2iNode` | trigger item to content-similar candidates |
 | `user_cf_u2i` | `U2iNode` | user to collaborative-filter candidates |
 | `item_seq_emb` | `EmbeddingNode` | trigger sequence vector to nearest items |
-| `query_emb` | `QueryEmbeddingNode` | supplied `params.queryEmbedding` vector to nearest items |
+| `query_qwen_emb` | `QueryEmbeddingNode` | supplied `params.queryEmbedding` vector to nearest items |
 | `sparse` | `SparseNode` | request text to BM25 matches in the active sparse index |
 | `hot` | `HotNode` | scene to popular items |
 | `new` | `NewNode` | scene to recent items |
@@ -47,7 +47,7 @@ Recall configs separate strategy identity from storage routing:
 - `name` identifies the graph node and currently matches `recallType` for recall nodes.
 
 The default user graph is separate: `user_cf_u2u`, `content_u2u`, and the ALS-backed
-`user_als_emb` feed `combine`, then the User Rank model scores candidate users. It deliberately has
+`user_als_u2u` feed `combine`, then the User Rank model scores candidate users. It deliberately has
 no hot/new channels.
 
 Recall nodes publish `recall:<recallType>` dynamically. Fixed annotation exports remain for older

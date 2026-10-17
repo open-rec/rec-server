@@ -38,7 +38,7 @@ The default serving graph selects `WeightedChannelOperationRule` with these curr
     "item_seq_emb": 0.2,
     "hot": 0.2,
     "new": 0.2,
-    "query_emb": 0.2,
+    "query_qwen_emb": 0.2,
     "sparse": 0.1
   }
 }
