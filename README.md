@@ -381,3 +381,8 @@ without history it falls back to `triggerSelf`. User combine excludes both click
 and self. Missing identity/scene, a disabled trigger, or a nonpositive size skips history.
 The current item-event push API writes `event:{userId}:{scene}:click`, not user-click
 history; the user-event producer must populate the separate `user-event` namespace.
+
+Cluster query-text embedding is disabled by default (`EMBEDDING_ENABLED=false`),
+so GitHub CI does not need GPU hardware, vLLM, or Qwen weights. Local GPU deployments
+can enable it with `EMBEDDING_ENABLED=true` after configuring the inference endpoint
+and matching title-vector index. BM25 text search remains available without inference.
