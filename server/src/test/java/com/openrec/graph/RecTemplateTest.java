@@ -41,13 +41,18 @@ public class RecTemplateTest {
     @Test
     public void userGraphReferencesLoadableNodeClassesAndValidEdges() {
         GraphConfig graphConfig = RecTemplate.toGraphConfig("user_graph.json");
-        Assert.assertEquals(11, graphConfig.getNodes().size());
+        Assert.assertEquals(12, graphConfig.getNodes().size());
         Assert.assertNotNull(GraphPlan.compile(graphConfig));
         Set<String> classes = graphConfig.getNodes().stream().map(NodeConfig::getClazz).collect(Collectors.toSet());
         Assert.assertTrue(classes.contains("com.openrec.graph.node.user.BlackNode"));
         Assert.assertTrue(classes.contains("com.openrec.graph.node.user.EmbeddingNode"));
         Assert.assertTrue(classes.contains("com.openrec.graph.node.user.OperationNode"));
         Assert.assertTrue(classes.contains("com.openrec.graph.node.user.UserFeatureNode"));
+        Assert.assertTrue(classes.contains("com.openrec.graph.node.user.SearchNode"));
+        Set<String> edges = graphConfig.getEdges().stream().map(edge -> edge.getFrom() + "->" + edge.getTo())
+            .collect(Collectors.toSet());
+        Assert.assertTrue(edges.contains("user_trigger->user_search"));
+        Assert.assertTrue(edges.contains("user_search->combine"));
         Assert.assertFalse(classes.contains("com.openrec.graph.node.user.HotNode"));
         Assert.assertFalse(classes.contains("com.openrec.graph.node.user.NewNode"));
     }
